@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SGUV — Sistema de Gestión Unificada de Ventas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#050a18;--sf:rgba(12,16,30,0.85);--sf-s:#0c101e;
+  --bd:rgba(232,160,191,0.12);--bd-h:rgba(232,160,191,0.3);
+  --ch:#e8a0bf;--ch-l:#f0c4d8;--ch-d:#c75e8a;
+  --gd:#d4a853;--gd-d:rgba(212,168,83,0.15);
+  --tx:#f0ece4;--ts:#b0a89e;--tm:#6b6560;
+  --mtn1:#0d1520;--mtn2:#121d30;--mtn3:#1a2740;--mtn4:#1f2f4a;
+  --pgd:rgba(18,28,48,0.92);--pgd-r:rgba(120,40,50,0.6);
+  --tr:#2a1f18;--bl:#e8a0bf;--bl2:#f0c4d8;
+  --pin-bg:rgba(5,10,24,0.97);
+  --bub:radial-gradient(ellipse at 30% 30%,rgba(232,160,191,0.07),rgba(12,16,30,0.55));
+  --ok:#22c55e;--err:#ef4444;--warn:#eab308;--info:#3b82f6;
+  --ok-bg:rgba(34,197,94,0.08);--ok-bd:rgba(34,197,94,0.15);
+  --warn-bg:rgba(234,179,8,0.08);--warn-bd:rgba(234,179,8,0.15);
+  --err-bg:rgba(239,68,68,0.08);--err-bd:rgba(239,68,68,0.15);
+}
+html.light{
+  --bg:#fde8d0;--sf:rgba(255,240,225,0.85);--sf-s:#fff0e0;
+  --bd:rgba(180,100,60,0.15);--bd-h:rgba(180,100,60,0.35);
+  --ch:#c75e8a;--ch-l:#d87ea5;--ch-d:#a0406a;
+  --gd:#b8860b;--gd-d:rgba(184,134,11,0.12);
+  --tx:#2a1a10;--ts:#6b5548;--tm:#a08a7a;
+  --mtn1:rgba(100,60,50,0.3);--mtn2:rgba(120,70,55,0.25);--mtn3:rgba(140,80,60,0.2);--mtn4:rgba(160,90,65,0.15);
+  --pgd:rgba(100,60,50,0.35);--pgd-r:rgba(160,60,50,0.45);
+  --tr:#5a3a28;--bl:#d87ea5;--bl2:#f0a0c0;
+  --pin-bg:rgba(253,232,208,0.98);
+  --bub:radial-gradient(ellipse at 30% 30%,rgba(200,120,80,0.1),rgba(255,240,225,0.6));
+  --ok-bg:rgba(34,197,94,0.1);--warn-bg:rgba(234,179,8,0.1);--err-bg:rgba(239,68,68,0.1);
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased;overscroll-behavior:none;font-size:14px}
+input,button,select,textarea{font-family:inherit}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+input[type=number]{-moz-appearance:textfield}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+.screen{position:absolute;inset:0;overflow:hidden;transition:opacity .4s,transform .4s}
+.screen.hidden{opacity:0;pointer-events:none;transform:scale(1.03)}
+.screen.visible{opacity:1;pointer-events:auto;transform:scale(1)}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@keyframes bubbleFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes twinkle{0%,100%{opacity:0}50%{opacity:var(--op)}}
+@keyframes petalFall{0%{transform:translateY(-20px) rotate(0deg);opacity:0}5%{opacity:var(--op)}90%{opacity:var(--op)}100%{transform:translateY(110vh) rotate(var(--rot));opacity:0}}
+@keyframes petalSway{0%,100%{margin-left:0}25%{margin-left:var(--s1)}75%{margin-left:var(--s2)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.btn-primary{width:100%;padding:12px;border-radius:10px;background:var(--ch-d);color:#fff;font-weight:700;font-size:14px;cursor:pointer;border:none;transition:opacity .2s}
+.btn-primary:hover{opacity:.9}
+.btn-primary:disabled{background:var(--bd);color:var(--tm);cursor:not-allowed;opacity:1}
+.btn-secondary{width:100%;padding:10px;border-radius:10px;background:var(--sf);border:1px solid var(--bd);color:var(--ts);font-size:12px;cursor:pointer}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:14px}
+.input{width:100%;padding:10px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--bd);color:var(--tx);font-size:13px;outline:none}
+.input:focus{border-color:var(--ch)}
+.input-mono{font-family:'DM Mono',monospace}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;padding:4px 10px;border-radius:7px}
+.badge-ok{background:var(--ok-bg);color:var(--ok);border:1px solid var(--ok-bd)}
+.badge-warn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-bd)}
+.badge-err{background:var(--err-bg);color:var(--err);border:1px solid var(--err-bd)}
+.table{width:100%;border-collapse:collapse;font-size:12px}
+.table th,.table td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--bd);color:var(--ts)}
+.table th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--tm);font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- ============ PIN / LICENCIA SCREEN ============ -->
+<div class="pin-screen" id="pinScr" style="position:fixed;inset:0;z-index:9999;background:var(--pin-bg);display:flex;flex-direction:column;align-items:center;justify-content:center">
+  <div style="font-size:28px;margin-bottom:6px">🌸</div>
+  <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;letter-spacing:4px;background:linear-gradient(135deg,var(--ch-l),var(--gd));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">SGUV</div>
+  <div style="font-size:11px;color:var(--tm);margin-bottom:28px;letter-spacing:2px;text-transform:uppercase" id="pinSubtitle">Sistema de Gestión Comercial</div>
+  <div id="pinDots" style="display:flex;gap:14px;margin-bottom:24px">
+    <div class="pd" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--bd);transition:all .2s"></div>
+    <div class="pd" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--bd);transition:all .2s"></div>
+    <div class="pd" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--bd);transition:all .2s"></div>
+    <div class="pd" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--bd);transition:all .2s"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,72px);gap:10px" id="pinPad"></div>
+  <div id="pinErr" style="color:var(--err);font-size:11px;height:16px;margin-top:12px"></div>
+  <div id="pinSkip" style="margin-top:16px;display:none"><button onclick="skipPin()" style="background:none;border:none;color:var(--tm);font-size:11px;cursor:pointer;text-decoration:underline">Omitir protección</button></div>
+</div>
+
+<!-- ============ MAIN SCREEN ============ -->
+<div class="screen visible" id="mainScr">
+  <div style="position:absolute;inset:0;z-index:0;transition:background .6s" id="skyBg"></div>
+  <div id="stars" style="position:absolute;inset:0;z-index:1;overflow:hidden;transition:opacity .6s"></div>
+  <div style="position:absolute;bottom:0;left:0;right:0;z-index:2;pointer-events:none;overflow:hidden;height:55%">
+    <div style="position:absolute;bottom:35%;left:0;right:0;opacity:0.4;filter:blur(2px)"><svg viewBox="0 0 1440 200" preserveAspectRatio="none" style="display:block;width:100%"><path d="M0,200 L0,140 Q100,60 250,120 Q400,30 580,100 Q720,20 900,90 Q1080,40 1250,110 Q1380,70 1440,130 L1440,200 Z" fill="var(--mtn1)"/></svg></div>
+    <div style="position:absolute;bottom:25%;left:0;right:0;opacity:0.6;filter:blur(1px)"><svg viewBox="0 0 1440 250" preserveAspectRatio="none" style="display:block;width:100%"><path d="M0,250 L0,180 Q180,80 380,160 Q550,50 780,140 Q1000,70 1200,150 Q1350,100 1440,170 L1440,250 Z" fill="var(--mtn2)"/></svg></div>
+    <div style="position:absolute;bottom:12%;left:0;right:0;opacity:0.85"><svg viewBox="0 0 1440 220" preserveAspectRatio="none" style="display:block;width:100%"><path d="M0,220 L0,150 Q120,70 320,130 Q500,50 720,120 Q920,60 1120,110 Q1300,70 1440,140 L1440,220 Z" fill="var(--mtn3)"/></svg></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;z-index:3"><svg viewBox="0 0 1440 160" preserveAspectRatio="none" style="display:block;width:100%"><path d="M0,160 L0,110 Q200,60 450,100 Q700,50 950,90 Q1200,60 1440,100 L1440,160 Z" fill="var(--mtn4)"/></svg></div>
+    <div style="position:absolute;left:-30px;bottom:8%;width:200px;opacity:0.7;z-index:5">
+      <svg viewBox="0 0 200 300" fill="none"><path d="M140,300 Q135,260 125,220 Q110,170 90,140 Q70,115 45,100" stroke="var(--tr)" stroke-width="7" stroke-linecap="round"/><path d="M115,195 Q95,175 75,180" stroke="var(--tr)" stroke-width="4" stroke-linecap="round"/><circle cx="42" cy="96" r="8" fill="var(--bl)" opacity="0.7"/><circle cx="52" cy="90" r="6" fill="var(--bl2)" opacity="0.55"/><circle cx="36" cy="88" r="5" fill="var(--ch-d)" opacity="0.4"/><circle cx="70" cy="176" r="7" fill="var(--bl)" opacity="0.6"/><circle cx="46" cy="135" r="6" fill="var(--bl)" opacity="0.55"/></svg>
+    </div>
+    <div style="position:absolute;right:-20px;bottom:10%;width:260px;opacity:0.65;z-index:5">
+      <svg viewBox="0 0 260 350" fill="none"><path d="M80,350 Q85,300 95,250 Q110,200 135,170 Q160,140 190,120" stroke="var(--tr)" stroke-width="8" stroke-linecap="round"/><path d="M120,230 Q150,205 170,210" stroke="var(--tr)" stroke-width="5" stroke-linecap="round"/><circle cx="188" cy="116" r="10" fill="var(--bl)" opacity="0.65"/><circle cx="198" cy="110" r="7" fill="var(--bl2)" opacity="0.5"/><circle cx="168" cy="206" r="8" fill="var(--bl)" opacity="0.6"/><circle cx="193" cy="165" r="7" fill="var(--bl)" opacity="0.55"/></svg>
+    </div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:150px;z-index:6;pointer-events:none;background:linear-gradient(180deg,transparent 0%,var(--bg) 100%);opacity:0.7"></div>
+  </div>
+  <div id="petals" style="position:absolute;inset:0;z-index:7;pointer-events:none;overflow:hidden"></div>
+  <button id="themeBtn" style="position:absolute;top:14px;right:14px;z-index:20;width:40px;height:40px;border-radius:50%;background:var(--sf);border:1px solid var(--bd);backdrop-filter:blur(8px);color:var(--ts);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">🌙</button>
+  <div style="position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px 16px 12px">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:30px;margin-bottom:4px;filter:drop-shadow(0 0 16px rgba(232,160,191,0.25))">🌸</div>
+      <h1 style="font-family:'Cormorant Garamond',serif;font-size:clamp(30px,7vw,48px);font-weight:300;letter-spacing:5px;text-transform:uppercase;background:linear-gradient(135deg,var(--ch-l),var(--gd),var(--ch));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 2px 16px rgba(232,160,191,0.15))">SGUV</h1>
+      <p style="font-size:clamp(9px,2vw,11px);color:var(--ts);letter-spacing:3px;text-transform:uppercase;margin-top:4px;font-weight:300" id="shopNameDisp">Sistema de Gestión Comercial</p>
+    </div>
+    <div id="bubbles" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:380px;width:100%;margin-bottom:24px"></div>
+  </div>
+  <div style="position:relative;z-index:10;width:100%;max-width:420px;margin:0 auto;padding:0 16px 16px;display:flex;flex-direction:column;gap:8px" id="cfgBar"></div>
+  <div style="position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:8px;color:var(--tm);letter-spacing:2px;z-index:10;font-family:'DM Mono',monospace;opacity:0.5">SGUV — v1.0 — Desarrollado por MiMo</div>
+</div>
+
+<!-- ============ VIEW SHELLS ============ -->
+<div class="screen hidden" id="viewMicaja"></div>
+<div class="screen hidden" id="viewResumen"></div>
+<div class="screen hidden" id="viewLicencia"></div>
+<div class="screen hidden" id="viewImpresora"></div>
+<div class="screen hidden" id="viewCamara"></div>
+<div class="screen hidden" id="viewUsuario"></div>
+<div class="screen hidden" id="viewProveedores"></div>
+<div class="screen hidden" id="viewStock"></div>
+<div class="screen hidden" id="viewControl"></div>
+
+<!-- ============ MODALS ============ -->
+<div id="modalLayer" style="display:none"></div>
+<div id="tooltipLayer" style="display:none"></div>
+
+<script>
+// ============================================================
+//  SGUV — Sistema de Gestión Unificada de Ventas v1.0
+// ============================================================
+
+// ---- STORAGE ----
+const LS={get(k,d){try{const v=localStorage.getItem("sguv_"+k);return v!==null?JSON.parse(v):d}catch{return d}},set(k,v){try{localStorage.setItem("sguv_"+k,JSON.stringify(v))}catch{}}};
+
+// ---- PRODUCTS DATABASE ----
+const DEFAULT_PRODUCTS=[
+  {id:1,bc:"7790895001234",name:"Coca-Cola 500ml",cat:"Bebidas",price:1200,stock:24},
+  {id:2,bc:"7790895005678",name:"Coca-Cola Zero 500ml",cat:"Bebidas",price:1200,stock:18},
+  {id:3,bc:"7790040012345",name:"Alfajor Havanna x3u",cat:"Kiosco",price:800,stock:12},
+  {id:4,bc:"7790340001111",name:"Agua Villavicencio 500ml",cat:"Bebidas",price:600,stock:30},
+  {id:5,bc:"7790520002222",name:"Chicle Beldent Menta",cat:"Kiosco",price:400,stock:50},
+  {id:6,bc:"7790895009999",name:"Sprite 500ml",cat:"Bebidas",price:1200,stock:20},
+  {id:7,bc:"7790340003333",name:"Agua Saborizada 500ml",cat:"Bebidas",price:900,stock:15},
+  {id:8,bc:"7790040044444",name:"Alfajor Guaymallen x3u",cat:"Kiosco",price:500,stock:20},
+  {id:9,bc:"7790740001234",name:"Papas Lays 95g",cat:"Kiosco",price:1800,stock:10},
+  {id:10,bc:"7790740005678",name:"Doritos Nacho 90g",cat:"Kiosco",price:1800,stock:10},
+  {id:11,bc:"7790895011111",name:"Fanta 500ml",cat:"Bebidas",price:1200,stock:22},
+  {id:12,bc:"7790340007777",name:"Cerveza Quilmes 1L",cat:"Bebidas",price:2200,stock:8},
+  {id:13,bc:"7790520008888",name:"Caramelos Arcor x100g",cat:"Kiosco",price:600,stock:40},
+  {id:14,bc:"7790040099999",name:"Oreo Original",cat:"Kiosco",price:900,stock:14},
+  {id:15,bc:"7790895022222",name:"Speed 250ml",cat:"Bebidas",price:1000,stock:16},
+  {id:16,bc:"INT001",name:"Jamón Cocido xkg",cat:"Fiambreria",price:8500,kg:true,stock:5},
+  {id:17,bc:"INT002",name:"Queso Tybo xkg",cat:"Fiambreria",price:7200,kg:true,stock:4},
+  {id:18,bc:"INT003",name:"Mortadela xkg",cat:"Fiambreria",price:6500,kg:true,stock:3},
+];
+
+let customProducts=LS.get("customProds",[]);
+function allProducts(){return[...DEFAULT_PRODUCTS.map(p=>({...p})),...customProducts.map(p=>({...p}))]}
+function findProd(bc){return allProducts().find(p=>p.bc===bc.trim())||null}
+function searchProd(q){if(!q||q.length<2)return[];const l=q.toLowerCase();return allProducts().filter(p=>p.name.toLowerCase().includes(l)||p.bc.includes(q.trim())||p.cat.toLowerCase().includes(l))}
+
+// ---- STATE ----
+let S={
+  pin:LS.get("pin","1234"),
+  pinEnabled:LS.get("pinEnabled",false),
+  theme:LS.get("theme","dark"),
+  licensed:LS.get("licensed",false),
+  devCode:LS.get("devCode",null),
+  userName:LS.get("userName",""),
+  shopName:LS.get("shopName",""),
+  camId:LS.get("camId",""),
+  // Caja
+  cajaOpen:LS.get("cajaOpen",false),
+  cajaOp:LS.get("cajaOp",""),
+  cajaCash:LS.get("cajaCash",0),
+  cajaStart:LS.get("cajaStart",null),
+  ticketNum:LS.get("ticketNum",1),
+  // Runtime
+  ticket:[],
+  scannedProd:null,
+  // History
+  sales:LS.get("sales",[]),
+  activities:LS.get("activities",[]),
+};
+
+function save(k){LS.set(k,S[k])}
+function saveAll(){["pin","pinEnabled","theme","licensed","devCode","userName","shopName","camId","cajaOpen","cajaOp","cajaCash","cajaStart","ticketNum","sales","activities"].forEach(k=>LS.set(k,S[k]))}
+
+// ---- LICENSE ----
+function genDevCode(){
+  const ch="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let c="M2-";
+  for(let g=0;g<3;g++){if(g)c+="-";for(let i=0;i<4;i++)c+=ch[Math.floor(Math.random()*ch.length)]}
+  return c;
+}
+function genLicenseKey(dc){
+  const s=dc.replace(/[^A-Z0-9]/gi,"");let h=5381;
+  for(let i=0;i<s.length;i++){h=((h<<5)+h+s.charCodeAt(i))&0x7FFFFFFF}
+  const r=[];for(let i=0;i<4;i++){const v=(h>>(i*7))&0xFFFF;r.push(((v%10000)+10000).toString(36).toUpperCase().substr(0,4))}
+  return"M2-"+r.join("-");
+}
+const VALID_KEY="M2-F8A2-K3M7-B9N5";
+function validateKey(k){
+  if(k===VALID_KEY)return true;
+  if(!S.devCode)return false;
+  return k===genLicenseKey(S.devCode);
+}
+if(!S.devCode){S.devCode=genDevCode();save("devCode")}
+
+// ---- THEME ----
+function applyTheme(){
+  document.documentElement.classList.toggle("light",S.theme==="light");
+  const b=document.getElementById("themeBtn");if(b)b.textContent=S.theme==="light"?"☀️":"🌙";
+  const s=document.getElementById("skyBg");if(s)s.style.background=S.theme==="light"
+    ?"linear-gradient(180deg,#b03a2e 0%,#d35400 25%,#e67e22 50%,#f0a050 70%,#fde8d0 100%)"
+    :"linear-gradient(180deg,#050a18 0%,#0a1628 40%,#162848 100%)";
+  const st=document.getElementById("stars");if(st)st.style.opacity=S.theme==="light"?"0":"1";
+}
+
+// ---- NAVIGATION ----
+let currentView=null;
+function showView(id){
+  document.getElementById("mainScr").classList.remove("visible");document.getElementById("mainScr").classList.add("hidden");
+  document.querySelectorAll(".screen:not(#mainScr)").forEach(s=>{s.classList.remove("visible");s.classList.add("hidden")});
+  const v=document.getElementById("view"+id.charAt(0).toUpperCase()+id.slice(1));
+  if(v){v.classList.remove("hidden");v.classList.add("visible");v.innerHTML=renderView(id);bindView(id)}
+  currentView=id;
+}
+function showMain(){
+  document.querySelectorAll(".screen").forEach(s=>{s.classList.remove("visible");s.classList.add("hidden")});
+  document.getElementById("mainScr").classList.remove("hidden");document.getElementById("mainScr").classList.add("visible");
+  currentView=null;stopCam();stopScan();
+}
+function goBack(){showMain()}
+
+const viewTitles={micaja:"Mi Caja",resumen:"Resumen del Día",licencia:"Licencia",impresora:"Impresora",camara:"Cámara",usuario:"Mi Cuenta",proveedores:"Proveedores",stock:"Stock",control:"Control Cajas"};
+
+function renderView(id){
+  const h=`<div style="display:flex;flex-direction:column;height:100%;height:100dvh;background:var(--bg);overflow:hidden">`+
+    `<div style="height:52px;display:flex;align-items:center;gap:12px;padding:0 14px;background:var(--sf-s);border-bottom:1px solid var(--bd);flex-shrink:0">`+
+    `<button onclick="goBack()" style="width:36px;height:36px;border-radius:10px;background:none;border:1px solid var(--bd);color:var(--ch);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px">←</button>`+
+    `<span style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:400;letter-spacing:2px;flex:1">${viewTitles[id]||""}</span>`+
+    (id==="micaja"?`<button onclick="showResumen()" style="background:none;border:1px solid var(--bd);color:var(--ts);padding:5px 10px;border-radius:6px;font-size:10px;cursor:pointer">📋 Resumen</button>`:"")+
+    `</div>`+
+    `<div style="flex:1;overflow-y:auto;padding:16px" id="vBody_${id}">${renderViewBody(id)}</div>`+
+    `</div>`;
+  return h;
+}
+
+function renderViewBody(id){
+  if(id==="micaja")return renderCaja();
+  if(id==="resumen")return renderResumen();
+  if(id==="licencia")return renderLicencia();
+  if(id==="impresora")return renderPrinter();
+  if(id==="camara")return renderCam();
+  if(id==="usuario")return renderUser();
+  if(id==="proveedores")return renderPlaceholder("📦","Proveedores","Recepción de mercadería con OCR inteligente. Escaneá facturas o cargá PDFs para reconocimiento automático.",["📷 Escáner de facturas con PaddleOCR","📄 Carga de PDF digital","🔍 Reconocimiento por similitud de productos","🏷️ Creación de productos nuevos desde factura"]);
+  if(id==="stock")return renderStock();
+  if(id==="control")return renderPlaceholder("📡","Control de Cajas","Monitoreá cajas y operadores en tiempo real.",["👥 Multi-dispositivo con licencias","📊 Panel de control en tiempo real","🔑 Licencias por dispositivo"]);
+  return"";
+}
+
+function renderPlaceholder(icon,title,desc,features){
+  let h=`<div style="display:flex;flex-direction:column;align-items:center;padding-top:30px">`;
+  h+=`<div style="font-size:48px;margin-bottom:12px;opacity:.15">${icon}</div>`;
+  h+=`<div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;letter-spacing:2px;margin-bottom:6px;color:var(--ch-l)">${title}</div>`;
+  h+=`<div style="font-size:12px;color:var(--tm);text-align:center;max-width:380px;line-height:1.6;margin-bottom:20px">${desc}</div>`;
+  h+=`<div style="display:flex;flex-direction:column;gap:8px;width:100%;max-width:400px">`;
+  features.forEach(f=>{h+=`<div style="display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:10px;background:var(--sf);border:1px solid var(--bd)"><span style="font-size:12px;color:var(--ts);line-height:1.5">${f}</span></div>`});
+  h+=`</div></div>`;return h;
+}
+
+// ============================================================
+//  MI CAJA
+// ============================================================
+function renderCaja(){
+  if(!S.cajaOpen)return renderCajaSetup();
+  return renderCajaActive();
+}
+
+function renderCajaSetup(){
+  return`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:20px;text-align:center">
+    <div style="font-size:48px;margin-bottom:12px;opacity:.2">🏪</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:22px;margin-bottom:6px;color:var(--ch-l)">Abrir Caja</div>
+    <div style="font-size:12px;color:var(--tm);margin-bottom:20px;max-width:300px">Ingresá el nombre del cajero y el efectivo de apertura para comenzar a facturar.</div>
+    <div style="width:100%;max-width:300px">
+      <div style="margin-bottom:12px"><input type="text" id="cajaOpInp" placeholder="Nombre del cajero" value="${S.userName||""}" class="input" style="text-align:center"></div>
+      <div style="margin-bottom:16px"><input type="number" id="cajaCashInp" placeholder="Caja inicial ($)" value="10000" class="input input-mono" style="text-align:center;font-size:16px"></div>
+      <button onclick="openCaja()" class="btn-primary">Abrir Caja</button>
+    </div>
+  </div>`;
+}
+
+function openCaja(){
+  const op=document.getElementById("cajaOpInp").value.trim();
+  const cash=Number(document.getElementById("cajaCashInp").value)||0;
+  if(!op){alert("Ingresá el nombre del cajero.");return}
+  S.cajaOpen=true;S.cajaOp=op;S.cajaCash=cash;S.cajaStart=Date.now();S.ticket=[];
+  addActivity("apertura","Caja abierta por "+op+" con $"+cash.toLocaleString("es-AR"));
+  saveAll();showView("micaja");
+}
+
+function renderCajaActive(){
+  let h="";
+  // Accordion tutorial
+  h+=`<div style="margin-bottom:12px;border-radius:10px;border:1px solid var(--bd);overflow:hidden">`;
+  h+=`<div id="tutToggle" onclick="toggleTut()" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:var(--sf)">`;
+  h+=`<span style="font-size:12px;font-weight:600;color:var(--gd)">📖 Cómo funciona Mi Caja</span><span id="tutArrow" style="font-size:12px;color:var(--tm);transition:transform .2s">▼</span></div>`;
+  h+=`<div id="tutContent" style="max-height:0;overflow:hidden;transition:max-height .3s ease">`;
+  h+=`<div style="padding:12px 14px;font-size:11px;color:var(--ts);line-height:1.7;background:var(--sf-s)">`;
+  h+=`<strong style="color:var(--tx)">1. Escanear</strong> — Ingresá el código de barras o buscá por nombre. Cuando se reconoce, aparece en verde.<br>`;
+  h+=`<strong style="color:var(--tx)">2. Agregar</strong> — Tocá <strong>+</strong> para sumar al ticket. Ajustá cantidades con − y +.<br>`;
+  h+=`<strong style="color:var(--tx)">3. Fiambrería</strong> — Productos por kg te piden ingresar gramos antes de agregar.<br>`;
+  h+=`<strong style="color:var(--tx)">4. Cobrar</strong> — Tocá COBRAR para cerrar la venta. Elegí método de pago.<br>`;
+  h+=`<strong style="color:var(--tx)">5. Resumen</strong> — Revisá el resumen del día con el botón 📋 arriba.`;
+  h+=`</div></div></div>`;
+
+  // Scanner zone
+  h+=`<div id="scanZone" style="margin-bottom:12px">`;
+  h+=`<div style="display:flex;gap:6px;margin-bottom:8px">`;
+  h+=`<input type="text" id="barcodeInp" placeholder="Ingresar código de barras..." inputmode="numeric" class="input input-mono" style="flex:1;letter-spacing:2px;font-size:16px">`;
+  h+=`<button onclick="scanBarcode()" style="padding:10px 16px;border-radius:8px;background:var(--ch-d);color:#fff;font-weight:700;font-size:13px;cursor:pointer;border:none;white-space:nowrap">🔍 Buscar</button>`;
+  h+=`</div>`;
+
+  // Scanned product display
+  if(S.scannedProd){
+    const p=S.scannedProd;
+    h+=`<div id="scannedInfo" style="padding:12px;border-radius:10px;border:2px solid var(--ok);background:var(--ok-bg);animation:fadeIn .2s">`;
+    h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">`;
+    h+=`<span style="font-size:13px;font-weight:600">${esc(p.name)}</span>`;
+    h+=`<span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--ok)">${fmt(p.price)}${p.kg?"/kg":""}</span></div>`;
+    h+=`<div style="font-size:10px;color:var(--tm);margin-bottom:8px">${esc(p.cat)}${p.kg?" · venta por peso":""} · ${esc(p.bc)} · Stock: ${p.stock}</div>`;
+    h+=`<div style="display:flex;gap:6px;flex-wrap:wrap">`;
+    if(p.kg){
+      h+=`<button onclick="showWeightModal()" style="padding:6px 14px;border-radius:6px;background:var(--ok);color:#000;font-weight:700;font-size:11px;cursor:pointer;border:none">⚖️ Ingresar Gramos</button>`;
+    } else {
+      h+=`<button onclick="addToTicket()" style="padding:6px 14px;border-radius:6px;background:var(--ok);color:#000;font-weight:700;font-size:11px;cursor:pointer;border:none">+ Agregar</button>`;
+    }
+    h+=`<button onclick="changeScanned()" style="padding:6px 12px;border-radius:6px;background:var(--sf);border:1px solid var(--bd);color:var(--ts);font-size:11px;cursor:pointer">Cambiar</button>`;
+    h+=`<button onclick="rescan()" style="padding:6px 12px;border-radius:6px;background:var(--sf);border:1px solid var(--bd);color:var(--ts);font-size:11px;cursor:pointer">↩ Rescanear</button>`;
+    h+=`</div></div>`;
+  }
+  h+=`</div>`;
+
+  // Search alternative
+  h+=`<div style="margin-bottom:12px"><div style="display:flex;gap:6px"><input type="text" id="searchInp" placeholder="Buscar por nombre..." class="input" style="flex:1;font-size:12px"><button onclick="searchProduct()" style="padding:8px 12px;border-radius:8px;background:var(--sf);border:1px solid var(--bd);color:var(--ts);font-size:11px;cursor:pointer">🔍</button></div><div id="searchResults"></div></div>`;
+
+  // Ticket
+  h+=`<div style="flex:1;display:flex;flex-direction:column;min-height:0">`;
+  h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;font-weight:600">Ticket #${String(S.ticketNum).padStart(4,"0")}</span><span style="font-size:10px;color:var(--tm)">${ticketCount()} items · ${esc(S.cajaOp)}</span></div>`;
+
+  if(S.ticket.length===0){
+    h+=`<div style="display:flex;align-items:center;justify-content:center;height:100px;color:var(--tm);font-size:12px">Escaneá o buscá un producto para comenzar</div>`;
+  }else{
+    S.ticket.forEach((it,idx)=>{
+      h+=`<div style="display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--bd);animation:slideUp .2s ease ${idx*30}ms both">`;
+      h+=`<div style="display:flex;align-items:center;gap:2px"><button onclick="updQty(${it.id},-1)" style="width:24px;height:24px;border-radius:4px;background:var(--sf);border:1px solid var(--bd);color:var(--tm);cursor:pointer;font-size:12px">−</button>`;
+      h+=`<span style="width:24px;text-align:center;font-family:'DM Mono',monospace;font-weight:500;font-size:13px">${it.qty}</span>`;
+      h+=`<button onclick="updQty(${it.id},1)" style="width:24px;height:24px;border-radius:4px;background:var(--sf);border:1px solid var(--bd);color:var(--tm);cursor:pointer;font-size:12px">+</button></div>`;
+      h+=`<span style="flex:1;font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.prod.name)}${it.grams?" ("+it.grams+"g)":""}</span>`;
+      h+=`<span style="font-family:'DM Mono',monospace;font-size:12px;font-weight:500">${fmt(it.sub)}</span>`;
+      h+=`<button onclick="delItem(${it.id})" style="background:none;border:none;color:var(--tm);cursor:pointer;font-size:13px;padding:2px">✕</button>`;
+      h+=`</div>`;
+    });
+  }
+  h+=`</div>`;
+
+  // Total + Cobrar
+  h+=`<div style="padding-top:10px;border-top:1px solid var(--bd)">`;
+  h+=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><span style="font-size:12px;color:var(--tm)">TOTAL</span><span style="font-family:'DM Mono',monospace;font-weight:700;font-size:26px;color:var(--ch)">${fmt(ticketTotal())}</span></div>`;
+  h+=`<button onclick="cobrar()" ${ticketTotal()===0?"disabled":""} style="width:100%;padding:14px;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;border:none;${ticketTotal()>0?"background:var(--ok);color:#000":"background:var(--bd);color:var(--tm);cursor:not-allowed"}">COBRAR${ticketTotal()>0?" — "+fmt(ticketTotal()):""}</button>`;
+  h+=`</div>`;
+  h+=`</div>`;
+  return h;
+}
+
+function fmt(n){return"$"+n.toLocaleString("es-AR")}
+function esc(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML}
+function ticketTotal(){return S.ticket.reduce((s,i)=>s+i.sub,0)}
+function ticketCount(){return S.ticket.reduce((s,i)=>s+i.qty,0)}
+
+function toggleTut(){
+  const c=document.getElementById("tutContent"),a=document.getElementById("tutArrow");
+  if(!c)return;
+  const open=c.style.maxHeight!=="0px";
+  c.style.maxHeight=open?"0":"200px";a.style.transform=open?"rotate(0deg)":"rotate(180deg)";
+}
+
+function scanBarcode(){
+  const inp=document.getElementById("barcodeInp");if(!inp)return;
+  const bc=inp.value.trim();if(!bc)return;
+  const p=findProd(bc);
+  if(p){S.scannedProd=p;addActivity("scan","Escaneado: "+p.name);inp.value=""}
+  else{S.scannedProd=null;
+    if(confirm("Código no encontrado: "+bc+"\n¿Querés crear un nuevo producto con este código?")){createProduct(bc)}
+  }
+  refreshCaja();
+}
+function searchProduct(){
+  const inp=document.getElementById("searchInp");if(!inp)return;
+  const r=searchProd(inp.value);
+  const el=document.getElementById("searchResults");if(!el)return;
+  if(r.length===0){el.innerHTML='<div style="padding:8px;font-size:11px;color:var(--tm)">Sin resultados</div>';return}
+  el.innerHTML=r.slice(0,5).map(p=>`<div onclick="S.scannedProd=findProd('${p.bc}');refreshCaja()" style="padding:8px 10px;cursor:pointer;display:flex;justify-content:space-between;border-bottom:1px solid var(--bd);font-size:12px;transition:background .1s" onmouseover="this.style.background='var(--sf)'" onmouseout="this.style.background=''"><span>${esc(p.name)}</span><span style="font-family:'DM Mono',monospace;color:var(--ch)">${fmt(p.price)}${p.kg?'/kg':''}</span></div>`).join("");
+}
+function addToTicket(grams){
+  if(!S.scannedProd)return;
+  const p=S.scannedProd;
+  const ex=S.ticket.find(i=>i.prod.id===p.id && (!grams || i.grams===grams));
+  if(ex){ex.qty++;ex.sub=ex.qty*(grams?Math.round(p.price*grams/1000):p.price)}
+  else{
+    const sub=grams?Math.round(p.price*grams/1000):p.price;
+    S.ticket.push({id:Date.now()+Math.random(),prod:p,qty:1,sub:sub,grams:grams||null});
+  }
+  addActivity("add","Agregado: "+p.name+(grams?" "+grams+"g":""));
+  S.scannedProd=null;refreshCaja();
+}
+function showWeightModal(){
+  const p=S.scannedProd;if(!p||!p.kg)return;
+  const grams=prompt("Ingresá el peso en gramos:","100");
+  if(!grams)return;
+  const g=parseInt(grams);
+  if(isNaN(g)||g<=0){alert("Peso inválido");return}
+  addToTicket(g);
+}
+function changeScanned(){S.scannedProd=null;refreshCaja();setTimeout(()=>{const i=document.getElementById("barcodeInp");if(i)i.focus()},100)}
+function rescan(){S.scannedProd=null;refreshCaja();setTimeout(()=>{const i=document.getElementById("barcodeInp");if(i)i.focus()},100)}
+function updQty(id,d){
+  const it=S.ticket.find(i=>i.id===id);if(!it)return;
+  it.qty+=d;
+  if(it.qty<=0){S.ticket=S.ticket.filter(i=>i.id!==id);addActivity("delete","Borrado: "+it.prod.name+(it.grams?" "+it.grams+"g":""))}
+  else{it.sub=it.qty*(it.grams?Math.round(it.prod.price*it.grams/1000):it.prod.price)}
+  refreshCaja();
+}
+function delItem(id){
+  const it=S.ticket.find(i=>i.id===id);if(!it)return;
+  S.ticket=S.ticket.filter(i=>i.id!==id);
+  addActivity("delete","Borrado del ticket: "+it.prod.name+(it.grams?" "+it.grams+"g":"")+" x"+it.qty);
+  refreshCaja();
+}
+
+function createProduct(bc){
+  const name=prompt("Nombre del producto:");if(!name)return;
+  const price=Number(prompt("Precio ($):"));if(!price)return;
+  const cat=prompt("Categoría (ej: Bebidas, Kiosco, Fiambreria):")||"General";
+  const isKg=confirm("¿Es un producto de fiambrería (venta por peso)?");
+  const np={id:Date.now(),bc:bc,name:name.trim(),cat:cat.trim(),price:price,kg:isKg,stock:0};
+  customProducts.push(np);LS.set("customProds",customProducts);
+  S.scannedProd=np;addActivity("create","Producto creado: "+name);
+  refreshCaja();
+}
+
+function addActivity(type,detail){
+  S.activities.unshift({type,detail,time:Date.now(),operator:S.cajaOp||S.userName||"Sistema"});
+  if(S.activities.length>300)S.activities=S.activities.slice(0,300);
+  LS.set("activities",S.activities);
+}
+
+function refreshCaja(){
+  if(currentView==="micaja"){
+    const body=document.getElementById("vBody_micaja");
+    if(body)body.innerHTML=renderCajaActive();
+  }
+}
+
+// ---- PAYMENT ----
+function cobrar(){
+  if(ticketTotal()===0)return;
+  showPaymentModal();
+}
+
+function showPaymentModal(){
+  const L=document.getElementById("modalLayer");L.style.display="flex";
+  L.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:flex-end";
+  L.innerHTML=`<div id="payModal" style="background:var(--sf-s);border:1px solid var(--bd);border-radius:16px 16px 0 0;width:100%;max-height:85vh;overflow-y:auto;animation:slideUp .25s ease">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid var(--bd)">
+      <h3 style="font-size:15px;font-weight:600">Cobrar</h3>
+      <button onclick="closePayModal()" style="background:none;border:none;color:var(--tm);font-size:22px;cursor:pointer;padding:2px 8px">✕</button>
+    </div>
+    <div style="padding:16px;text-align:center">
+      <div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1px">Total a cobrar</div>
+      <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:34px;color:var(--ch);margin:4px 0 16px">${fmt(ticketTotal())}</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button onclick="selectPay('efectivo')" style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:10px;background:var(--bg);border:1px solid var(--bd);cursor:pointer;font-size:14px;font-weight:500;color:var(--tx)"><span style="font-size:20px">💵</span> Efectivo</button>
+        <button onclick="selectPay('tarjeta')" style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:10px;background:var(--bg);border:1px solid var(--bd);cursor:pointer;font-size:14px;font-weight:500;color:var(--tx)"><span style="font-size:20px">💳</span> Tarjeta</button>
+        <button onclick="selectPay('mercadopago')" style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:10px;background:var(--bg);border:1px solid var(--bd);cursor:pointer;font-size:14px;font-weight:500;color:var(--tx)"><span style="font-size:20px">📱</span> Mercado Pago</button>
+      </div>
+    </div>
+  </div>`;
+  L.onclick=e=>{if(e.target===L)closePayModal()};
+}
+function closePayModal(){const L=document.getElementById("modalLayer");L.style.display="none";L.innerHTML=""}
+
+let payMethod="",payCash=0;
+function selectPay(m){
+  payMethod=m;
+  if(m==="efectivo"){showCashInput();return}
+  confirmSale();
+}
+function showCashInput(){
+  const tot=ticketTotal();
+  const qa=[tot,Math.ceil(tot/500)*500,Math.ceil(tot/1000)*1000,Math.ceil(tot/2000)*2000,Math.ceil(tot/5000)*5000].filter((v,i,a)=>a.indexOf(v)===i&&v>=tot).slice(0,5);
+  const M=document.getElementById("payModal");
+  M.querySelector("div[style*='padding:16px;text-align']").innerHTML=`
+    <div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Monto recibido</div>
+    <input type="number" id="cashInp" placeholder="0" inputmode="decimal" oninput="updateCash()" style="width:100%;font-size:28px;font-family:'DM Mono',monospace;font-weight:700;padding:12px;border-radius:10px;background:var(--bg);border:1px solid var(--bd);color:var(--tx);text-align:center;outline:none">
+    <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px">${qa.map(a=>`<button onclick="document.getElementById('cashInp').value=${a};updateCash()" style="padding:6px 14px;border-radius:8px;background:var(--bg);border:1px solid var(--bd);font-size:12px;font-family:'DM Mono',monospace;color:var(--tm);cursor:pointer">${fmt(a)}</button>`).join("")}</div>
+    <div id="changeDisp"></div>
+    <button id="cashContinue" onclick="confirmSale()" disabled style="width:100%;padding:14px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;border:none;margin-top:14px;background:var(--bd);color:var(--tm)">Continuar</button>
+  `;
+  setTimeout(()=>{const i=document.getElementById("cashInp");if(i)i.focus()},100);
+}
+function updateCash(){
+  const inp=document.getElementById("cashInp");if(!inp)return;
+  payCash=Number(inp.value)||0;
+  const tot=ticketTotal();const chg=payCash-tot;
+  const disp=document.getElementById("changeDisp");
+  const btn=document.getElementById("cashContinue");
+  if(payCash>=tot){
+    disp.innerHTML=`<div style="text-align:center;padding:14px;border-radius:10px;background:var(--ok-bg);border:1px solid var(--ok-bd);margin-top:12px"><div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1px">Vuelto</div><div style="font-family:'DM Mono',monospace;font-weight:700;font-size:26px;color:var(--ok);margin-top:4px">${fmt(chg)}</div></div>`;
+    btn.disabled=false;btn.style.background="var(--ok)";btn.style.color="#000";btn.style.cursor="pointer";
+  }else{
+    disp.innerHTML=payCash>0?`<div style="text-align:center;color:var(--err);font-size:11px;margin-top:10px">Monto menor al total</div>`:"";
+    btn.disabled=true;btn.style.background="var(--bd)";btn.style.color="var(--tm)";btn.style.cursor="not-allowed";
+  }
+}
+
+function confirmSale(){
+  const tot=ticketTotal();
+  const chg=payMethod==="efectivo"?Math.max(0,payCash-tot):0;
+  const sale={
+    id:Date.now(),items:S.ticket.map(i=>({...i,prod:{id:i.prod.id,name:i.prod.name,bc:i.prod.bc,cat:i.prod.cat,price:i.prod.price}})),total:tot,
+    method:payMethod,cashReceived:payMethod==="efectivo"?payCash:tot,change:chg,
+    time:Date.now(),operator:S.cajaOp
+  };
+  // Update stock
+  S.ticket.forEach(it=>{
+    const prod=allProducts().find(p=>p.id===it.prod.id);
+    if(prod){
+      if(prod.kg){
+        const idx=customProducts.findIndex(p=>p.id===prod.id);
+        if(idx>=0){customProducts[idx].stock=Math.max(0,(customProducts[idx].stock||0)-it.qty);}
+      } else {
+        const idx=customProducts.findIndex(p=>p.id===prod.id);
+        if(idx>=0){customProducts[idx].stock=Math.max(0,(customProducts[idx].stock||0)-it.qty);}
+      }
+    }
+  });
+  LS.set("customProds",customProducts);
+  S.sales.unshift(sale);
+  S.ticketNum++;
+  addActivity("sale","Venta #"+String(sale.id).slice(-4)+": "+fmt(tot)+" ("+payMethod+")");
+  S.ticket=[];S.scannedProd=null;
+  saveAll();
+  closePayModal();
+  showConfirmSale(sale);
+}
+
+function showConfirmSale(sale){
+  const L=document.getElementById("modalLayer");L.style.display="flex";
+  L.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;pointer-events:none";
+  L.innerHTML=`<div style="background:var(--sf-s);border:1px solid rgba(34,197,94,.3);border-radius:14px;padding:36px 28px;text-align:center">
+    <div style="font-size:52px;margin-bottom:8px">✅</div>
+    <div style="font-size:17px;font-weight:700;margin-bottom:3px">Venta registrada</div>
+    <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:30px;color:var(--ok)">${fmt(sale.total)}</div>
+    <div style="font-size:11px;color:var(--tm);margin-top:8px">${esc(S.cajaOp)} · ${sale.method}${sale.change>0?" — Vuelto: "+fmt(sale.change):""}</div>
+  </div>`;
+  setTimeout(()=>{L.style.display="none";L.innerHTML="";refreshCaja()},2200);
+}
+
+// ---- RESUMEN ----
+function showResumen(){showView("resumen")}
+function renderResumen(){
+  const todayS=S.sales.filter(s=>isToday(s.time));
+  const tot=todayS.reduce((a,s)=>a+s.total,0);
+  const cnt=todayS.length;
+  const avg=cnt?Math.round(tot/cnt):0;
+  const cashT=todayS.filter(s=>s.method==="efectivo").reduce((a,s)=>a+s.total,0);
+  const cardT=todayS.filter(s=>s.method==="tarjeta").reduce((a,s)=>a+s.total,0);
+  const mpT=todayS.filter(s=>s.method==="mercadopago").reduce((a,s)=>a+s.total,0);
+  const irregular=S.activities.filter(a=>isToday(a.time)&&(a.type==="delete"||a.type==="void"||a.type==="anulacion"));
+
+  let h=`<div style="display:flex;flex-direction:column;gap:14px">`;
+
+  // Ventas
+  h+=`<div class="card">`;
+  h+=`<div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">📊 Ventas de hoy</div>`;
+  h+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">`;
+  h+=`<div><div style="font-family:'DM Mono',monospace;font-weight:700;font-size:18px;color:var(--ch)">${fmt(tot)}</div><div style="font-size:9px;color:var(--tm)">Total</div></div>`;
+  h+=`<div><div style="font-family:'DM Mono',monospace;font-weight:700;font-size:18px">${cnt}</div><div style="font-size:9px;color:var(--tm)">Tickets</div></div>`;
+  h+=`<div><div style="font-family:'DM Mono',monospace;font-weight:700;font-size:18px">${fmt(avg)}</div><div style="font-size:9px;color:var(--tm)">Promedio</div></div>`;
+  h+=`</div>`;
+  h+=`<div style="border-top:1px solid var(--bd);margin-top:10px;padding-top:10px">`;
+  h+=`<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--tm)">💵 Efectivo</span><span style="font-family:'DM Mono',monospace">${fmt(cashT)}</span></div>`;
+  h+=`<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--tm)">💳 Tarjeta</span><span style="font-family:'DM Mono',monospace">${fmt(cardT)}</span></div>`;
+  h+=`<div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--tm)">📱 Mercado Pago</span><span style="font-family:'DM Mono',monospace">${fmt(mpT)}</span></div>`;
+  h+=`</div></div>`;
+
+  // Arqueo
+  if(S.cajaOpen){
+    h+=`<div class="card">`;
+    h+=`<div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">💰 Arqueo de Caja</div>`;
+    h+=`<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--tm)">Apertura</span><span style="font-family:'DM Mono',monospace">${fmt(S.cajaCash)}</span></div>`;
+    h+=`<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--tm)">Ventas efectivo</span><span style="font-family:'DM Mono',monospace">${fmt(cashT)}</span></div>`;
+    h+=`<div style="display:flex;justify-content:space-between;font-size:12px;padding-top:6px;border-top:1px solid var(--bd);font-weight:700"><span>Esperado en caja</span><span style="font-family:'DM Mono',monospace;color:var(--ok)">${fmt(S.cajaCash+cashT)}</span></div>`;
+    h+=`<button onclick="showArqueoModal()" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:var(--ch-d);color:#fff;font-weight:600;font-size:12px;cursor:pointer;border:none">🔢 Realizar Arqueo</button>`;
+    h+=`</div>`;
+  }
+
+  // Irregularidades
+  h+=`<div class="card">`;
+  h+=`<div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">⚠️ Actividades Irregulares (${irregular.length})</div>`;
+  if(irregular.length===0)h+=`<div style="font-size:11px;color:var(--tm);text-align:center;padding:8px">Sin actividades irregulares hoy ✅</div>`;
+  else irregular.slice(0,10).forEach(a=>{
+    const icon=a.type==="delete"?"🗑️":"❌";
+    h+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd);font-size:11px"><span>${icon}</span><div><div style="color:var(--ts)">${esc(a.detail)}</div><div style="font-size:9px;color:var(--tm);font-family:'DM Mono',monospace">${new Date(a.time).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})} · ${esc(a.operator)}</div></div></div>`;
+  });
+  h+=`</div>`;
+
+  // Auditoría completa
+  h+=`<div class="card">`;
+  h+=`<div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">📋 Log de Auditoría (${S.activities.filter(a=>isToday(a.time)).length})</div>`;
+  const todayActs=S.activities.filter(a=>isToday(a.time)).slice(0,15);
+  if(todayActs.length===0)h+=`<div style="font-size:11px;color:var(--tm);text-align:center;padding:8px">Sin actividad registrada</div>`;
+  else todayActs.forEach(a=>{
+    const icons={apertura:"🔓",cierre:"🔒",sale:"💰",add:"➕",delete:"🗑️",scan:"🔍",create:"🏷️",anulacion:"❌",arqueo:"📊"};
+    h+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--bd);font-size:11px"><span>${icons[a.type]||"•"}</span><div><div style="color:var(--ts)">${esc(a.detail)}</div><div style="font-size:9px;color:var(--tm);font-family:'DM Mono',monospace">${new Date(a.time).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})} · ${esc(a.operator)}</div></div></div>`;
+  });
+  h+=`</div>`;
+
+  // Close caja button
+  if(S.cajaOpen){
+    h+=`<button onclick="closeCaja()" style="width:100%;padding:12px;border-radius:10px;background:var(--err-bg);border:1px solid var(--err-bd);color:var(--err);font-weight:700;font-size:13px;cursor:pointer">🔒 Cerrar Caja</button>`;
+  }
+
+  // Export / Backup
+  h+=`<button onclick="exportData()" style="width:100%;padding:10px;border-radius:10px;background:var(--sf);border:1px solid var(--bd);color:var(--ts);font-weight:600;font-size:12px;cursor:pointer;margin-top:4px">💾 Exportar datos (backup)</button>`;
+
+  h+=`</div>`;
+  return h;
+}
+
+function showArqueoModal(){
+  const L=document.getElementById("modalLayer");L.style.display="flex";
+  L.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:flex-end";
+  const billetes=[{v:10,n:"$10"},{v:20,n:"$20"},{v:50,n:"$50"},{v:100,n:"$100"},{v:200,n:"$200"},{v:500,n:"$500"},{v:1000,n:"$1.000"},{v:2000,n:"$2.000"},{v:5000,n:"$5.000"},{v:10000,n:"$10.000"},{v:20000,n:"$20.000"}];
+  const monedas=[{v:1,n:"$1"},{v:2,n:"$2"},{v:5,n:"$5"},{v:10,n:"$10"},{v:20,n:"$20"},{v:50,n:"$50"}];
+  const todayCash=S.sales.filter(s=>isToday(s.time)&&s.method==="efectivo").reduce((a,s)=>a+s.total,0);
+  const esperado=S.cajaCash+todayCash;
+  let h=`<div style="background:var(--sf-s);border:1px solid var(--bd);border-radius:16px 16px 0 0;width:100%;max-height:90vh;overflow-y:auto;animation:slideUp .25s ease;padding:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><h3 style="font-size:15px;font-weight:600">Arqueo de Caja</h3><button onclick="closePayModal()" style="background:none;border:none;color:var(--tm);font-size:22px;cursor:pointer">✕</button></div>
+    <div style="text-align:center;margin-bottom:12px"><div style="font-size:9px;color:var(--tm);text-transform:uppercase">Esperado en caja</div><div style="font-family:'DM Mono',monospace;font-size:24px;color:var(--ch)">${fmt(esperado)}</div></div>
+    <div style="font-size:11px;font-weight:600;margin-bottom:8px;color:var(--ts)">Billetes</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">`;
+  billetes.forEach(b=>{
+    h+=`<div style="background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px;text-align:center">
+      <div style="font-size:10px;color:var(--tm)">${b.n}</div>
+      <input type="number" id="arq_b_${b.v}" placeholder="0" class="input input-mono" style="text-align:center;margin-top:4px;font-size:14px;padding:6px" oninput="calcArqueo()">
+    </div>`;
+  });
+  h+=`</div><div style="font-size:11px;font-weight:600;margin-bottom:8px;color:var(--ts)">Monedas</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">`;
+  monedas.forEach(m=>{
+    h+=`<div style="background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px;text-align:center">
+      <div style="font-size:10px;color:var(--tm)">${m.n}</div>
+      <input type="number" id="arq_m_${m.v}" placeholder="0" class="input input-mono" style="text-align:center;margin-top:4px;font-size:14px;padding:6px" oninput="calcArqueo()">
+    </div>`;
+  });
+  h+=`</div>
+    <div id="arqResult" style="padding:12px;border-radius:10px;background:var(--bg);border:1px solid var(--bd);text-align:center;margin-bottom:12px">
+      <div style="font-size:9px;color:var(--tm);text-transform:uppercase">Total contado</div>
+      <div style="font-family:'DM Mono',monospace;font-size:22px" id="arqTotal">$0</div>
+      <div style="font-size:11px;margin-top:4px" id="arqDiff"></div>
+    </div>
+    <button onclick="confirmArqueo()" class="btn-primary">Confirmar Arqueo</button>
+  </div>`;
+  L.innerHTML=h;
+}
+
+function calcArqueo(){
+  const billetes=[10,20,50,100,200,500,1000,2000,5000,10000,20000];
+  const monedas=[1,2,5,10,20,50];
+  let total=0;
+  billetes.forEach(v=>{const el=document.getElementById("arq_b_"+v);if(el)total+=v*(Number(el.value)||0)});
+  monedas.forEach(v=>{const el=document.getElementById("arq_m_"+v);if(el)total+=v*(Number(el.value)||0)});
+  const todayCash=S.sales.filter(s=>isToday(s.time)&&s.method==="efectivo").reduce((a,s)=>a+s.total,0);
+  const esperado=S.cajaCash+todayCash;
+  const diff=total-esperado;
+  document.getElementById("arqTotal").textContent=fmt(total);
+  const diffEl=document.getElementById("arqDiff");
+  if(diff===0){diffEl.innerHTML='<span style="color:var(--ok)">✅ Cuadrado perfecto</span>';}
+  else if(diff>0){diffEl.innerHTML='<span style="color:var(--warn)">⚠️ Sobrante: '+fmt(diff)+'</span>';}
+  else{diffEl.innerHTML='<span style="color:var(--err)">❌ Faltante: '+fmt(Math.abs(diff))+'</span>';}
+}
+
+function confirmArqueo(){
+  const billetes=[10,20,50,100,200,500,1000,2000,5000,10000,20000];
+  const monedas=[1,2,5,10,20,50];
+  let total=0;
+  billetes.forEach(v=>{const el=document.getElementById("arq_b_"+v);if(el)total+=v*(Number(el.value)||0)});
+  monedas.forEach(v=>{const el=document.getElementById("arq_m_"+v);if(el)total+=v*(Number(el.value)||0)});
+  const todayCash=S.sales.filter(s=>isToday(s.time)&&s.method==="efectivo").reduce((a,s)=>a+s.total,0);
+  const esperado=S.cajaCash+todayCash;
+  const diff=total-esperado;
+  addActivity("arqueo","Arqueo realizado. Contado: "+fmt(total)+" | Esperado: "+fmt(esperado)+" | Diferencia: "+(diff>=0?"+":"")+fmt(diff));
+  closePayModal();
+  alert("Arqueo registrado en auditoría.");
+}
+
+function closeCaja(){
+  if(!confirm("¿Cerrar la caja? Se registrará el cierre y se limpiará el ticket."))return;
+  const todayTot=S.sales.filter(s=>isToday(s.time)).reduce((a,s)=>a+s.total,0);
+  addActivity("cierre","Caja cerrada. Total vendido hoy: "+fmt(todayTot));
+  S.cajaOpen=false;S.cajaOp="";S.cajaCash=0;S.cajaStart=null;S.ticket=[];S.scannedProd=null;
+  saveAll();showMain();
+}
+
+function isToday(ts){const d=new Date(ts),t=new Date();return d.getDate()===t.getDate()&&d.getMonth()===t.getMonth()&&d.getFullYear()===t.getFullYear()}
+
+// ---- STOCK ----
+function renderStock(){
+  const prods=allProducts();
+  let h=`<div style="display:flex;flex-direction:column;gap:14px">`;
+  h+=`<div style="display:flex;gap:8px"><input type="text" id="stockSearch" placeholder="Buscar producto..." class="input" style="flex:1" oninput="filterStock()"><button onclick="showAddProductModal()" class="btn-primary" style="width:auto;padding:10px 16px">+ Nuevo</button></div>`;
+  h+=`<div id="stockList" style="display:flex;flex-direction:column;gap:8px">`;
+  h+=renderStockList(prods);
+  h+=`</div>`;
+  h+=`<div class="card" style="margin-top:8px"><div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Resumen</div><div style="display:flex;justify-content:space-between;font-size:12px"><span>Total productos</span><span style="font-family:'DM Mono',monospace">${prods.length}</span></div><div style="display:flex;justify-content:space-between;font-size:12px;margin-top:4px"><span>Valor estimado</span><span style="font-family:'DM Mono',monospace">${fmt(prods.reduce((a,p)=>a+(p.price*(p.stock||0)),0))}</span></div></div>`;
+  h+=`</div>`;
+  return h;
+}
+
+function renderStockList(prods){
+  if(prods.length===0)return'<div style="text-align:center;padding:20px;color:var(--tm);font-size:12px">Sin productos</div>';
+  let h=`<div style="overflow-x:auto"><table class="table"><thead><tr><th>Producto</th><th>Código</th><th>Precio</th><th>Stock</th><th>Acciones</th></tr></thead><tbody>`;
+  prods.forEach(p=>{
+    const stockLow=(p.stock||0)<5;
+    h+=`<tr><td><div style="font-weight:500;color:var(--tx)">${esc(p.name)}</div><div style="font-size:10px;color:var(--tm)">${esc(p.cat)}${p.kg?' · por kg':''}</div></td>`;
+    h+=`<td style="font-family:'DM Mono',monospace;font-size:11px">${esc(p.bc)}</td>`;
+    h+=`<td style="font-family:'DM Mono',monospace">${fmt(p.price)}${p.kg?'/kg':''}</td>`;
+    h+=`<td><span style="color:${stockLow?'var(--err)':'var(--ok)'}">${p.stock||0}</span></td>`;
+    h+=`<td><button onclick="editStock(${p.id})" style="background:none;border:none;color:var(--ch);cursor:pointer;font-size:12px;margin-right:8px">✎</button><button onclick="adjustStock(${p.id})" style="background:none;border:none;color:var(--gd);cursor:pointer;font-size:12px">⚖️</button></td></tr>`;
+  });
+  h+=`</tbody></table></div>`;
+  return h;
+}
+
+function filterStock(){
+  const q=document.getElementById("stockSearch").value;
+  const prods=q?searchProd(q):allProducts();
+  document.getElementById("stockList").innerHTML=renderStockList(prods);
+}
+
+function showAddProductModal(){
+  const L=document.getElementById("modalLayer");L.style.display="flex";
+  L.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px";
+  L.innerHTML=`<div style="background:var(--sf-s);border:1px solid var(--bd);border-radius:14px;width:100%;max-width:360px;padding:20px;max-height:90vh;overflow-y:auto">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:14px">Nuevo Producto</h3>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div><div style="font-size:10px;color:var(--tm);margin-bottom:4px">Nombre</div><input type="text" id="npName" class="input" placeholder="Ej: Coca-Cola 500ml"></div>
+      <div><div style="font-size:10px;color:var(--tm);margin-bottom:4px">Código de barras</div><input type="text" id="npBc" class="input input-mono" placeholder="Ej: 7790..."></div>
+      <div><div style="font-size:10px;color:var(--tm);margin-bottom:4px">Categoría</div><input type="text" id="npCat" class="input" placeholder="Ej: Bebidas, Kiosco, Fiambreria"></div>
+      <div><div style="font-size:10px;color:var(--tm);margin-bottom:4px">Precio de venta</div><input type="number" id="npPrice" class="input input-mono" placeholder="1200"></div>
+      <div><div style="font-size:10px;color:var(--tm);margin-bottom:4px">Stock inicial</div><input type="number" id="npStock" class="input input-mono" placeholder="0" value="0"></div>
+      <div style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="npKg" style="width:16px;height:16px;accent-color:var(--ch-d)"><label style="font-size:12px;color:var(--ts)">Producto de fiambrería (venta por peso)</label></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button onclick="closePayModal()" class="btn-secondary" style="flex:1">Cancelar</button>
+      <button onclick="saveNewProduct()" class="btn-primary" style="flex:1">Guardar</button>
+    </div>
+  </div>`;
+}
+
+function saveNewProduct(){
+  const name=document.getElementById("npName").value.trim();
+  const bc=document.getElementById("npBc").value.trim();
+  const cat=document.getElementById("npCat").value.trim()||"General";
+  const price=Number(document.getElementById("npPrice").value)||0;
+  const stock=Number(document.getElementById("npStock").value)||0;
+  const kg=document.getElementById("npKg").checked;
+  if(!name||!bc){alert("Nombre y código son obligatorios.");return}
+  if(findProd(bc)){alert("Ya existe un producto con ese código.");return}
+  const np={id:Date.now(),bc,name,cat,price,stock,kg};
+  customProducts.push(np);LS.set("customProds",customProducts);
+  addActivity("create","Producto creado desde Stock: "+name);
+  closePayModal();showView("stock");
+}
+
+function editStock(id){
+  const p=allProducts().find(x=>x.id===id);if(!p)return;
+  const isCustom=customProducts.findIndex(x=>x.id===id)>=0;
+  const L=document.getElementById("modalLayer");L.style.display="flex";
+  L.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px";
+  L.innerHTML=`<div style="background:var(--sf-s);border:1px solid var(--bd);border-radius:14px;width:100%;max-width:360px;padding:20px;max-height:90vh;overflow-y:auto">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:14px">Editar Producto</h3>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div><div style="font-size:10px;color:var(--tm);margin-bottom:4px">Nombre</div><input type="text" id="epName" class="input" value="${esc(p.name)}"></div>
+      <div><div style="font-size:10px;color:var(--tm);margin-bottom:4px">Código</div><input type="text" id="epBc" class="input input-mono" value="${esc(p.bc)}" ${isCustom?'':'readonly'} style="${isCustom?'':'opacity:0.5'}"></div>
+      <div><div style="font-size:10px;color:var(--tm);margin-bottom:4px">Categoría</div><input type="text" id="epCat" class="input" value="${esc(p.cat)}"></div>
+      <div><div style="font-size:10px;color:var(--tm);margin-bottom:4px">Precio</div><input type="number" id="epPrice" class="input input-mono" value="${p.price}"></div>
+      <div><div style="font-size:10px;color:var(--tm);margin-bottom:4px">Stock</div><input type="number" id="epStock" class="input input-mono" value="${p.stock||0}"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button onclick="closePayModal()" class="btn-secondary" style="flex:1">Cancelar</button>
+      <button onclick="saveEditProduct(${id})" class="btn-primary" style="flex:1">Guardar</button>
+    </div>
+    ${isCustom?`<button onclick="deleteProduct(${id})" style="width:100%;margin-top:8px;padding:8px;border-radius:8px;background:var(--err-bg);border:1px solid var(--err-bd);color:var(--err);font-size:11px;cursor:pointer">🗑️ Eliminar producto</button>`:''}
+  </div>`;
+}
+
+function saveEditProduct(id){
+  const idx=customProducts.findIndex(p=>p.id===id);
+  if(idx<0){alert("No se puede editar productos del sistema.");return}
+  customProducts[idx].name=document.getElementById("epName").value.trim();
+  customProducts[idx].cat=document.getElementById("epCat").value.trim();
+  customProducts[idx].price=Number(document.getElementById("epPrice").value)||0;
+  customProducts[idx].stock=Number(document.getElementById("epStock").value)||0;
+  const newBc=document.getElementById("epBc").value.trim();
+  if(newBc&&newBc!==customProducts[idx].bc){
+    if(findProd(newBc)&&findProd(newBc).id!==id){alert("Código ya en uso.");return}
+    customProducts[idx].bc=newBc;
+  }
+  LS.set("customProds",customProducts);
+  addActivity("edit","Producto editado: "+customProducts[idx].name);
+  closePayModal();showView("stock");
+}
+
+function deleteProduct(id){
+  if(!confirm("¿Eliminar este producto?"))return;
+  const p=customProducts.find(x=>x.id===id);
+  customProducts=customProducts.filter(x=>x.id!==id);
+  LS.set("customProds",customProducts);
+  addActivity("delete","Producto eliminado: "+(p?p.name:""));
+  closePayModal();showView("stock");
+}
+
+function adjustStock(id){
+  const p=allProducts().find(x=>x.id===id);if(!p)return;
+  const grams=p.kg;
+  const motivo=prompt(grams?"Ajuste de stock (kg):":"Ajuste de stock (unidades):\nIngresá el nuevo valor total:");
+  if(motivo===null)return;
+  const nuevo=Number(motivo);
+  if(isNaN(nuevo)||nuevo<0){alert("Valor inválido");return}
+  const anterior=p.stock||0;
+  const idx=customProducts.findIndex(x=>x.id===id);
+  if(idx>=0){
+    customProducts[idx].stock=nuevo;
+  } else {
+    customProducts.push({...p,stock:nuevo});
+  }
+  LS.set("customProds",customProducts);
+  addActivity("edit","Ajuste stock: "+p.name+" de "+anterior+" a "+nuevo);
+  showView("stock");
+}
+
+// ---- LICENCIA ----
+function renderLicencia(){
+  let h=`<div style="display:flex;flex-direction:column;gap:14px">`;
+  h+=`<div class="card"><div class="badge ${S.licensed?'badge-ok':'badge-warn'}" style="width:100%;justify-content:center"><span style="width:6px;height:6px;border-radius:50%;background:${S.licensed?'#4ade80':'#facc15'}"></span> ${S.licensed?"Licencia activa — Todas las funciones habilitadas":"Sin licencia — Modo demo"}</div></div>`;
+  h+=`<div class="card"><div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Tu código de dispositivo</div><p style="font-size:11px;color:var(--ts);margin-bottom:8px">Enviá este código para recibir tu clave de activación.</p><input type="text" value="${S.devCode}" readonly class="input input-mono" style="text-align:center;letter-spacing:1px"><button onclick="copyDevCode()" class="btn-secondary" style="margin-top:8px">📋 Copiar código</button></div>`;
+  h+=`<div class="card"><div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Ingresar clave</div><input type="text" id="licKeyInp" placeholder="M2-XXXX-XXXX-XXXX" class="input input-mono" style="text-align:center;letter-spacing:1px"><button onclick="activateLic()" class="btn-primary" style="margin-top:10px">✅ Activar licencia</button></div>`;
+  h+=`<div class="card"><div style="font-size:11px;color:var(--ts);line-height:1.7"><p>• Validez: <span style="color:var(--ch);font-weight:500">1 año</span> desde activación.</p><p>• Cada licencia anclada a un dispositivo.</p><p>• Para otro dispositivo se necesita licencia adicional.</p><p>• Renovable al vencimiento.</p></div></div>`;
+  h+=`<div class="card"><div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Protección por PIN</div><p style="font-size:11px;color:var(--ts);margin-bottom:8px">Activá un PIN de 4 dígitos para proteger el acceso.</p><div style="display:flex;gap:8px"><input type="password" id="pinToggleInp" placeholder="PIN 4 dígitos" maxlength="4" inputmode="numeric" class="input input-mono" style="text-align:center;flex:1"><button onclick="togglePin()" class="btn-primary" style="width:auto;padding:10px 16px">${S.pinEnabled?'Desactivar':'Activar'}</button></div></div>`;
+  h+=`</div>`;return h;
+}
+function copyDevCode(){navigator.clipboard.writeText(S.devCode).then(()=>alert("Código copiado: "+S.devCode)).catch(()=>alert("Copiá manualmente: "+S.devCode))}
+function activateLic(){
+  const k=document.getElementById("licKeyInp").value.trim().toUpperCase();
+  if(validateKey(k)){S.licensed=true;save("licensed");alert("✅ ¡Licencia activada! Todas las funciones están habilitadas.");showView("licencia")}
+  else alert("❌ Clave inválida. Verificá e intentá de nuevo.");
+}
+function togglePin(){
+  const v=document.getElementById("pinToggleInp").value;
+  if(S.pinEnabled){
+    S.pinEnabled=false;save("pinEnabled");alert("PIN desactivado.");showView("licencia");
+  } else {
+    if(!/^\d{4}$/.test(v)){alert("El PIN debe tener 4 dígitos.");return}
+    S.pin=v;S.pinEnabled=true;save("pin");save("pinEnabled");alert("PIN activado.");showView("licencia");
+  }
+}
+
+// ---- PRINTER ----
+function renderPrinter(){
+  let h=`<div style="display:flex;flex-direction:column;gap:14px">`;
+  h+=`<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:16px;background:var(--bg);border:1px solid var(--bd);border-radius:12px"><span style="font-size:36px;opacity:.3">🖨️</span><div style="font-size:10px;color:var(--tm);line-height:1.5">Sin impresora conectada<br><span>Seleccioná un método abajo</span></div></div>`;
+  h+=`<div class="card"><button class="btn-secondary" style="margin-bottom:6px">📶 Bluetooth</button><button class="btn-secondary" style="margin-bottom:6px">🔌 Cable USB</button><button class="btn-secondary">🌐 Red WiFi</button></div>`;
+  h+=`<div class="card"><div style="font-size:11px;color:var(--gd);font-weight:500;margin-bottom:10px">Guía: Conectar impresora térmica Bluetooth</div><div style="display:flex;flex-direction:column;gap:6px">`;
+  ["Encendé la impresora y activá el modo Bluetooth.","Tocá "Bluetooth" arriba. El sistema buscará dispositivos.","Seleccioná tu impresora. PIN: generalmente 0000 o 1234.","Tocá "Imprimir prueba" para verificar.","¡Listo! Se reconectará automáticamente."].forEach((s,i)=>{h+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:9px 10px;background:var(--sf-s);border:1px solid var(--bd);border-radius:8px"><span style="width:20px;height:20px;border-radius:50%;background:var(--ch-d);color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${i+1}</span><span style="font-size:10px;color:var(--ts);line-height:1.5">${s}</span></div>`});
+  h+=`</div></div></div>`;return h;
+}
+
+// ---- CAMARA ----
+let html5QrCode=null;
+function renderCam(){
+  let h=`<div style="display:flex;flex-direction:column;gap:14px">`;
+  h+=`<div class="card"><div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Escanear con cámara</div><p style="font-size:11px;color:var(--ts);margin-bottom:8px">Usá la cámara para leer códigos de barras en tiempo real.</p><div id="qr-reader" style="width:100%;min-height:200px;border-radius:10px;overflow:hidden;border:1px solid var(--bd)"></div><div style="display:flex;gap:8px;margin-top:10px"><button onclick="startScan()" class="btn-primary" style="flex:1">📷 Iniciar</button><button onclick="stopScan()" class="btn-secondary" style="flex:1">⏹ Detener</button></div></div>`;
+  h+=`<div class="card"><div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Seleccionar cámara</div><select id="camSel" class="input" style="margin-bottom:8px"><option>Detectando cámaras...</option></select><button onclick="testCam()" class="btn-secondary">🔄 Actualizar lista</button></div>`;
+  h+=`<div class="card"><div style="display:flex;align-items:center;gap:6px;font-size:10px;padding:6px 10px;border-radius:7px;background:var(--warn-bg);color:#facc15;border:1px solid var(--warn-bd)"><span style="width:6px;height:6px;border-radius:50%;background:#facc15"></span> Requiere HTTPS o localhost</div><p style="font-size:11px;color:var(--ts);margin-top:8px;line-height:1.5">Si estás en GitHub Pages o servidor local, la cámara funciona automáticamente. Desde archivo directo (file://) los navegadores bloquean el acceso.</p></div>`;
+  h+=`</div>`;return h;
+}
+
+async function detectCams(){
+  const sel=document.getElementById("camSel");if(!sel)return;
+  try{const d=await navigator.mediaDevices.enumerateDevices();const c=d.filter(x=>x.kind==="videoinput");sel.innerHTML="";if(!c.length){sel.innerHTML="<option>No se encontraron cámaras</option>";return}c.forEach((x,i)=>{const o=document.createElement("option");o.value=x.deviceId;o.textContent=x.label||`Cámara ${i+1}`;sel.appendChild(o)})}
+  catch{sel.innerHTML="<option>Permisos requeridos</option>"}
+}
+
+function startScan(){
+  const sel=document.getElementById("camSel");
+  const camId=sel?sel.value:undefined;
+  if(!html5QrCode)html5QrCode=new Html5Qrcode("qr-reader");
+  const config={fps:10,qrbox:{width:250,height:150},aspectRatio:1.777};
+  html5QrCode.start(camId||{facingMode:"environment"},config,onScanSuccess,onScanFailure).catch(err=>{
+    alert("Error al iniciar cámara: "+err);
+  });
+}
+function stopScan(){if(html5QrCode){html5QrCode.stop().catch(()=>{});html5QrCode=null}}
+function onScanSuccess(decodedText){
+  const p=findProd(decodedText);
+  if(p){S.scannedProd=p;addActivity("scan","Escaneado cámara: "+p.name);}
+  else{S.scannedProd=null;if(confirm("Código no encontrado: "+decodedText+"\n¿Crear producto?"))createProduct(decodedText);}
+  if(currentView==="camara"){showView("micaja");refreshCaja();}
+}
+function onScanFailure(err){}
+
+async function testCam(){await detectCams();}
+function stopCam(){stopScan();}
+
+// ---- USUARIO ----
+function renderUser(){
+  let h=`<div style="display:flex;flex-direction:column;gap:14px">`;
+  h+=`<div class="card" style="display:flex;align-items:center;gap:12px"><div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--ch),var(--gd));display:flex;align-items:center;justify-content:center;font-size:18px">👤</div><div><div style="font-size:13px;font-weight:600">${esc(S.userName||"Sin configurar")}</div><div style="font-size:10px;color:var(--tm)">Administrador</div></div></div>`;
+  h+=`<div class="card"><div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Datos</div><p style="font-size:10px;color:var(--tm);margin-bottom:4px">Nombre de usuario</p><input type="text" id="uNameInp" value="${esc(S.userName)}" placeholder="Ej: María" class="input"><p style="font-size:10px;color:var(--tm);margin:8px 0 4px">Nombre del comercio</p><input type="text" id="uShopInp" value="${esc(S.shopName)}" placeholder="Ej: Kiosco Don Pedro" class="input"><button onclick="saveUserData()" class="btn-primary" style="margin-top:10px">💾 Guardar</button></div>`;
+  h+=`<div class="card"><div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Seguridad</div><p style="font-size:11px;color:var(--ts);margin-bottom:8px">Cambiar clave de acceso de 4 dígitos.</p><div style="display:flex;gap:8px"><input type="password" id="oldPinInp" placeholder="Actual" maxlength="4" inputmode="numeric" class="input input-mono" style="text-align:center;flex:1"><input type="password" id="newPinInp" placeholder="Nueva" maxlength="4" inputmode="numeric" class="input input-mono" style="text-align:center;flex:1"></div><button onclick="changePin()" class="btn-secondary" style="margin-top:8px">🔒 Cambiar clave</button></div>`;
+  h+=`<div class="card"><div style="display:flex;align-items:center;gap:12px"><div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#a855f7);display:flex;align-items:center;justify-content:center;font-size:18px">🤖</div><div><div style="font-size:13px;font-weight:600">MiMo</div><div style="font-size:10px;color:var(--tm)">Desarrollador — SGUV Core Team</div></div></div></div>`;
+  h+=`<button onclick="importData()" class="btn-secondary">📥 Importar backup (JSON)</button>`;
+  h+=`<input type="file" id="importFile" style="display:none" accept=".json" onchange="handleImport(event)">`;
+  h+=`</div>`;return h;
+}
+function saveUserData(){
+  S.userName=document.getElementById("uNameInp").value.trim();
+  S.shopName=document.getElementById("uShopInp").value.trim();
+  saveAll();updateShopName();alert("Datos guardados.");
+}
+function changePin(){
+  const old=document.getElementById("oldPinInp").value;
+  const nw=document.getElementById("newPinInp").value;
+  if(old!==S.pin){alert("La clave actual es incorrecta.");return}
+  if(!/^\d{4}$/.test(nw)){alert("La nueva clave debe tener 4 dígitos.");return}
+  S.pin=nw;save("pin");alert("Clave actualizada.");
+}
+
+// ---- EXPORT / IMPORT ----
+function exportData(){
+  const data={
+    version:"1.0",exportDate:new Date().toISOString(),
+    customProducts,activities:S.activities,sales:S.sales,
+    settings:{pin:S.pin,pinEnabled:S.pinEnabled,theme:S.theme,licensed:S.licensed,devCode:S.devCode,userName:S.userName,shopName:S.shopName}
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download="sguv-backup-"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(url);
+}
+function importData(){document.getElementById("importFile").click();}
+function handleImport(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{const data=JSON.parse(ev.target.result);
+      if(data.customProducts){customProducts=data.customProducts;LS.set("customProds",customProducts);}
+      if(data.activities){S.activities=data.activities;LS.set("activities",S.activities);}
+      if(data.sales){S.sales=data.sales;LS.set("sales",S.sales);}
+      if(data.settings){
+        if(data.settings.userName)S.userName=data.settings.userName;
+        if(data.settings.shopName)S.shopName=data.settings.shopName;
+        if(data.settings.theme)S.theme=data.settings.theme;
+      }
+      saveAll();alert("✅ Datos importados correctamente.");showMain();
+    }catch(err){alert("❌ Error al importar: "+err.message);}
+  };
+  reader.readAsText(file);
+}
+
+// ---- VIEW BINDING ----
+function bindView(id){
+  if(id==="camara")setTimeout(detectCams,100);
+  if(id==="stock")setTimeout(filterStock,100);
+}
+
+// ---- PIN SYSTEM ----
+let pinEntry="";
+function buildPinPad(){
+  const pad=document.getElementById("pinPad");
+  [["1","1"],["2","2"],["3","3"],["4","4"],["5","5"],["6","6"],["7","7"],["8","8"],["9","9"],["clear","Borrar"],["0","0"],["back","←"]].forEach(([k,l])=>{
+    const b=document.createElement("button");b.dataset.k=k;b.textContent=l;
+    b.style.cssText=`width:72px;height:52px;border-radius:12px;background:var(--sf);border:1px solid var(--bd);color:${k.length>1?"var(--ts)":"var(--tx)"};font-size:${k.length>1?"14px":"20px"};cursor:pointer;font-family:'DM Mono',monospace`;
+    b.addEventListener("click",()=>pinKey(k));pad.appendChild(b);
+  });
+}
+function pinKey(k){
+  if(k==="clear"){pinEntry="";updPinDots();document.getElementById("pinErr").textContent="";return}
+  if(k==="back"){pinEntry=pinEntry.slice(0,-1);updPinDots();return}
+  if(pinEntry.length>=4)return;
+  pinEntry+=k;updPinDots();
+  if(pinEntry.length===4)setTimeout(checkPin,200);
+}
+function updPinDots(){document.querySelectorAll(".pd").forEach((d,i)=>{d.style.background=i<pinEntry.length?"var(--ch)":"transparent";d.style.borderColor=i<pinEntry.length?"var(--ch)":"var(--bd)";d.style.boxShadow=i<pinEntry.length?"0 0 10px rgba(232,160,191,0.3)":"none"})}
+function checkPin(){
+  if(pinEntry===S.pin){
+    document.getElementById("pinScr").style.opacity="0";
+    document.getElementById("pinScr").style.pointerEvents="none";
+    setTimeout(()=>document.getElementById("pinScr").style.display="none",500);
+  }else{
+    document.getElementById("pinErr").textContent="Clave incorrecta";
+    pinEntry="";updPinDots();
+    document.getElementById("pinDots").style.animation="shake .3s ease";
+    setTimeout(()=>document.getElementById("pinDots").style.animation="",300);
+  }
+}
+function skipPin(){
+  document.getElementById("pinScr").style.opacity="0";
+  document.getElementById("pinScr").style.pointerEvents="none";
+  setTimeout(()=>document.getElementById("pinScr").style.display="none",500);
+}
+
+// ---- MAIN SCREEN BUILD ----
+function buildMainScreen(){
+  const bub=[
+    {id:"micaja",icon:"🏪",label:"Mi Caja"},
+    {id:"proveedores",icon:"📦",label:"Proveedores"},
+    {id:"stock",icon:"📊",label:"Stock"},
+    {id:"control",icon:"📡",label:"Control Cajas"}
+  ];
+  const bc=document.getElementById("bubbles");
+  bc.innerHTML=bub.map((b,i)=>`<div onclick="showView('${b.id}')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:100%;aspect-ratio:1;border-radius:50%;cursor:pointer;position:relative;overflow:hidden;background:var(--bub);border:1px solid var(--bd);backdrop-filter:blur(12px);transition:all .3s;animation:bubbleFloat ${4+i*0.3}s ease-in-out infinite"><span style="font-size:clamp(26px,6vw,34px);filter:drop-shadow(0 3px 8px rgba(0,0,0,0.3))">${b.icon}</span><span style="font-size:clamp(8px,2vw,10px);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--ts);text-align:center;line-height:1.2">${b.label}</span></div>`).join("");
+
+  const cfg=[
+    {id:"licencia",icon:"🔑",label:"Licencia del Sistema",badge:S.licensed?"ACTIVA":"SIN LICENCIA"},
+    {id:"impresora",icon:"🖨️",label:"Configurar Impresora",badge:"No conectada"},
+    {id:"camara",icon:"📷",label:"Configurar Cámara",badge:"No configurada"},
+    {id:"usuario",icon:"👤",label:"Mi Cuenta",badge:S.userName||"Sin configurar"}
+  ];
+  const cbar=document.getElementById("cfgBar");
+  cbar.innerHTML=cfg.map(c=>`<div onclick="showView('${c.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:var(--sf);border:1px solid var(--bd);backdrop-filter:blur(10px);cursor:pointer;transition:all .2s"><span style="font-size:18px;width:28px;text-align:center">${c.icon}</span><span style="flex:1;font-size:12px;font-weight:500">${c.label}</span><span style="font-size:9px;color:var(--tm);font-family:'DM Mono',monospace">${c.badge}</span><span style="color:var(--tm);font-size:14px">›</span></div>`).join("");
+
+  updateShopName();
+}
+function updateShopName(){
+  const el=document.getElementById("shopNameDisp");
+  if(el)el.textContent=S.shopName||"Sistema de Gestión Comercial";
+}
+
+// ---- VISUAL EFFECTS ----
+function createPetals(){
+  const c=document.getElementById("petals");if(!c)return;
+  const cols=["#e8a0bf","#f0c4d8","#c75e8a","#d4a853","#f5d5e0"];
+  for(let i=0;i<28;i++){const p=document.createElement("div");const sz=4+Math.random()*7;p.style.cssText=`position:absolute;top:-20px;border-radius:50% 0 50% 0;left:${Math.random()*100}%;width:${sz}px;height:${sz*0.65}px;background:${cols[i%cols.length]};animation:petalFall ${11+Math.random()*14}s linear ${-Math.random()*20}s infinite,petalSway ${3+Math.random()*3}s ease-in-out ${-Math.random()*20}s infinite;--s1:${-25+Math.random()*50}px;--s2:${-25+Math.random()*50}px;--rot:${360+Math.random()*720}deg;--op:${0.2+Math.random()*0.4}`;c.appendChild(p)}
+}
+function createStars(){
+  const c=document.getElementById("stars");if(!c)return;
+  for(let i=0;i<50;i++){const s=document.createElement("div");s.style.cssText=`position:absolute;left:${Math.random()*100}%;top:${Math.random()*55}%;width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;background:#fff;border-radius:50%;animation:twinkle ${2+Math.random()*5}s ease-in-out ${-Math.random()*5}s infinite;opacity:0;--op:${0.3+Math.random()*0.5}`;c.appendChild(s)}
+}
+
+// ---- INIT ----
+buildPinPad();
+buildMainScreen();
+createPetals();
+createStars();
+applyTheme();
+document.getElementById("themeBtn").addEventListener("click",()=>{S.theme=S.theme==="dark"?"light":"dark";save("theme");applyTheme()});
+
+// PIN / License flow
+if(!S.pinEnabled){
+  document.getElementById("pinScr").style.opacity="0";
+  document.getElementById("pinScr").style.pointerEvents="none";
+  setTimeout(()=>document.getElementById("pinScr").style.display="none",500);
+} else {
+  document.getElementById("pinSubtitle").textContent="Ingresá tu PIN de acceso";
+  document.getElementById("pinSkip").style.display="none";
+}
+
+// Keyboard shortcut for barcode input
+document.addEventListener("keydown",e=>{
+  if(currentView==="micaja"&&e.key==="Enter"){
+    const bi=document.getElementById("barcodeInp");
+    if(bi&&document.activeElement===bi){e.preventDefault();scanBarcode()}
+  }
+});
+</script>
+</body>
+</html>
