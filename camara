@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📷 Cámara - Mejorar 2</title>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        body { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: flex-start; 
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 24px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            margin-top: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header h1 { font-size: 20px; }
+        .header .subtitle { font-size: 12px; opacity: 0.8; }
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .content { padding: 20px; }
+        
+        .scan-btn {
+            width: 100%;
+            padding: 18px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        .scan-btn:active { transform: scale(0.98); }
+        .scan-btn:disabled { opacity: 0.5; }
+        
+        .stop-btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 16px;
+            background: #d33;
+            color: white;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .scanner-box {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .scanner-box h3 { font-size: 15px; color: #333; margin-bottom: 10px; }
+        
+        #reader {
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        #reader video { border-radius: 12px !important; }
+        
+        .log-box {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .log-box h3 { font-size: 15px; color: #333; margin-bottom: 10px; }
+        .log-item {
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            font-size: 13px;
+            border-left: 4px solid #667eea;
+        }
+        .log-item.found { border-left-color: #2a9d4a; }
+        .log-item.not-found { border-left-color: #d33; }
+        .log-item .code { font-family: monospace; font-weight: 700; color: #333; }
+        .log-item .name { color: #2a9d4a; font-weight: 600; }
+        .log-item .time { color: #888; font-size: 11px; }
+        
+        .info-box {
+            background: #e8f5e9;
+            border: 2px solid #2a9d4a;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .info-box h3 { color: #2a9d4a; margin-bottom: 8px; font-size: 14px; }
+        .info-box p { font-size: 13px; color: #555; line-height: 1.6; }
+        
+        .warning-box {
+            background: #fff3cd;
+            border: 2px solid #f0ad4e;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .warning-box h3 { color: #856404; margin-bottom: 8px; font-size: 14px; }
+        .warning-box p { font-size: 13px; color: #856404; line-height: 1.6; }
+        
+        .empty-msg {
+            text-align: center;
+            color: #888;
+            padding: 20px;
+            font-size: 13px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+        .stat-value { font-size: 22px; font-weight: 800; color: #667eea; }
+        .stat-label { font-size: 11px; color: #888; margin-top: 3px; }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 300;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .toast.show { opacity: 1; }
+        .toast.success { background: #2a9d4a; }
+        .toast.error { background: #d33; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="header">
+            <div>
+                <h1>📷 Cámara / Escáner</h1>
+                <div class="subtitle">Prueba independiente</div>
+            </div>
+            <button class="back-btn" onclick="volver()">←</button>
+        </div>
+        
+        <div class="content">
+            <!-- Info -->
+            <div class="info-box">
+                <h3>✅ Esta es una prueba independiente</h3>
+                <p>Esta pantalla solo prueba la cámara y el escaneo. No depende del PIN ni del menú principal. Si funciona acá, funcionará cuando la unamos al resto.</p>
+            </div>
+            
+            <!-- Estadísticas -->
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-total">0</div>
+                    <div class="stat-label">Escaneos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-found" style="color:#2a9d4a">0</div>
+                    <div class="stat-label">Encontrados</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-not-found" style="color:#d33">0</div>
+                    <div class="stat-label">No encontrados</div>
+                </div>
+            </div>
+            
+            <!-- Botón escanear -->
+            <button class="scan-btn" id="btn-scan" onclick="iniciarEscaneo()">📷 Iniciar Cámara y Escanear</button>
+            
+            <!-- Zona del escáner (aparece cuando se activa) -->
+            <div class="scanner-box" id="scanner-zone" style="display:none">
+                <h3>🎥 Vista de cámara</h3>
+                <div id="reader"></div>
+                <button class="stop-btn" onclick="detenerEscaneo()">⏹ Detener Cámara</button>
+            </div>
+            
+            <!-- Log de escaneos -->
+            <div class="log-box">
+                <h3>📋 Historial de escaneos</h3>
+                <div id="log-list">
+                    <p class="empty-msg">Todavía no escaneaste nada. Tocá "Iniciar Cámara y Escanear".</p>
+                </div>
+            </div>
+            
+            <!-- Advertencia -->
+            <div class="warning-box">
+                <h3>⚠️ Importante</h3>
+                <p>• La cámara <b>solo funciona en HTTPS</b> (GitHub Pages) o localhost.<br>
+                • Si abrís este archivo directo (file://), la cámara no va a funcionar.<br>
+                • Usá este link: <b>https://arboldelostero.github.io/Mejora2/camara.html</b></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ============================================================
+        // CATÁLOGO DE PRODUCTOS (para probar que reconoce códigos)
+        // ============================================================
+        const productos = [
+            { id: 1, nombre: 'Coca Cola 500ml', codigo: '7790080000509', precio: 1500 },
+            { id: 2, nombre: 'Agua Mineral 500ml', codigo: '7790360111016', precio: 900 },
+            { id: 3, nombre: 'Yerba Mate Taragüi 1kg', codigo: '7790245100015', precio: 3500 },
+            { id: 4, nombre: 'Alfajor Havanna', codigo: '7790360222224', precio: 1200 },
+            { id: 5, nombre: 'Manaos Cola 1.5L', codigo: '7790530111150', precio: 2200 },
+            { id: 6, nombre: 'Doritos Queso 80g', codigo: '7790320666668', precio: 1800 },
+            { id: 7, nombre: 'Pan de Molde Bimbo', codigo: '7790350111123', precio: 2800 },
+            { id: 8, nombre: 'Leche La Serenísima 1L', codigo: '7790020123456', precio: 1600 },
+            { id: 9, nombre: 'Azúcar Ledesma 1kg', codigo: '7790189000019', precio: 1900 },
+            { id: 10, nombre: 'Cerveza Quilmes 473ml', codigo: '7790670000473', precio: 2100 }
+        ];
+        
+        // ============================================================
+        // ESTADO
+        // ============================================================
+        let scanner = null;
+        let escaneando = false;
+        let historial = [];
+        let stats = { total: 0, found: 0, notFound: 0 };
+        
+        // ============================================================
+        // FUNCIONES
+        // ============================================================
+        function volver() {
+            // Simula volver al menú (en la versión final irá al index.html)
+            if (confirm('¿Volver al menú principal?\n\n(En la versión final esto te lleva al index.html con el PIN)')) {
+                window.location.href = 'index.html';
+            }
+        }
+        
+        async function iniciarEscaneo() {
+            if (escaneando) {
+                mostrarToast('Ya está escaneando', 'error');
+                return;
+            }
+            
+            const btnScan = document.getElementById('btn-scan');
+            const scannerZone = document.getElementById('scanner-zone');
+            
+            btnScan.disabled = true;
+            btnScan.textContent = '⏳ Iniciando cámara...';
+            
+            try {
+                scanner = new Html5Qrcode("reader");
+                
+                await scanner.start(
+                    { facingMode: "environment" },
+                    { 
+                        fps: 10, 
+                        qrbox: { width: 250, height: 150 },
+                        aspectRatio: 1.0
+                    },
+                    function(codigo) {
+                        procesarCodigo(codigo);
+                    },
+                    function() { /* ignorar fallos de escaneo continuo */ }
+                );
+                
+                escaneando = true;
+                scannerZone.style.display = 'block';
+                btnScan.textContent = '📷 Cámara activa';
+                mostrarToast('✅ Cámara iniciada', 'success');
+                
+            } catch(err) {
+                console.error('Error cámara:', err);
+                btnScan.disabled = false;
+                btnScan.textContent = '📷 Iniciar Cámara y Escanear';
+                
+                const msg = err.toString().toLowerCase();
+                if (msg.includes('notallowed') || msg.includes('permission')) {
+                    mostrarToast('🚫 Permiso bloqueado. Tocá el candado 🔒 en la URL', 'error');
+                    alert('Permiso de cámara bloqueado.\n\nSolución:\n1. Tocá el candado 🔒 al lado de la URL\n2. Permisos → Cámara → Permitir\n3. Recargá la página');
+                } else if (msg.includes('notfound')) {
+                    mostrarToast('📷 No se encontró cámara', 'error');
+                } else {
+                    mostrarToast('Error: ' + (err.message || err), 'error');
+                }
+            }
+        }
+        
+        async function detenerEscaneo() {
+            if (scanner) {
+                try {
+                    await scanner.stop();
+                    scanner.clear();
+                } catch(e) { console.log('Error cerrando:', e); }
+                scanner = null;
+            }
+            escaneando = false;
+            
+            document.getElementById('scanner-zone').style.display = 'none';
+            const btnScan = document.getElementById('btn-scan');
+            btnScan.disabled = false;
+            btnScan.textContent = '📷 Iniciar Cámara y Escanear';
+            
+            mostrarToast('Cámara detenida', 'success');
+        }
+        
+        function procesarCodigo(codigo) {
+            // Vibración de feedback
+            if (navigator.vibrate) navigator.vibrate(100);
+            
+            stats.total++;
+            
+            // Buscar producto
+            const producto = productos.find(p => p.codigo === codigo);
+            
+            const entrada = {
+                codigo: codigo,
+                encontrado: !!producto,
+                nombre: producto ? producto.nombre : null,
+                precio: producto ? producto.precio : null,
+                hora: new Date().toLocaleTimeString()
+            };
+            
+            historial.unshift(entrada);
+            
+            if (producto) {
+                stats.found++;
+                mostrarToast('✅ ' + producto.nombre + ' - $' + producto.precio, 'success');
+            } else {
+                stats.notFound++;
+                mostrarToast('❌ Código no reconocido: ' + codigo, 'error');
+            }
+            
+            actualizarUI();
+        }
+        
+        function actualizarUI() {
+            // Stats
+            document.getElementById('stat-total').textContent = stats.total;
+            document.getElementById('stat-found').textContent = stats.found;
+            document.getElementById('stat-not-found').textContent = stats.notFound;
+            
+            // Log
+            const logList = document.getElementById('log-list');
+            if (historial.length === 0) {
+                logList.innerHTML = '<p class="empty-msg">Todavía no escaneaste nada.</p>';
+                return;
+            }
+            
+            let html = '';
+            historial.forEach(e => {
+                const clase = e.encontrado ? 'found' : 'not-found';
+                const estado = e.encontrado 
+                    ? `<span class="name">✅ ${e.nombre}</span> - $${e.precio}`
+                    : `<span style="color:#d33">❌ No reconocido</span>`;
+                html += `
+                    <div class="log-item ${clase}">
+                        <div class="code">${e.codigo}</div>
+                        <div>${estado}</div>
+                        <div class="time">${e.hora}</div>
+                    </div>
+                `;
+            });
+            logList.innerHTML = html;
+        }
+        
+        function mostrarToast(mensaje, tipo = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = mensaje;
+            toast.className = 'toast show ' + tipo;
+            setTimeout(() => {
+                toast.className = 'toast ' + tipo;
+            }, 2500);
+        }
+        
+        // Limpieza al cerrar
+        window.addEventListener('beforeunload', () => {
+            if (scanner) {
+                try { scanner.stop(); scanner.clear(); } catch(e) {}
+            }
+        });
+        
+        console.log('📷 Pantalla de cámara lista');
+        console.log('Productos cargados:', productos.length);
+    </script>
+</body>
+</html>
