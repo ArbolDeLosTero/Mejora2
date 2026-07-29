@@ -57,4 +57,341 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .empty { text-align: center; color: #888; padding: 20px; font-size: 13px; }
 
 /* Modal pago */
-.modal-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none
+.modal-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal-bg.active { display: flex; }
+.modal { background: white; border-radius: 20px; padding: 25px; max-width: 400px; width: 100%; }
+.modal h3 { font-size: 18px; color: #333; margin-bottom: 5px; text-align: center; }
+.modal-total { font-size: 28px; font-weight: 800; color: #667eea; text-align: center; margin-bottom: 20px; }
+.pay-method { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.pay-method.efectivo { background: #e8f5e9; color: #2a6b3a; }
+.pay-method.tarjeta { background: #e3f2fd; color: #1565c0; }
+.pay-method.mp { background: #e0f7fa; color: #00838f; }
+.pay-method:active { transform: scale(0.98); }
+.cancel-btn { width: 100%; padding: 12px; background: none; border: none; color: #888; font-weight: 600; cursor: pointer; margin-top: 5px; }
+
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 22px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; transition: opacity 0.3s; max-width: 90%; text-align: center; }
+.toast.show { opacity: 1; }
+.toast.ok { background: #2a9d4a; }
+.toast.err { background: #d33; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <h1>🏪 Mi Caja</h1>
+    <p>Venta manual sin cámara</p>
+  </div>
+  <div class="content">
+    <div class="info">
+      <b>Cómo usar:</b><br>
+      1. Escribí el nombre del producto en el buscador<br>
+      2. Tocá el producto para agregarlo al ticket<br>
+      3. Modificá cantidades con + / -<br>
+      4. Tocá "💰 Cobrar" para cerrar la venta
+    </div>
+
+    <input type="text" class="search" id="buscador" placeholder="🔍 Buscar producto por nombre..." oninput="buscar()">
+    
+    <div class="results" id="resultados"></div>
+
+    <div class="ticket-box">
+      <div class="ticket-head">
+        <h2>🧾 Ticket Actual</h2>
+        <button class="clear-btn" onclick="vaciarTicket()">Vaciar</button>
+      </div>
+      <div class="ticket-items" id="ticket-items">
+        <p class="empty">Ticket vacío. Buscá un producto.</p>
+      </div>
+      <div class="total-row">
+        <span class="total-label">Total:</span>
+        <span class="total-value" id="total">$0</span>
+      </div>
+    </div>
+
+    <button class="pay-btn" id="btn-cobrar" onclick="abrirPago()" disabled>💰 Cobrar</button>
+
+    <div class="summary">
+      <h3>📊 Resumen del Día</h3>
+      <div class="summary-row">
+        <span>Tickets emitidos:</span>
+        <strong id="sum-tickets">0</strong>
+      </div>
+      <div class="summary-row">
+        <span>Total vendido:</span>
+        <strong id="sum-total">$0</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de pago -->
+<div class="modal-bg" id="modal-pago">
+  <div class="modal">
+    <h3>Seleccionar método de pago</h3>
+    <div class="modal-total" id="modal-total">$0</div>
+    <button class="pay-method efectivo" onclick="cobrar('efectivo')">💵 Efectivo</button>
+    <button class="pay-method tarjeta" onclick="cobrar('tarjeta')">💳 Tarjeta / Débito</button>
+    <button class="pay-method mp" onclick="cobrar('mercadopago')">📱 Mercado Pago</button>
+    <button class="cancel-btn" onclick="cerrarPago()">Cancelar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ DATOS ============
+// Usa los mismos productos que stock.html (comparten localStorage)
+const PRODUCTOS_INICIALES = [
+  { id: 1, nombre: 'Coca Cola 500ml', codigo: '7790080000509', precio: 1500, stock: 24 },
+  { id: 2, nombre: 'Agua Mineral 500ml', codigo: '7790360111016', precio: 900, stock: 30 },
+  { id: 3, nombre: 'Yerba Taragüi 1kg', codigo: '7790245100015', precio: 3500, stock: 12 },
+  { id: 4, nombre: 'Alfajor Havanna', codigo: '7790360222224', precio: 1200, stock: 40 },
+  { id: 5, nombre: 'Manaos Cola 1.5L', codigo: '7790530111150', precio: 2200, stock: 15 },
+  { id: 6, nombre: 'Doritos Queso', codigo: '7790320666668', precio: 1800, stock: 20 },
+  { id: 7, nombre: 'Pan Bimbo', codigo: '7790350111123', precio: 2800, stock: 10 },
+  { id: 8, nombre: 'Leche 1L', codigo: '7790020123456', precio: 1600, stock: 18 },
+  { id: 9, nombre: 'Azúcar 1kg', codigo: '7790189000019', precio: 1900, stock: 15 },
+  { id: 10, nombre: 'Quilmes 473ml', codigo: '7790670000473', precio: 2100, stock: 36 }
+];
+
+let productos = [];
+let ticket = [];
+let ventas = [];
+
+// ============ INICIO ============
+function iniciar() {
+  // Cargar productos (compartido con stock.html)
+  const prods = localStorage.getItem('productos_v1');
+  if (prods) {
+    try { productos = JSON.parse(prods); }
+    catch(e) { productos = [...PRODUCTOS_INICIALES]; guardarProductos(); }
+  } else {
+    productos = [...PRODUCTOS_INICIALES];
+    guardarProductos();
+  }
+  
+  // Cargar ventas del día
+  const v = localStorage.getItem('ventas_v1');
+  if (v) {
+    try { ventas = JSON.parse(v); }
+    catch(e) { ventas = []; }
+  }
+  
+  mostrarResultados(productos);
+  renderTicket();
+  actualizarResumen();
+  console.log('✅ Caja iniciada. Productos:', productos.length);
+}
+
+function guardarProductos() {
+  localStorage.setItem('productos_v1', JSON.stringify(productos));
+}
+
+function guardarVentas() {
+  localStorage.setItem('ventas_v1', JSON.stringify(ventas));
+}
+
+// ============ BÚSQUEDA ============
+function buscar() {
+  const q = document.getElementById('buscador').value.toLowerCase().trim();
+  if (!q) {
+    mostrarResultados(productos);
+    return;
+  }
+  const filtrados = productos.filter(p => p.nombre.toLowerCase().includes(q));
+  mostrarResultados(filtrados);
+}
+
+function mostrarResultados(lista) {
+  const cont = document.getElementById('resultados');
+  if (lista.length === 0) {
+    cont.innerHTML = '<p class="empty">No se encontraron productos</p>';
+    return;
+  }
+  let html = '';
+  lista.forEach(p => {
+    html += '<div class="result-item" onclick="agregarAlTicket(' + p.id + ')">' +
+      '<div>' +
+        '<div class="result-name">' + p.nombre + '</div>' +
+        '<div class="result-detail">Stock: ' + p.stock + '</div>' +
+      '</div>' +
+      '<div class="result-price">$' + p.precio + '</div>' +
+    '</div>';
+  });
+  cont.innerHTML = html;
+}
+
+// ============ TICKET ============
+function agregarAlTicket(id) {
+  const prod = productos.find(p => p.id === id);
+  if (!prod) return;
+  
+  const existe = ticket.find(t => t.id === id);
+  if (existe) {
+    if (existe.cantidad >= prod.stock) {
+      toast('⚠️ Stock insuficiente', 'err');
+      return;
+    }
+    existe.cantidad += 1;
+    existe.subtotal = existe.cantidad * existe.precio;
+  } else {
+    ticket.push({
+      id: prod.id,
+      nombre: prod.nombre,
+      precio: prod.precio,
+      cantidad: 1,
+      subtotal: prod.precio
+    });
+  }
+  
+  renderTicket();
+  toast('✅ ' + prod.nombre + ' agregado', 'ok');
+}
+
+function cambiarCantidad(id, delta) {
+  const item = ticket.find(t => t.id === id);
+  const prod = productos.find(p => p.id === id);
+  if (!item) return;
+  
+  const nueva = item.cantidad + delta;
+  if (nueva <= 0) {
+    quitarDelTicket(id);
+    return;
+  }
+  if (nueva > prod.stock) {
+    toast('⚠️ Stock insuficiente', 'err');
+    return;
+  }
+  item.cantidad = nueva;
+  item.subtotal = nueva * item.precio;
+  renderTicket();
+}
+
+function quitarDelTicket(id) {
+  ticket = ticket.filter(t => t.id !== id);
+  renderTicket();
+}
+
+function vaciarTicket() {
+  if (ticket.length === 0) return;
+  if (!confirm('¿Vaciar el ticket?')) return;
+  ticket = [];
+  renderTicket();
+}
+
+function renderTicket() {
+  const cont = document.getElementById('ticket-items');
+  const btnCobrar = document.getElementById('btn-cobrar');
+  
+  if (ticket.length === 0) {
+    cont.innerHTML = '<p class="empty">Ticket vacío. Buscá un producto.</p>';
+    document.getElementById('total').textContent = '$0';
+    btnCobrar.disabled = true;
+    return;
+  }
+  
+  let html = '';
+  let total = 0;
+  ticket.forEach(item => {
+    total += item.subtotal;
+    html += '<div class="ticket-item">' +
+      '<div class="item-info">' +
+        '<div class="item-name">' + item.nombre + '</div>' +
+        '<div class="item-controls">' +
+          '<button class="qty-btn" onclick="cambiarCantidad(' + item.id + ',-1)">−</button>' +
+          '<span class="qty-display">' + item.cantidad + '</span>' +
+          '<button class="qty-btn" onclick="cambiarCantidad(' + item.id + ',1)">+</button>' +
+          '<button class="remove-btn" onclick="quitarDelTicket(' + item.id + ')">🗑️</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="item-total">$' + item.subtotal + '</div>' +
+    '</div>';
+  });
+  cont.innerHTML = html;
+  document.getElementById('total').textContent = '$' + total;
+  btnCobrar.disabled = false;
+}
+
+// ============ PAGO ============
+function abrirPago() {
+  if (ticket.length === 0) return;
+  const total = ticket.reduce((s, i) => s + i.subtotal, 0);
+  document.getElementById('modal-total').textContent = '$' + total;
+  document.getElementById('modal-pago').classList.add('active');
+}
+
+function cerrarPago() {
+  document.getElementById('modal-pago').classList.remove('active');
+}
+
+function cobrar(metodo) {
+  const total = ticket.reduce((s, i) => s + i.subtotal, 0);
+  
+  // Si es efectivo, pedir monto recibido
+  let vuelto = 0;
+  if (metodo === 'efectivo') {
+    const recibido = parseFloat(prompt('Total: $' + total + '\n\nIngresá el monto recibido:', total));
+    if (isNaN(recibido) || recibido < total) {
+      toast('❌ Monto inválido', 'err');
+      return;
+    }
+    vuelto = recibido - total;
+  }
+  
+  // Registrar venta
+  const venta = {
+    id: Date.now(),
+    fecha: new Date().toISOString(),
+    items: [...ticket],
+    total: total,
+    metodo: metodo,
+    vuelto: vuelto
+  };
+  ventas.push(venta);
+  guardarVentas();
+  
+  // Descontar stock
+  ticket.forEach(item => {
+    const prod = productos.find(p => p.id === item.id);
+    if (prod) prod.stock -= item.cantidad;
+  });
+  guardarProductos();
+  
+  // Mensaje de confirmación
+  let msg = '✅ Venta registrada\n\nTotal: $' + total + '\nMétodo: ' + metodo.toUpperCase();
+  if (metodo === 'efectivo' && vuelto > 0) {
+    msg += '\nVuelto: $' + vuelto;
+  }
+  alert(msg);
+  
+  // Limpiar
+  ticket = [];
+  renderTicket();
+  cerrarPago();
+  actualizarResumen();
+  toast('✅ Venta procesada', 'ok');
+}
+
+// ============ RESUMEN ============
+function actualizarResumen() {
+  const hoy = new Date().toDateString();
+  const ventasHoy = ventas.filter(v => new Date(v.fecha).toDateString() === hoy);
+  const totalHoy = ventasHoy.reduce((s, v) => s + v.total, 0);
+  
+  document.getElementById('sum-tickets').textContent = ventasHoy.length;
+  document.getElementById('sum-total').textContent = '$' + totalHoy;
+}
+
+// ============ TOAST ============
+function toast(msg, tipo) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + tipo;
+  setTimeout(() => t.className = 'toast ' + tipo, 2500);
+}
+
+iniciar();
+</script>
+</body>
+</html>
