@@ -1,152 +1,297 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📷📊 Cámara + Stock - Mejorar 2</title>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-        body { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            min-height: 100vh; 
-            padding: 20px;
-        }
-        .card {
-            background: white;
-            border-radius: 24px;
-            max-width: 500px;
-            margin: 20px auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-        }
-        .header h1 { font-size: 20px; }
-        .header .subtitle { font-size: 12px; opacity: 0.8; }
-        .content { padding: 20px; }
-        
-        .info-box {
-            background: #e8f5e9;
-            border: 2px solid #2a9d4a;
-            border-radius: 16px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-        .info-box h3 { color: #2a9d4a; margin-bottom: 8px; font-size: 14px; }
-        .info-box p { font-size: 13px; color: #555; line-height: 1.6; }
-        
-        .btn-scan {
-            width: 100%;
-            padding: 18px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-bottom: 15px;
-        }
-        .btn-scan:active { transform: scale(0.98); }
-        
-        .btn-add {
-            background: #2a9d4a;
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        
-        .stock-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .stock-header h2 { font-size: 18px; color: #333; }
-        
-        .search-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-        .search-input:focus { outline: none; border-color: #667eea; }
-        
-        .product-card {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .product-info { flex: 1; }
-        .product-name { font-weight: 600; font-size: 14px; color: #333; }
-        .product-barcode { font-size: 11px; color: #888; font-family: monospace; margin-top: 2px; }
-        .product-meta { font-size: 12px; color: #666; margin-top: 3px; }
-        .product-stock-low { color: #d33; font-weight: 700; }
-        .product-actions { display: flex; gap: 8px; }
-        .icon-btn {
-            background: white;
-            border: 1px solid #ddd;
-            width: 36px; height: 36px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 15px;
-        }
-        
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.6);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            padding: 20px;
-        }
-        .modal-overlay.active { display: flex; }
-        .modal {
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
-            max-width: 400px;
-            width: 100%;
-        }
-        .modal h3 { font-size: 18px; margin-bottom: 15px; color: #333; }
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 600; }
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 14px;
-        }
-        .form-group input:focus { outline: none; border-color: #667eea; }
-        .modal-buttons { display: flex; gap: 10px; margin-top: 15px; }
-        .btn-cancel { flex: 1; padding: 12px; border-radius: 12px; background: #f0f0f5; border: none; font-weight: 600; cursor: pointer; }
-        .btn-save { flex: 1; padding: 12px; border-radius: 12px; background: #2a9d4a; color: white; border: none; font-weight: 600; cursor: pointer; }
-        
-        /* Scanner modal */
-        .scanner-modal {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.95);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-            padding: 
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cámara + Stock</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 15px; }
+.card { background: white; border-radius: 20px; max-width: 500px; margin: 0 auto; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; }
+.header h1 { font-size: 20px; margin-bottom: 5px; }
+.header p { font-size: 12px; opacity: 0.9; }
+.content { padding: 20px; }
+.btn-scan { width: 100%; padding: 16px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 15px; }
+.btn-scan:active { transform: scale(0.98); }
+.btn-add { background: #2a9d4a; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 13px; }
+.row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.row h2 { font-size: 17px; color: #333; }
+.search { width: 100%; padding: 11px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; margin-bottom: 12px; }
+.search:focus { outline: none; border-color: #667eea; }
+.product { background: #f8f9fa; border-radius: 10px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.product-info { flex: 1; }
+.product-name { font-weight: 600; font-size: 14px; color: #333; }
+.product-code { font-size: 11px; color: #888; font-family: monospace; margin-top: 2px; }
+.product-meta { font-size: 12px; color: #666; margin-top: 3px; }
+.low-stock { color: #d33; font-weight: 700; }
+.actions { display: flex; gap: 6px; }
+.icon-btn { background: white; border: 1px solid #ddd; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+/* Scanner */
+.scanner-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.scanner-modal.active { display: flex; }
+.scanner-box { background: white; border-radius: 20px; padding: 20px; max-width: 400px; width: 100%; }
+.scanner-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.scanner-head h3 { font-size: 17px; }
+.close-btn { background: #ffe0e0; color: #d33; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 16px; cursor: pointer; }
+#reader { width: 100%; min-height: 280px; background: #000; border-radius: 10px; overflow: hidden; }
+#reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+.hint { text-align: center; color: #666; font-size: 12px; margin-top: 10px; }
+/* Toast */
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 22px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; transition: opacity 0.3s; max-width: 90%; text-align: center; }
+.toast.show { opacity: 1; }
+.toast.ok { background: #2a9d4a; }
+.toast.err { background: #d33; }
+.empty { text-align: center; color: #888; padding: 25px; font-size: 13px; }
+.info { background: #e8f5e9; border: 2px solid #2a9d4a; border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #2a6b3a; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <h1>📷📊 Cámara + Stock</h1>
+    <p>Escaneá y gestioná productos</p>
+  </div>
+  <div class="content">
+    <div class="info">
+      <b>Cómo probar:</b><br>
+      1. Tocá "Escanear Producto"<br>
+      2. Apuntá la cámara a un código de barras<br>
+      3. Si está en el stock → lo reconoce ✅<br>
+      4. Si no está → te ofrece crearlo
+    </div>
+    
+    <button class="btn-scan" onclick="abrirScanner()">📷 Escanear Producto</button>
+    
+    <div class="row">
+      <h2 id="titulo-stock">Inventario</h2>
+      <button class="btn-add" onclick="nuevoProducto()">+ Nuevo</button>
+    </div>
+    
+    <input type="text" class="search" id="busqueda" placeholder="🔍 Buscar por nombre o código..." oninput="mostrarLista()">
+    <div id="lista"></div>
+  </div>
+</div>
+
+<!-- Modal Scanner -->
+<div class="scanner-modal" id="modal-scanner">
+  <div class="scanner-box">
+    <div class="scanner-head">
+      <h3>📷 Escaneando...</h3>
+      <button class="close-btn" onclick="cerrarScanner()">✕</button>
+    </div>
+    <div id="reader"></div>
+    <p class="hint">Apuntá al código de barras</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ DATOS ============
+const PRODUCTOS_INICIALES = [
+  { id: 1, nombre: 'Coca Cola 500ml', codigo: '7790080000509', precio: 1500, stock: 24 },
+  { id: 2, nombre: 'Agua Mineral 500ml', codigo: '7790360111016', precio: 900, stock: 30 },
+  { id: 3, nombre: 'Yerba Taragüi 1kg', codigo: '7790245100015', precio: 3500, stock: 12 },
+  { id: 4, nombre: 'Alfajor Havanna', codigo: '7790360222224', precio: 1200, stock: 40 },
+  { id: 5, nombre: 'Manaos Cola 1.5L', codigo: '7790530111150', precio: 2200, stock: 15 },
+  { id: 6, nombre: 'Doritos Queso', codigo: '7790320666668', precio: 1800, stock: 20 },
+  { id: 7, nombre: 'Pan Bimbo', codigo: '7790350111123', precio: 2800, stock: 10 },
+  { id: 8, nombre: 'Leche 1L', codigo: '7790020123456', precio: 1600, stock: 18 },
+  { id: 9, nombre: 'Azúcar 1kg', codigo: '7790189000019', precio: 1900, stock: 15 },
+  { id: 10, nombre: 'Quilmes 473ml', codigo: '7790670000473', precio: 2100, stock: 36 }
+];
+
+let productos = [];
+let scanner = null;
+let escaneando = false;
+
+// ============ INICIO ============
+function iniciar() {
+  const guardados = localStorage.getItem('productos_v1');
+  if (guardados) {
+    try { productos = JSON.parse(guardados); }
+    catch(e) { productos = [...PRODUCTOS_INICIALES]; guardar(); }
+  } else {
+    productos = [...PRODUCTOS_INICIALES];
+    guardar();
+  }
+  actualizarTitulo();
+  mostrarLista();
+  console.log('✅ Productos cargados:', productos.length);
+}
+
+function guardar() {
+  localStorage.setItem('productos_v1', JSON.stringify(productos));
+}
+
+function actualizarTitulo() {
+  document.getElementById('titulo-stock').textContent = 'Inventario (' + productos.length + ')';
+}
+
+// ============ LISTA ============
+function mostrarLista() {
+  const busq = (document.getElementById('busqueda').value || '').toLowerCase();
+  const cont = document.getElementById('lista');
+  const filtrados = productos.filter(p =>
+    p.nombre.toLowerCase().includes(busq) || p.codigo.includes(busq)
+  );
+  
+  if (filtrados.length === 0) {
+    cont.innerHTML = '<p class="empty">No se encontraron productos</p>';
+    return;
+  }
+  
+  let html = '';
+  filtrados.forEach(p => {
+    const bajo = p.stock < 5;
+    html += '<div class="product">' +
+      '<div class="product-info">' +
+        '<div class="product-name">' + p.nombre + '</div>' +
+        '<div class="product-code">' + p.codigo + '</div>' +
+        '<div class="product-meta">$' + p.precio + ' · <span class="' + (bajo ? 'low-stock' : '') + '">Stock: ' + p.stock + '</span></div>' +
+      '</div>' +
+      '<div class="actions">' +
+        '<button class="icon-btn" onclick="editar(' + p.id + ')">✏️</button>' +
+        '<button class="icon-btn" onclick="eliminar(' + p.id + ')">🗑️</button>' +
+      '</div>' +
+    '</div>';
+  });
+  cont.innerHTML = html;
+}
+
+// ============ PRODUCTOS ============
+function nuevoProducto() {
+  const nombre = prompt('Nombre del producto:');
+  if (!nombre) return;
+  const codigo = prompt('Código de barras:');
+  if (!codigo) return;
+  const precio = parseFloat(prompt('Precio ($):', '0')) || 0;
+  const stock = parseInt(prompt('Stock inicial:', '0')) || 0;
+  
+  const nuevoId = productos.length > 0 ? Math.max(...productos.map(p => p.id)) + 1 : 1;
+  productos.push({ id: nuevoId, nombre, codigo, precio, stock });
+  guardar();
+  actualizarTitulo();
+  mostrarLista();
+  toast('✅ Producto creado', 'ok');
+}
+
+function editar(id) {
+  const p = productos.find(x => x.id === id);
+  if (!p) return;
+  
+  const nombre = prompt('Nombre:', p.nombre);
+  if (nombre === null) return;
+  const codigo = prompt('Código:', p.codigo);
+  if (codigo === null) return;
+  const precio = parseFloat(prompt('Precio:', p.precio));
+  if (isNaN(precio)) return;
+  const stock = parseInt(prompt('Stock:', p.stock));
+  if (isNaN(stock)) return;
+  
+  p.nombre = nombre;
+  p.codigo = codigo;
+  p.precio = precio;
+  p.stock = stock;
+  guardar();
+  mostrarLista();
+  toast('✅ Actualizado', 'ok');
+}
+
+function eliminar(id) {
+  const p = productos.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm('¿Eliminar "' + p.nombre + '"?')) return;
+  productos = productos.filter(x => x.id !== id);
+  guardar();
+  actualizarTitulo();
+  mostrarLista();
+  toast('🗑️ Eliminado', 'ok');
+}
+
+// ============ SCANNER ============
+async function abrirScanner() {
+  if (escaneando) return;
+  escaneando = true;
+  document.getElementById('modal-scanner').classList.add('active');
+  
+  try {
+    scanner = new Html5Qrcode("reader");
+    await scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 250, height: 150 } },
+      function(codigo) { procesarCodigo(codigo); },
+      function() {} // ignorar errores
+    );
+    console.log('✅ Cámara activa');
+  } catch(err) {
+    console.error('Error:', err);
+    escaneando = false;
+    const msg = err.toString().toLowerCase();
+    if (msg.includes('notallowed')) {
+      toast('🚫 Permiso bloqueado', 'err');
+      alert('Permiso de cámara bloqueado.\n\nTocá el candado 🔒 al lado de la URL → Permisos → Cámara → Permitir');
+    } else {
+      toast('Error: ' + err.message, 'err');
+    }
+    cerrarScanner();
+  }
+}
+
+async function cerrarScanner() {
+  document.getElementById('modal-scanner').classList.remove('active');
+  if (scanner) {
+    try { await scanner.stop(); scanner.clear(); } catch(e) {}
+    scanner = null;
+  }
+  escaneando = false;
+}
+
+function procesarCodigo(codigo) {
+  if (navigator.vibrate) navigator.vibrate(100);
+  
+  const p = productos.find(x => x.codigo === codigo);
+  
+  if (p) {
+    toast('✅ ' + p.nombre + ' - $' + p.precio, 'ok');
+    // Resaltar en la lista
+    document.getElementById('busqueda').value = p.codigo;
+    mostrarLista();
+  } else {
+    toast('❌ No encontrado: ' + codigo, 'err');
+    if (confirm('Código no encontrado:\n' + codigo + '\n\n¿Crear producto ahora?')) {
+      cerrarScanner();
+      const nombre = prompt('Nombre del producto:');
+      if (!nombre) return;
+      const precio = parseFloat(prompt('Precio ($):', '0')) || 0;
+      const stock = parseInt(prompt('Stock inicial:', '0')) || 0;
+      const nuevoId = productos.length > 0 ? Math.max(...productos.map(p => p.id)) + 1 : 1;
+      productos.push({ id: nuevoId, nombre, codigo, precio, stock });
+      guardar();
+      actualizarTitulo();
+      mostrarLista();
+      toast('✅ Producto creado con ese código', 'ok');
+    }
+  }
+}
+
+// ============ TOAST ============
+function toast(msg, tipo) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + tipo;
+  setTimeout(() => t.className = 'toast ' + tipo, 2500);
+}
+
+// Limpieza
+window.addEventListener('beforeunload', () => {
+  if (scanner) { try { scanner.stop(); scanner.clear(); } catch(e) {} }
+});
+
+iniciar();
+</script>
+</body>
+</html>
