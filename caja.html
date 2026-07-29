@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏪 Mi Caja - Mejorar 2</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 15px; }
+.card { background: white; border-radius: 20px; max-width: 500px; margin: 0 auto; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; }
+.header h1 { font-size: 20px; margin-bottom: 5px; }
+.header p { font-size: 12px; opacity: 0.9; }
+.content { padding: 20px; }
+
+.info { background: #e8f5e9; border: 2px solid #2a9d4a; border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #2a6b3a; line-height: 1.5; }
+
+.search { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 14px; margin-bottom: 12px; }
+.search:focus { outline: none; border-color: #667eea; }
+
+.results { max-height: 200px; overflow-y: auto; margin-bottom: 15px; }
+.result-item { background: #f8f9fa; padding: 10px 12px; border-radius: 10px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.result-item:active { background: #e9ecef; }
+.result-name { font-weight: 600; font-size: 14px; color: #333; }
+.result-detail { font-size: 11px; color: #888; }
+.result-price { font-weight: 700; color: #667eea; font-size: 14px; }
+
+.ticket-box { background: #f8f9fa; border-radius: 14px; padding: 15px; margin-bottom: 15px; }
+.ticket-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.ticket-head h2 { font-size: 15px; color: #333; }
+.clear-btn { background: none; border: none; color: #d33; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+.ticket-items { max-height: 250px; overflow-y: auto; }
+.ticket-item { background: white; padding: 10px; border-radius: 10px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+.item-info { flex: 1; }
+.item-name { font-weight: 600; font-size: 13px; color: #333; }
+.item-detail { font-size: 11px; color: #888; margin-top: 2px; }
+.item-controls { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
+.qty-btn { background: #667eea; color: white; border: none; width: 26px; height: 26px; border-radius: 6px; font-weight: 700; cursor: pointer; }
+.qty-display { font-weight: 700; color: #333; min-width: 20px; text-align: center; }
+.remove-btn { background: none; border: none; color: #d33; font-size: 11px; cursor: pointer; margin-left: 8px; }
+.item-total { font-weight: 700; color: #667eea; font-size: 15px; }
+
+.total-row { border-top: 2px solid #ddd; margin-top: 10px; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; }
+.total-label { font-weight: 600; color: #333; font-size: 15px; }
+.total-value { font-size: 24px; font-weight: 800; color: #667eea; }
+
+.pay-btn { width: 100%; padding: 16px; background: #2a9d4a; color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 15px; }
+.pay-btn:active { transform: scale(0.98); }
+.pay-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+.summary { background: #f8f9fa; border-radius: 14px; padding: 15px; }
+.summary h3 { font-size: 14px; color: #333; margin-bottom: 10px; }
+.summary-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+.summary-row strong { color: #667eea; }
+
+.empty { text-align: center; color: #888; padding: 20px; font-size: 13px; }
+
+/* Modal pago */
+.modal-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none
