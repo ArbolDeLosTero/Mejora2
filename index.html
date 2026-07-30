@@ -95,6 +95,7 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 
 /* Proveedores */
 .prov-card { background: #f8f9fa; border-radius: 14px; padding: 14px; margin-bottom: 10px; border-left: 4px solid #667eea; }
+.prov-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
 .prov-contact { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd; }
 .contact-btn { flex: 1; padding: 8px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; }
 .btn-call { background: #e3f2fd; color: #1565c0; }
@@ -119,6 +120,11 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .prod-card.nivel-critico { border-left-color: #d33; background: #fff5f5; }
 .prod-card.nivel-urgente { border-left-color: #f57c00; background: #fff8f0; }
 .prod-card.nivel-proximo { border-left-color: #fbc02d; background: #fffdf0; }
+.prod-actions { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd; }
+.action-btn { flex: 1; padding: 8px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.btn-merma { background: #ffebee; color: #d33; }
+.btn-lote { background: #e3f2fd; color: #1565c0; }
+.btn-edit { background: #f0f0f5; color: #333; }
 
 /* Arqueo */
 .arqueo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
@@ -143,6 +149,13 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .search:focus { outline: none; border-color: #667eea; }
 
 .logout-btn { width: 100%; margin-top: 15px; padding: 12px; border-radius: 16px; background: #f0f0f5; border: none; color: #666; font-weight: 600; cursor: pointer; }
+
+.tabs { display: flex; gap: 5px; margin-bottom: 15px; }
+.tab { flex: 1; padding: 10px; border: none; border-radius: 10px; background: #f0f0f5; color: #666; font-weight: 600; font-size: 13px; cursor: pointer; }
+.tab.active { background: #667eea; color: white; }
+
+.section { display: none; }
+.section.active { display: block; }
 </style>
 </head>
 <body>
@@ -229,7 +242,7 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
         <span class="menu-icon">🔑</span>
         <div class="menu-text">
           <div class="menu-title">Licencia del Sistema</div>
-          <div class="menu-sub active">ACTIVA</div>
+          <div class="menu-sub active" id="licencia-status">ACTIVA</div>
         </div>
         <span class="menu-arrow">›</span>
       </button>
@@ -274,7 +287,14 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
     <!-- VIEW: CONTROL DE CAJA -->
     <div id="view-control-caja" class="view">
       <div id="status-caja" class="panel" style="text-align:center;"></div>
-      <div id="sec-apertura-caja">
+      
+      <div class="tabs">
+        <button class="tab active" onclick="mostrarTabCaja('panel', this)">📊 Panel</button>
+        <button class="tab" onclick="mostrarTabCaja('arqueo', this)">💵 Arqueo</button>
+        <button class="tab" onclick="mostrarTabCaja('audit', this)">📝 Auditoría</button>
+      </div>
+
+      <div id="sec-apertura-caja" class="section active">
         <div class="panel">
           <h3>🔓 Apertura de Caja</h3>
           <div class="form-group">
@@ -288,7 +308,8 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
           <button class="btn btn-success" onclick="abrirCaja()">🔓 Abrir Caja</button>
         </div>
       </div>
-      <div id="sec-panel-caja" style="display:none;">
+
+      <div id="sec-panel-caja" class="section">
         <div class="panel">
           <h3>📊 Resumen del Turno</h3>
           <div class="info-row"><span>Cajero:</span><strong id="pnl-cajero">-</strong></div>
@@ -296,6 +317,36 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
           <div class="info-row"><span>Total vendido:</span><strong id="pnl-total">$0</strong></div>
         </div>
         <button class="btn btn-danger" onclick="cerrarCaja()">🔒 Cerrar Turno</button>
+      </div>
+
+      <div id="sec-arqueo-caja" class="section">
+        <div class="panel">
+          <h3>💵 Conteo de Billetes y Monedas</h3>
+          <div class="arqueo-grid" id="arqueo-grid"></div>
+          <div class="info-row">
+            <span>Efectivo contado:</span>
+            <strong id="arq-contado">$0</strong>
+          </div>
+          <div class="info-row">
+            <span>Efectivo esperado:</span>
+            <strong id="arq-esperado">$0</strong>
+          </div>
+        </div>
+        <div id="diff-box" class="difference-box diff-ok">
+          <div style="font-size:12px;font-weight:600;">Diferencia</div>
+          <div style="font-size:22px;font-weight:800;margin-top:3px;" id="diff-value">$0</div>
+        </div>
+        <button class="btn btn-primary" onclick="guardarArqueo()">💾 Guardar Arqueo</button>
+      </div>
+
+      <div id="sec-audit-caja" class="section">
+        <div class="panel">
+          <h3>📝 Registro de Auditoría</h3>
+          <div class="audit-box" id="audit-list">
+            <p class="empty">Sin registros</p>
+          </div>
+        </div>
+        <button class="btn btn-secondary" onclick="exportarAuditoria()">📤 Exportar Auditoría</button>
       </div>
     </div>
 
@@ -312,6 +363,7 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
         <button class="filter-btn" onclick="filtrarVencimientos('critico', this)">🔴 Crítico</button>
         <button class="filter-btn" onclick="filtrarVencimientos('urgente', this)">🟠 Urgente</button>
       </div>
+      <button class="btn btn-primary" onclick="agregarLote()">+ Agregar Lote con Vencimiento</button>
       <div id="lista-vencimientos"></div>
     </div>
 
@@ -329,8 +381,16 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
         <p style="font-size:13px;color:#555;">Modo completo habilitado</p>
       </div>
       <div class="panel">
-        <h3>Device ID</h3>
+        <h3>🆔 Device ID</h3>
         <p style="font-family:monospace;font-weight:700;background:#f0f0f5;padding:10px;border-radius:8px;" id="device-id">M2-XXXX</p>
+      </div>
+      <div class="panel">
+        <h3>🔑 Activar Licencia</h3>
+        <div class="form-group">
+          <label>Clave de activación</label>
+          <input type="text" id="clave-licencia" placeholder="Ej: M2-XXXX-XXXX-XXXX" style="text-transform:uppercase;">
+        </div>
+        <button class="btn btn-success" onclick="activarLicencia()">✅ Activar Licencia</button>
       </div>
     </div>
 
@@ -403,6 +463,7 @@ const BILLETES = [20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5, 
 function iniciar() {
   cargarDatos();
   actualizarDeviceID();
+  renderArqueoGrid();
   console.log('✅ App unificada iniciada');
 }
 
@@ -413,7 +474,6 @@ function cargarDatos() {
   turno = JSON.parse(localStorage.getItem('turno_activo') || 'null');
   auditoria = JSON.parse(localStorage.getItem('auditoria_v1') || '[]');
   
-  // Asegurar lotes en productos
   productos.forEach(p => {
     if (!p.lotes || p.lotes.length === 0) {
       p.lotes = [{id: Date.now() + Math.random(), cantidad: p.stock, fechaVencimiento: '2027-12-31'}];
@@ -454,7 +514,6 @@ function mostrarVista(vista) {
     backBtn.classList.add('visible');
   }
   
-  // Actualizar header
   const titulos = {
     'menu': ['🌸 Mejorar 2', 'Sistema de Gestión Comercial'],
     'caja': ['🏪 Mi Caja', 'Ventas'],
@@ -470,12 +529,12 @@ function mostrarVista(vista) {
   document.getElementById('header-title').textContent = titulo;
   document.getElementById('header-subtitle').textContent = sub;
   
-  // Renderizar contenido específico
-  if (vista === 'caja') renderTicket();
+  if (vista === 'caja') { renderTicket(); buscarProductoCaja(); }
   if (vista === 'stock') renderListaStock();
   if (vista === 'control-caja') renderControlCaja();
   if (vista === 'vencimientos') renderVencimientos();
   if (vista === 'proveedores') renderListaProveedores();
+  if (vista === 'control-caja') renderAuditoria();
 }
 
 function volverAlMenu() {
@@ -591,10 +650,26 @@ function buscarProductoCaja() {
   
   let html = '';
   filtrados.forEach(p => {
-    html += `<div class="product-card" onclick="agregarAlTicket(${p.id})" style="cursor:pointer;">
+    // CORRECCIÓN 1: Calcular stock disponible (stock real - cantidad en ticket)
+    const enTicket = ticket.find(t => t.id === p.id);
+    const stockDisponible = p.stock - (enTicket ? enTicket.cantidad : 0);
+    
+    let stockClass = 'color:#2a9d4a;';
+    let stockText = 'Stock: ' + stockDisponible;
+    if (stockDisponible <= 0) {
+      stockClass = 'color:#999;font-style:italic;';
+      stockText = 'Sin stock';
+    } else if (stockDisponible < 5) {
+      stockClass = 'color:#d33;font-weight:700;';
+      stockText = 'Stock bajo: ' + stockDisponible;
+    }
+    
+    const disabled = stockDisponible <= 0;
+    
+    html += `<div class="product-card" onclick="${disabled ? '' : 'agregarAlTicket(' + p.id + ')'}" style="cursor:${disabled ? 'not-allowed' : 'pointer'};opacity:${disabled ? '0.5' : '1'};">
       <div class="product-info">
         <div class="product-name">${p.nombre}</div>
-        <div style="font-size:11px;color:#888;">Stock: ${p.stock}</div>
+        <div style="font-size:11px;${stockClass}">${stockText}</div>
       </div>
       <div style="font-weight:700;color:#667eea;">$${p.precio}</div>
     </div>`;
@@ -607,11 +682,14 @@ function agregarAlTicket(id) {
   if (!prod) return;
   
   const existe = ticket.find(t => t.id === id);
+  const cantActual = existe ? existe.cantidad : 0;
+  
+  if (cantActual >= prod.stock) {
+    toast('⚠️ Stock insuficiente', 'err');
+    return;
+  }
+  
   if (existe) {
-    if (existe.cantidad >= prod.stock) {
-      toast('⚠️ Stock insuficiente', 'err');
-      return;
-    }
     existe.cantidad++;
     existe.subtotal = existe.cantidad * existe.precio;
   } else {
@@ -619,6 +697,7 @@ function agregarAlTicket(id) {
   }
   
   renderTicket();
+  buscarProductoCaja(); // CORRECCIÓN 1: Actualizar preview de stock
   toast('✅ ' + prod.nombre + ' agregado', 'ok');
 }
 
@@ -638,6 +717,7 @@ function cambiarCantidad(id, delta) {
     item.subtotal = nueva * item.precio;
   }
   renderTicket();
+  buscarProductoCaja(); // CORRECCIÓN 1: Actualizar preview de stock
 }
 
 function renderTicket() {
@@ -694,7 +774,6 @@ function abrirPago() {
     vuelto = recibido - total;
   }
   
-  // Registrar venta
   const venta = {
     id: Date.now(),
     fecha: new Date().toISOString(),
@@ -705,7 +784,6 @@ function abrirPago() {
   };
   ventas.push(venta);
   
-  // Descontar stock
   ticket.forEach(item => {
     const prod = productos.find(p => p.id === item.id);
     if (prod) prod.stock -= item.cantidad;
@@ -719,6 +797,7 @@ function abrirPago() {
   
   ticket = [];
   renderTicket();
+  buscarProductoCaja();
   toast('✅ Venta registrada', 'ok');
 }
 
@@ -803,8 +882,8 @@ function renderControlCaja() {
   
   if (turno && turno.estado === 'abierto') {
     statusBox.innerHTML = `<h3 style="color:#2a9d4a;">🔓 Caja Abierta</h3><p>Cajero: ${turno.cajero}</p>`;
-    secApertura.style.display = 'none';
-    secPanel.style.display = 'block';
+    secApertura.classList.remove('active');
+    secPanel.classList.add('active');
     
     const ventasTurno = ventas.filter(v => new Date(v.fecha) >= new Date(turno.apertura));
     const total = ventasTurno.reduce((s, v) => s + v.total, 0);
@@ -812,10 +891,32 @@ function renderControlCaja() {
     document.getElementById('pnl-cajero').textContent = turno.cajero;
     document.getElementById('pnl-tickets').textContent = ventasTurno.length;
     document.getElementById('pnl-total').textContent = '$' + total;
+    
+    calcularDiferencia();
   } else {
     statusBox.innerHTML = `<h3 style="color:#f0ad4e;">🔒 Caja Cerrada</h3>`;
-    secApertura.style.display = 'block';
-    secPanel.style.display = 'none';
+    secApertura.classList.add('active');
+    secPanel.classList.remove('active');
+  }
+}
+
+function mostrarTabCaja(tab, btn) {
+  document.querySelectorAll('#view-control-caja .tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#view-control-caja .section').forEach(s => s.classList.remove('active'));
+  btn.classList.add('active');
+  
+  if (tab === 'panel') {
+    if (turno && turno.estado === 'abierto') {
+      document.getElementById('sec-panel-caja').classList.add('active');
+    } else {
+      document.getElementById('sec-apertura-caja').classList.add('active');
+    }
+  } else if (tab === 'arqueo') {
+    document.getElementById('sec-arqueo-caja').classList.add('active');
+    calcularDiferencia();
+  } else if (tab === 'audit') {
+    document.getElementById('sec-audit-caja').classList.add('active');
+    renderAuditoria();
   }
 }
 
@@ -851,7 +952,130 @@ function cerrarCaja() {
   toast('✅ Turno cerrado', 'ok');
 }
 
-// ============ VENCIMIENTOS ============
+// ============ ARQUEO (CORRECCIÓN 2) ============
+function renderArqueoGrid() {
+  const grid = document.getElementById('arqueo-grid');
+  let html = '';
+  BILLETES.forEach(valor => {
+    const prefijo = valor >= 100 ? '$' : '🪙$';
+    html += `
+      <div class="arqueo-item">
+        <span class="arqueo-label">${prefijo}${valor}</span>
+        <input type="number" class="arqueo-input" data-valor="${valor}" value="0" min="0" oninput="calcularDiferencia()">
+      </div>
+    `;
+  });
+  grid.innerHTML = html;
+}
+
+function calcularContado() {
+  let total = 0;
+  document.querySelectorAll('.arqueo-input').forEach(input => {
+    const valor = parseFloat(input.dataset.valor);
+    const cantidad = parseInt(input.value) || 0;
+    total += valor * cantidad;
+  });
+  return total;
+}
+
+function calcularDiferencia() {
+  const contado = calcularContado();
+  document.getElementById('arq-contado').textContent = '$' + contado;
+  
+  let esperado = 0;
+  if (turno && turno.estado === 'abierto') {
+    esperado = turno.saldoInicial + ventas.filter(v => {
+      return new Date(v.fecha) >= new Date(turno.apertura) && v.metodo === 'efectivo';
+    }).reduce((s, v) => s + v.total, 0);
+  }
+  document.getElementById('arq-esperado').textContent = '$' + esperado;
+  
+  const diff = contado - esperado;
+  const diffBox = document.getElementById('diff-box');
+  const diffValue = document.getElementById('diff-value');
+  
+  if (diff === 0) {
+    diffBox.className = 'difference-box diff-ok';
+    diffValue.textContent = '$0 ✅ Cuadrada';
+  } else if (diff > 0) {
+    diffBox.className = 'difference-box diff-pos';
+    diffValue.textContent = '+$' + diff + ' Sobrante';
+  } else {
+    diffBox.className = 'difference-box diff-neg';
+    diffValue.textContent = '-$' + Math.abs(diff) + ' Faltante';
+  }
+}
+
+function guardarArqueo() {
+  if (!turno || turno.estado !== 'abierto') {
+    toast('❌ Primero abrí la caja', 'err');
+    return;
+  }
+  
+  const contado = calcularContado();
+  const esperado = turno.saldoInicial + ventas.filter(v => {
+    return new Date(v.fecha) >= new Date(turno.apertura) && v.metodo === 'efectivo';
+  }).reduce((s, v) => s + v.total, 0);
+  const diff = contado - esperado;
+  
+  auditoria.unshift({ timestamp: new Date().toISOString(), usuario: turno.cajero, accion: 'ARQUEO', detalle: `Contado: $${contado}, Esperado: $${esperado}, Diferencia: $${diff}` });
+  guardarTodo();
+  renderAuditoria();
+  
+  toast('💾 Arqueo guardado', 'ok');
+}
+
+// ============ AUDITORÍA (CORRECCIÓN 2) ============
+function renderAuditoria() {
+  const cont = document.getElementById('audit-list');
+  if (auditoria.length === 0) {
+    cont.innerHTML = '<p class="empty">Sin registros</p>';
+    return;
+  }
+  
+  let html = '';
+  auditoria.slice(0, 100).forEach(a => {
+    const fecha = new Date(a.timestamp);
+    const hora = fecha.toLocaleString('es-AR');
+    html += `
+      <div class="audit-item">
+        <span class="audit-time">[${hora}]</span>
+        <span class="audit-user">${a.usuario}</span>
+        <span class="audit-action">${a.accion}</span>
+        <div style="color:#888;font-size:10px;margin-top:2px;">${a.detalle}</div>
+      </div>
+    `;
+  });
+  cont.innerHTML = html;
+}
+
+function exportarAuditoria() {
+  if (auditoria.length === 0) {
+    toast('❌ No hay registros', 'err');
+    return;
+  }
+  
+  let texto = 'AUDITORÍA SGUV\n';
+  texto += 'Generado: ' + new Date().toLocaleString('es-AR') + '\n';
+  texto += '='.repeat(50) + '\n\n';
+  
+  auditoria.forEach(a => {
+    texto += `[${new Date(a.timestamp).toLocaleString('es-AR')}] ${a.usuario} - ${a.accion}\n`;
+    texto += `  ${a.detalle}\n\n`;
+  });
+  
+  const blob = new Blob([texto], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'auditoria_' + new Date().toISOString().slice(0, 10) + '.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  toast('📤 Auditoría exportada', 'ok');
+}
+
+// ============ VENCIMIENTOS (CORRECCIÓN 3) ============
 let filtroVencimientos = 'todos';
 
 function calcularNivel(fechaVenc) {
@@ -895,6 +1119,11 @@ function renderVencimientos() {
     html += `<div class="prod-card ${cardClass}">
       <div style="font-weight:700;font-size:15px;margin-bottom:8px;">${p.nombre}</div>
       <div style="font-size:12px;color:#555;">Stock: ${p.stock}</div>
+      <div class="prod-actions">
+        <button class="action-btn btn-merma" onclick="marcarMerma(${p.id})">🗑️ Merma</button>
+        <button class="action-btn btn-lote" onclick="agregarLoteAProducto(${p.id})">+ Lote</button>
+        <button class="action-btn btn-edit" onclick="editarFecha(${p.id})">✏️ Editar</button>
+      </div>
     </div>`;
   });
   
@@ -906,7 +1135,138 @@ function renderVencimientos() {
   document.getElementById('stat-normal').textContent = stats.normal;
 }
 
-// ============ PROVEEDORES ============
+function agregarLote() {
+  if (productos.length === 0) {
+    toast('❌ No hay productos', 'err');
+    return;
+  }
+  
+  let opciones = productos.map((p, i) => (i + 1) + '. ' + p.nombre).join('\n');
+  const seleccion = prompt('Elegí un producto (número):\n\n' + opciones);
+  if (!seleccion) return;
+  
+  const idx = parseInt(seleccion) - 1;
+  if (isNaN(idx) || idx < 0 || idx >= productos.length) {
+    toast('❌ Número inválido', 'err');
+    return;
+  }
+  
+  agregarLoteAProducto(productos[idx].id);
+}
+
+function agregarLoteAProducto(prodId) {
+  const producto = productos.find(p => p.id === prodId);
+  if (!producto) return;
+  
+  const cantidad = parseInt(prompt('Cantidad del lote:', '10'));
+  if (isNaN(cantidad) || cantidad <= 0) {
+    toast('❌ Cantidad inválida', 'err');
+    return;
+  }
+  
+  const fechaStr = prompt('Fecha de vencimiento (YYYY-MM-DD):\n\nEjemplo: 2026-08-15', '2027-12-31');
+  if (!fechaStr) return;
+  
+  const fecha = new Date(fechaStr + 'T00:00:00');
+  if (isNaN(fecha.getTime())) {
+    toast('❌ Fecha inválida', 'err');
+    return;
+  }
+  
+  if (!producto.lotes) producto.lotes = [];
+  producto.lotes.push({
+    id: Date.now() + Math.random(),
+    cantidad: cantidad,
+    fechaVencimiento: fechaStr
+  });
+  
+  guardarTodo();
+  renderVencimientos();
+  toast('✅ Lote agregado', 'ok');
+}
+
+function marcarMerma(prodId) {
+  const producto = productos.find(p => p.id === prodId);
+  if (!producto || !producto.lotes || producto.lotes.length === 0) {
+    toast('❌ No hay lotes', 'err');
+    return;
+  }
+  
+  const motivo = prompt('Motivo de la merma:\n\n1. Vencido\n2. Dañado\n3. Defectuoso\n4. Otro\n\nIngresá el número:', '1');
+  if (!motivo) return;
+  
+  const motivos = { '1': 'Vencido', '2': 'Dañado', '3': 'Defectuoso', '4': 'Otro' };
+  const motivoTexto = motivos[motivo] || 'Otro';
+  
+  const cantidadMerma = parseInt(prompt('Cantidad a dar de baja:', producto.lotes[0].cantidad));
+  if (isNaN(cantidadMerma) || cantidadMerma <= 0) {
+    toast('❌ Cantidad inválida', 'err');
+    return;
+  }
+  
+  if (confirm('¿Confirmar merma de ' + cantidadMerma + ' unidades de "' + producto.nombre + '"?\n\nMotivo: ' + motivoTexto)) {
+    producto.stock = Math.max(0, producto.stock - cantidadMerma);
+    
+    let restante = cantidadMerma;
+    producto.lotes.sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento));
+    
+    for (let i = 0; i < producto.lotes.length && restante > 0; i++) {
+      const lote = producto.lotes[i];
+      const descontar = Math.min(lote.cantidad, restante);
+      lote.cantidad -= descontar;
+      restante -= descontar;
+    }
+    
+    producto.lotes = producto.lotes.filter(l => l.cantidad > 0);
+    
+    auditoria.unshift({
+      timestamp: new Date().toISOString(),
+      usuario: 'SISTEMA',
+      accion: 'MERMA',
+      detalle: producto.nombre + ' - ' + cantidadMerma + ' un. - Motivo: ' + motivoTexto
+    });
+    
+    guardarTodo();
+    renderVencimientos();
+    toast('🗑️ Merma registrada', 'ok');
+  }
+}
+
+function editarFecha(prodId) {
+  const producto = productos.find(p => p.id === prodId);
+  if (!producto || !producto.lotes || producto.lotes.length === 0) {
+    toast('❌ No hay lotes', 'err');
+    return;
+  }
+  
+  let loteIdx = 0;
+  if (producto.lotes.length > 1) {
+    let opciones = producto.lotes.map((l, i) => (i + 1) + '. Vence: ' + l.fechaVencimiento + ' (' + l.cantidad + ' un.)').join('\n');
+    const sel = prompt('¿Qué lote querés editar?\n\n' + opciones);
+    if (!sel) return;
+    loteIdx = parseInt(sel) - 1;
+    if (isNaN(loteIdx) || loteIdx < 0 || loteIdx >= producto.lotes.length) {
+      toast('❌ Número inválido', 'err');
+      return;
+    }
+  }
+  
+  const nuevaFecha = prompt('Nueva fecha de vencimiento (YYYY-MM-DD):', producto.lotes[loteIdx].fechaVencimiento);
+  if (!nuevaFecha) return;
+  
+  const fecha = new Date(nuevaFecha + 'T00:00:00');
+  if (isNaN(fecha.getTime())) {
+    toast('❌ Fecha inválida', 'err');
+    return;
+  }
+  
+  producto.lotes[loteIdx].fechaVencimiento = nuevaFecha;
+  guardarTodo();
+  renderVencimientos();
+  toast('✅ Fecha actualizada', 'ok');
+}
+
+// ============ PROVEEDORES (CORRECCIÓN 4) ============
 function renderListaProveedores() {
   const busq = (document.getElementById('buscador-prov')?.value || '').toLowerCase();
   const cont = document.getElementById('lista-proveedores');
@@ -920,8 +1280,16 @@ function renderListaProveedores() {
   let html = '';
   filtrados.forEach(p => {
     html += `<div class="prov-card">
-      <div style="font-weight:700;font-size:15px;">${p.nombre}</div>
-      <div style="font-size:11px;color:#888;font-family:monospace;margin-top:2px;">CUIT: ${p.cuit || '-'}</div>
+      <div class="prov-header">
+        <div>
+          <div style="font-weight:700;font-size:15px;">${p.nombre}</div>
+          <div style="font-size:11px;color:#888;font-family:monospace;margin-top:2px;">CUIT: ${p.cuit || '-'}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="icon-btn" onclick="editarProveedor(${p.id})">✏️</button>
+          <button class="icon-btn" onclick="eliminarProveedor(${p.id})">🗑️</button>
+        </div>
+      </div>
       <div class="prov-contact">
         ${p.telefono ? `<a href="tel:${p.telefono}" class="contact-btn btn-call">📞</a>` : ''}
         ${p.whatsapp ? `<a href="https://wa.me/${p.whatsapp}" target="_blank" class="contact-btn btn-whatsapp">💬</a>` : ''}
@@ -945,6 +1313,56 @@ function nuevoProveedor() {
   guardarTodo();
   renderListaProveedores();
   toast('✅ Proveedor creado', 'ok');
+}
+
+function editarProveedor(id) {
+  const p = proveedores.find(x => x.id === id);
+  if (!p) return;
+  
+  const nombre = prompt('Nombre:', p.nombre);
+  if (nombre === null) return;
+  const cuit = prompt('CUIT:', p.cuit || '');
+  if (cuit === null) return;
+  const telefono = prompt('Teléfono:', p.telefono || '');
+  if (telefono === null) return;
+  const whatsapp = prompt('WhatsApp:', p.whatsapp || '');
+  if (whatsapp === null) return;
+  const email = prompt('Email:', p.email || '');
+  if (email === null) return;
+  
+  Object.assign(p, { nombre, cuit, telefono, whatsapp, email });
+  guardarTodo();
+  renderListaProveedores();
+  toast('✅ Proveedor actualizado', 'ok');
+}
+
+function eliminarProveedor(id) {
+  const p = proveedores.find(x => x.id === id);
+  if (!p) return;
+  if (confirm('¿Eliminar al proveedor "' + p.nombre + '"?')) {
+    proveedores = proveedores.filter(x => x.id !== id);
+    guardarTodo();
+    renderListaProveedores();
+    toast('🗑️ Proveedor eliminado', 'ok');
+  }
+}
+
+// ============ LICENCIA (CORRECCIÓN 5) ============
+function activarLicencia() {
+  const clave = document.getElementById('clave-licencia').value.trim().toUpperCase();
+  const deviceId = localStorage.getItem('device_id_v1');
+  
+  const CLAVE_VALIDA = 'M2-ACTIVAR-2026';
+  
+  if (clave === CLAVE_VALIDA || clave.includes(deviceId)) {
+    localStorage.setItem('licencia_v1', 'activa');
+    document.getElementById('licencia-status').textContent = 'ACTIVA';
+    document.getElementById('licencia-status').className = 'menu-sub active';
+    document.getElementById('clave-licencia').value = '';
+    toast('✅ Licencia activada', 'ok');
+  } else {
+    toast('❌ Clave inválida', 'err');
+  }
 }
 
 // ============ MI CUENTA ============
