@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>👤 Mi Cuenta - Mejorar 2</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 15px; }
+.card { background: white; border-radius: 20px; max-width: 500px; margin: 0 auto; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; }
+.header h1 { font-size: 20px; margin-bottom: 5px; }
+.header p { font-size: 12px; opacity: 0.9; }
+.content { padding: 20px; }
+
+.section { background: #f8f9fa; border-radius: 14px; padding: 15px; margin-bottom: 15px; }
+.section h3 { font-size: 14px; color: #333; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.section-icon { font-size: 18px; }
+
+.info-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e0e0e0; font-size: 13px; }
+.info-row:last-child { border-bottom: none; }
+.info-label { color: #666; }
+.info-value { font-weight: 600; color: #333; }
+.info-value.mono { font-family: monospace; background: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; }
+
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 600; }
+.form-group input { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; }
+.form-group input:focus { outline: none; border-color: #667eea; }
+
+.btn { width: 100%; padding: 12px; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
+.btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+.btn-success { background: #2a9d4a; color: white; }
+.btn-warning { background: #f0ad4e; color: white; }
+.btn-danger { background: #d33; color: white; }
+.btn-secondary { background: #f0f0f5; color: #333; }
+.btn:active { transform: scale(0.98); }
+
+.btn-group { display: flex; gap: 8px; }
+.btn-group .btn { flex: 1; }
+
+.badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.badge-active { background: #e8f5e9; color: #2a6b3a; }
+.badge-demo { background: #fff3cd; color: #856404; }
+
+.warning-box { background: #fff3cd; border: 2px solid #f0ad4e; border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #856404; line-height: 1.5; }
+
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 22px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; transition: opacity 0.3s; max-width: 90%; text-align: center; }
+.toast.show { opacity: 1; }
+.toast.ok { background: #2a9d4a; }
+.toast.err { background: #d33; }
+
+.file-input { display: none; }
+.file-label { display: block; width: 100%; padding: 12px; background: #f0f0f5; color: #333; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; text-align: center; margin-bottom: 8px; }
+.file-label:active { transform: scale(0.98); }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <h1>👤 Mi Cuenta</h1>
+    <p>Configuración y gestión de datos</p>
+  </div>
+  <div class="content">
+
+    <!-- SEGURIDAD -->
+    <div class="section">
+      <h3><span class="section-icon">🔐</span> Seguridad</h3>
+      <div class="info-row">
+        <span class="info-label">PIN actual:</span>
+        <span class="info-value">••••</span>
+      </div>
+      <div class="form-group" style="margin-top: 12px;">
+        <label>Cambiar PIN (4 dígitos)</label>
+        <input type="password" id="nuevo-pin" placeholder="Nuevo PIN" maxlength="4">
+      </div>
+      <button class="btn btn-primary" onclick="cambiarPin()">🔑 Cambiar PIN</button>
+    </div>
+
+    <!-- LICENCIA -->
+    <div class="section">
+      <h3><span class="section-icon">🆔</span> Licencia del Sistema</h3>
+      <div class="info-row">
+        <span class="info-label">Device ID:</span>
+        <span class="info-value mono" id="device-id">M2-XXXX</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Estado:</span>
+        <span class="badge badge-demo" id="licencia-estado">DEMO</span>
+      </div>
+      <div class="form-group" style="margin-top: 12px;">
+        <label>Clave de activación</label>
+        <input type="text" id="clave-licencia" placeholder="Ej: M2-XXXX-XXXX-XXXX" style="text-transform: uppercase;">
+      </div>
+      <button class="btn btn-success" onclick="activarLicencia()">✅ Activar Licencia</button>
+    </div>
+
+    <!-- ESTADÍSTICAS -->
+    <div class="section">
+      <h3><span class="section-icon">📊</span> Estadísticas</h3>
+      <div class="info-row">
+        <span class="info-label">Productos en stock:</span>
+        <span class="info-value" id="stat-productos">0</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Ventas registradas:</span>
+        <span class="info-value" id="stat-ventas">0</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Registros de auditoría:</span>
+        <span class="info-value" id="stat-auditoria">0</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Cierres de caja:</span>
+        <span class="info-value" id="stat-cierres">0</span>
+      </div>
+    </div>
+
+    <!-- BACKUP / RESTAURAR -->
+    <div class="section">
+      <h3><span class="section-icon">💾</span> Backup y Restauración</h3>
+      <button class="btn btn-success" onclick="exportarDatos()">📤 Exportar Backup (JSON)</button>
+      
+      <label class="file-label" for="import-file">📥 Restaurar desde Backup</label>
+      <input type="file" id="import-file" class="file-input" accept=".json" onchange="importarDatos(event)">
+    </div>
+
+    <!-- RESET -->
+    <div class="warning-box">
+      <b>⚠️ Zona de peligro:</b> Resetear borra TODOS los datos (productos, ventas, configuración). Esta acción no se puede deshacer.
+    </div>
+    <button class="btn btn-danger" onclick="resetearTodo()">🗑️ Resetear Todo</button>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ DATOS ============
+const PIN_DEFAULT = '1234';
+
+// ============ INICIO ============
+function iniciar() {
+  // Device ID
+  let deviceId = localStorage.getItem('device_id_v1');
+  if (!deviceId) {
+    deviceId = 'M2-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+    localStorage.setItem('device_id_v1', deviceId);
+  }
+  document.getElementById('device-id').textContent = deviceId;
+  
+  // Licencia
+  const licencia = localStorage.getItem('licencia_v1');
+  if (licencia === 'activa') {
+    document.getElementById('licencia-estado').textContent = 'ACTIVA';
+    document.getElementById('licencia-estado').className = 'badge badge-active';
+  }
+  
+  // Estadísticas
+  actualizarEstadisticas();
+  
+  console.log('✅ Mi Cuenta iniciada');
+}
+
+// ============ PIN ============
+function cambiarPin() {
+  const nuevo = document.getElementById('nuevo-pin').value;
+  
+  if (nuevo.length !== 4 || !/^\d+$/.test(nuevo)) {
+    toast('❌ El PIN debe ser de 4 dígitos numéricos', 'err');
+    return;
+  }
+  
+  if (confirm('¿Cambiar el PIN a ' + nuevo + '?\n\nRecordá el nuevo PIN para acceder al sistema.')) {
+    localStorage.setItem('pin_v1', nuevo);
+    document.getElementById('nuevo-pin').value = '';
+    toast('✅ PIN cambiado correctamente', 'ok');
+  }
+}
+
+// ============ LICENCIA ============
+function activarLicencia() {
+  const clave = document.getElementById('clave-licencia').value.trim().toUpperCase();
+  const deviceId = localStorage.getItem('device_id_v1');
+  
+  // Clave de ejemplo (cambiar en producción)
+  const CLAVE_VALIDA = 'M2-ACTIVAR-2026';
+  
+  if (clave === CLAVE_VALIDA || clave.includes(deviceId)) {
+    localStorage.setItem('licencia_v1', 'activa');
+    document.getElementById('licencia-estado').textContent = 'ACTIVA';
+    document.getElementById('licencia-estado').className = 'badge badge-active';
+    document.getElementById('clave-licencia').value = '';
+    toast('✅ Licencia activada correctamente', 'ok');
+  } else {
+    toast('❌ Clave de licencia inválida', 'err');
+  }
+}
+
+// ============ ESTADÍSTICAS ============
+function actualizarEstadisticas() {
+  const productos = JSON.parse(localStorage.getItem('productos_v1') || '[]');
+  const ventas = JSON.parse(localStorage.getItem('ventas_v1') || '[]');
+  const auditoria = JSON.parse(localStorage.getItem('auditoria_v1') || '[]');
+  const cierres = JSON.parse(localStorage.getItem('cierres_v1') || '[]');
+  
+  document.getElementById('stat-productos').textContent = productos.length;
+  document.getElementById('stat-ventas').textContent = ventas.length;
+  document.getElementById('stat-auditoria').textContent = auditoria.length;
+  document.getElementById('stat-cierres').textContent = cierres.length;
+}
+
+// ============ BACKUP ============
+function exportarDatos() {
+  const datos = {
+    version: '1.0',
+    fecha: new Date().toISOString(),
+    productos: JSON.parse(localStorage.getItem('productos_v1') || '[]'),
+    ventas: JSON.parse(localStorage.getItem('ventas_v1') || '[]'),
+    auditoria: JSON.parse(localStorage.getItem('auditoria_v1') || '[]'),
+    cierres: JSON.parse(localStorage.getItem('cierres_v1') || '[]'),
+    turno: JSON.parse(localStorage.getItem('turno_activo') || 'null'),
+    pin: localStorage.getItem('pin_v1') || PIN_DEFAULT,
+    licencia: localStorage.getItem('licencia_v1') || 'demo',
+    deviceId: localStorage.getItem('device_id_v1')
+  };
+  
+  const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'backup_mejorar2_' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  toast('✅ Backup exportado', 'ok');
+}
+
+function importarDatos(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const datos = JSON.parse(e.target.result);
+      
+      if (!datos.productos || !datos.ventas) {
+        throw new Error('Archivo inválido');
+      }
+      
+      if (confirm('¿Restaurar datos desde backup?\n\nEsto reemplazará todos los datos actuales.\n\nProductos: ' + datos.productos.length + '\nVentas: ' + datos.ventas.length)) {
+        localStorage.setItem('productos_v1', JSON.stringify(datos.productos));
+        localStorage.setItem('ventas_v1', JSON.stringify(datos.ventas));
+        localStorage.setItem('auditoria_v1', JSON.stringify(datos.auditoria || []));
+        localStorage.setItem('cierres_v1', JSON.stringify(datos.cierres || []));
+        
+        if (datos.turno) {
+          localStorage.setItem('turno_activo', JSON.stringify(datos.turno));
+        }
+        
+        if (datos.pin) {
+          localStorage.setItem('pin_v1', datos.pin);
+        }
+        
+        if (datos.licencia) {
+          localStorage.setItem('licencia_v1', datos.licencia);
+        }
+        
+        actualizarEstadisticas();
+        toast('✅ Datos restaurados correctamente', 'ok');
+      }
+    } catch(err) {
+      toast('❌ Error al leer el archivo: ' + err.message, 'err');
+    }
+  };
+  reader.readAsText(file);
+  
+  // Reset input para permitir seleccionar el mismo archivo de nuevo
+  event.target.value = '';
+}
+
+// ============ RESET ============
+function resetearTodo() {
+  if (confirm('⚠️ ¿RESETEAR TODO?\n\nSe borrarán:\n- Todos los productos\n- Todas las ventas\n- Auditoría\n- Cierres de caja\n- Configuración\n\nEsta acción NO se puede deshacer.\n\n¿Continuar?')) {
+    if (confirm('⚠️ ÚLTIMA CONFIRMACIÓN\n\n¿Estás 100% seguro de borrar TODO?')) {
+      localStorage.clear();
+      toast('🗑️ Todos los datos fueron borrados', 'ok');
+      setTimeout(() => location.reload(), 1500);
+    }
+  }
+}
+
+// ============ TOAST ============
+function toast(msg, tipo) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + tipo;
+  setTimeout(() => t.className = 'toast ' + tipo, 2500);
+}
+
+iniciar();
+</script>
+</body>
+</html>
