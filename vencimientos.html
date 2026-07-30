@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📅 Vencimientos - Mejorar 2</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 15px; }
+.card { background: white; border-radius: 20px; max-width: 500px; margin: 0 auto; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; }
+.header h1 { font-size: 20px; margin-bottom: 5px; }
+.header p { font-size: 12px; opacity: 0.9; }
+.content { padding: 20px; }
+
+.info { background: #e8f5e9; border: 2px solid #2a9d4a; border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #2a6b3a; line-height: 1.5; }
+
+/* Panel de estadísticas */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+.stat-card { border-radius: 12px; padding: 12px; text-align: center; }
+.stat-critico { background: #ffebee; border: 2px solid #d33; }
+.stat-urgente { background: #fff3e0; border: 2px solid #f57c00; }
+.stat-proximo { background: #fff8e1; border: 2px solid #fbc02d; }
+.stat-normal { background: #e8f5e9; border: 2px solid #2a9d4a; }
+.stat-value { font-size: 26px; font-weight: 800; }
+.stat-critico .stat-value { color: #d33; }
+.stat-urgente .stat-value { color: #f57c00; }
+.stat-proximo .stat-value { color: #fbc02d; }
+.stat-normal .stat-value { color: #2a9d4a; }
+.stat-label { font-size: 11px; font-weight: 600; margin-top: 3px; }
+.stat-critico .stat-label { color: #b71c1c; }
+.stat-urgente .stat-label { color: #e65100; }
+.stat-proximo .stat-label { color: #f57f17; }
+.stat-normal .stat-label { color: #1b5e20; }
+
+/* Filtros */
+.filters { display: flex; gap: 6px; margin-bottom: 15px; flex-wrap: wrap; }
+.filter-btn { padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 20px; background: white; font-size: 12px; font-weight: 600; cursor: pointer; }
+.filter-btn.active { background: #667eea; color: white; border-color: #667eea; }
+.filter-btn:active { transform: scale(0.96); }
+
+/* Tarjeta de producto */
+.prod-card { background: #f8f9fa; border-radius: 14px; padding: 14px; margin-bottom: 10px; border-left: 5px solid #2a9d4a; }
+.prod-card.nivel-critico { border-left-color: #d33; background: #fff5f5; }
+.prod-card.nivel-urgente { border-left-color: #f57c00; background: #fff8f0; }
+.prod-card.nivel-proximo { border-left-color: #fbc02d; background: #fffdf0; }
+.prod-card.nivel-normal { border-left-color: #2a9d4a; }
+
+.prod-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.prod-name { font-weight: 700; font-size: 15px; color: #333; }
+.prod-badge { padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.badge-critico { background: #d33; color: white; }
+.badge-urgente { background: #f57c00; color: white; }
+.badge-proximo { background: #fbc02d; color: #333; }
+.badge-normal { background: #2a9d4a; color: white; }
+
+.lote-info { font-size: 12px; color: #555; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
+.lote-fecha { font-weight: 600; }
+.lote-dias { font-size: 11px; padding: 2px 6px; border-radius: 8px; font-weight: 700; }
+.dias-critico { background: #d33; color: white; }
+.dias-urgente { background: #f57c00; color: white; }
+.dias-proximo { background: #fbc02d; color: #333; }
+.dias-normal { background: #e0e0e0; color: #555; }
+
+.prod-actions { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd; }
+.action-btn { flex: 1; padding: 8px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.btn-merma { background: #ffebee; color: #d33; }
+.btn-lote { background: #e3f2fd; color: #1565c0; }
+.btn-edit { background: #f0f0f5; color: #333; }
+.action-btn:active { transform: scale(0.96); }
+
+/* Botones principales */
+.btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+.btn-secondary { width: 100%; padding: 12px; background: #f0f0f5; color: #333; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+.btn-primary:active, .btn-secondary:active { transform: scale(0.98); }
+
+.empty { text-align: center; color: #888; padding: 30px; font-size: 13px; }
+
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 22px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; transition: opacity 0.3s; max-width: 90%; text-align: center; }
+.toast.show { opacity: 1; }
+.toast.ok { background: #2a9d4a; }
+.toast.err { background: #d33; }
+
+/* Banner de alerta crítica */
+.alert-banner { background: #d33; color: white; padding: 12px; border-radius: 12px; margin-bottom: 15px; font-size: 13px; font-weight: 600; text-align: center; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <h1>📅 Control de Vencimientos</h1>
+    <p>Alertas y gestión de lotes</p>
+  </div>
+  <div class="content">
+    
+    <div class="info">
+      <b>Niveles de alerta:</b><br>
+      🔴 Crítico: menos de 24 horas<br>
+      🟠 Urgente: 1 a 3 días<br>
+      🟡 Próximo: 4 a 7 días<br>
+      🟢 Normal: más de 7 días
+    </div>
+
+    <!-- Banner de alerta crítica -->
+    <div id="alert-banner" class="alert-banner" style="display:none"></div>
+
+    <!-- Estadísticas -->
+    <div class="stats-grid">
+      <div class="stat-card stat-critico">
+        <div class="stat-value" id="stat-critico">0</div>
+        <div class="stat-label">🔴 CRÍTICO</div>
+      </div>
+      <div class="stat-card stat-urgente">
+        <div class="stat-value" id="stat-urgente">0</div>
+        <div class="stat-label">🟠 URGENTE</div>
+      </div>
+      <div class="stat-card stat-proximo">
+        <div class="stat-value" id="stat-proximo">0</div>
+        <div class="stat-label">🟡 PRÓXIMO</div>
+      </div>
+      <div class="stat-card stat-normal">
+        <div class="stat-value" id="stat-normal">0</div>
+        <div class="stat-label">🟢 NORMAL</div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters">
+      <button class="filter-btn active" onclick="filtrar('todos', this)">Todos</button>
+      <button class="filter-btn" onclick="filtrar('critico', this)">🔴 Crítico</button>
+      <button class="filter-btn" onclick="filtrar('urgente', this)">🟠 Urgente</button>
+      <button class="filter-btn" onclick="filtrar('proximo', this)">🟡 Próximo</button>
+      <button class="filter-btn" onclick="filtrar('normal', this)">🟢 Normal</button>
+    </div>
+
+    <!-- Botones principales -->
+    <button class="btn-primary" onclick="agregarLote()">+ Agregar Lote con Vencimiento</button>
+    <button class="btn-secondary" onclick="exportarListado()">📤 Exportar Listado</button>
+
+    <!-- Lista de productos -->
+    <div id="lista"></div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ DATOS INICIALES ============
+// Genera fechas relativas a hoy para simular distintos niveles de alerta
+const hoy = new Date();
+hoy.setHours(0, 0, 0, 0);
+
+function diasDesdeHoy(dias) {
+  const fecha = new Date(hoy);
+  fecha.setDate(fecha.getDate() + dias);
+  return fecha.toISOString().split('T')[0];
+}
+
+const PRODUCTOS_INICIALES = [
+  { id: 1, nombre: 'Leche La Serenísima 1L', codigo: '7790020123456', precio: 1600, stock: 18, lotes: [
+    { id: 101, cantidad: 6, fechaVencimiento: diasDesdeHoy(0) },   // Vence HOY (crítico)
+    { id: 102, cantidad: 12, fechaVencimiento: diasDesdeHoy(15) }  // Normal
+  ]},
+  { id: 2, nombre: 'Yogur Yogurísimo 1kg', codigo: '7790020999999', precio: 2200, stock: 10, lotes: [
+    { id: 201, cantidad: 10, fechaVencimiento: diasDesdeHoy(1) }   // Crítico
+  ]},
+  { id: 3, nombre: 'Pan de Molde Bimbo', codigo: '7790350111123', precio: 2800, stock: 8, lotes: [
+    { id: 301, cantidad: 8, fechaVencimiento: diasDesdeHoy(2) }    // Urgente
+  ]},
+  { id: 4, nombre: 'Jamón Cocido (fiambrería)', codigo: '2000000000001', precio: 8000, stock: 2, lotes: [
+    { id: 401, cantidad: 2, fechaVencimiento: diasDesdeHoy(4) }    // Urgente
+  ]},
+  { id: 5, nombre: 'Queso Cremoso (fiambrería)', codigo: '2000000000002', precio: 9500, stock: 3, lotes: [
+    { id: 501, cantidad: 3, fechaVencimiento: diasDesdeHoy(6) }    // Próximo
+  ]},
+  { id: 6, nombre: 'Coca Cola 500ml', codigo: '7790080000509', precio: 1500, stock: 24, lotes: [
+    { id: 601, cantidad: 24, fechaVencimiento: diasDesdeHoy(45) }  // Normal
+  ]},
+  { id: 7, nombre: 'Galletitas Oreo', codigo: '7790320777779', precio: 1800, stock: 15, lotes: [
+    { id: 701, cantidad: 15, fechaVencimiento: diasDesdeHoy(90) }  // Normal
+  ]},
+  { id: 8, nombre: 'Yerba Taragüi 1kg', codigo: '7790245100015', precio: 3500, stock: 12, lotes: [
+    { id: 801, cantidad: 12, fechaVencimiento: diasDesdeHoy(180) } // Normal
+  ]}
+];
+
+let productos = [];
+let filtroActual = 'todos';
+
+// ============ INICIO ============
+function iniciar() {
+  const guardados = localStorage.getItem('productos_v1');
+  if (guardados) {
+    try { 
+      productos = JSON.parse(guardados);
+      // Si los productos no tienen lotes, agregarles lotes por defecto
+      productos.forEach(p => {
+        if (!p.lotes || p.lotes.length === 0) {
+          p.lotes = [{ id: Date.now() + Math.random(), cantidad: p.stock, fechaVencimiento: diasDesdeHoy(30) }];
+        }
+      });
+    } catch(e) { 
+      productos = JSON.parse(JSON.stringify(PRODUCTOS_INICIALES)); 
+      guardar(); 
+    }
+  } else {
+    productos = JSON.parse(JSON.stringify(PRODUCTOS_INICIALES));
+    guardar();
+  }
+  
+  actualizarStats();
+  mostrarLista();
+  verificarAlertasCriticas();
+  console.log('✅ Vencimientos iniciado');
+}
+
+function guardar() {
+  localStorage.setItem('productos_v1', JSON.stringify(productos));
+}
+
+// ============ CÁLCULO DE NIVEL ============
+function calcularNivel(fechaVenc) {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const venc = new Date(fechaVenc + 'T00:00:00');
+  const diffMs = venc - hoy;
+  const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDias < 0) return { nivel: 'critico', dias: diffDias, texto: 'VENCIDO' };
+  if (diffDias === 0) return { nivel: 'critico', dias: 0, texto: 'Vence HOY' };
+  if (diffDias <= 3) return { nivel: 'urgente', dias: diffDias, texto: diffDias + (diffDias === 1 ? ' día' : ' días') };
+  if (diffDias <= 7) return { nivel: 'proximo', dias: diffDias, texto: diffDias + ' días' };
+  return { nivel: 'normal', dias: diffDias, texto: diffDias + ' días' };
+}
+
+function obtenerNivelMasCritico(producto) {
+  if (!producto.lotes || producto.lotes.length === 0) return { nivel: 'normal', dias: 999, texto: 'Sin lotes' };
+  
+  let masCritico = { nivel: 'normal', dias: 999, texto: '' };
+  const orden = { critico: 0, urgente: 1, proximo: 2, normal: 3 };
+  
+  producto.lotes.forEach(lote => {
+    const info = calcularNivel(lote.fechaVencimiento);
+    if (orden[info.nivel] < orden[masCritico.nivel]) {
+      masCritico = info;
+    }
+  });
+  
+  return masCritico;
+}
+
+// ============ ESTADÍSTICAS ============
+function actualizarStats() {
+  const stats = { critico: 0, urgente: 0, proximo: 0, normal: 0 };
+  
+  productos.forEach(p => {
+    const nivel = obtenerNivelMasCritico(p).nivel;
+    stats[nivel]++;
+  });
+  
+  document.getElementById('stat-critico').textContent = stats.critico;
+  document.getElementById('stat-urgente').textContent = stats.urgente;
+  document.getElementById('stat-proximo').textContent = stats.proximo;
+  document.getElementById('stat-normal').textContent = stats.normal;
+}
+
+function verificarAlertasCriticas() {
+  const criticos = productos.filter(p => obtenerNivelMasCritico(p).nivel === 'critico');
+  const banner = document.getElementById('alert-banner');
+  
+  if (criticos.length > 0) {
+    banner.style.display = 'block';
+    banner.innerHTML = '🚨 ATENCIÓN: ' + criticos.length + ' producto(s) con vencimiento crítico. Revisar inmediatamente.';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+// ============ FILTROS ============
+function filtrar(nivel, btn) {
+  filtroActual = nivel;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  mostrarLista();
+}
+
+// ============ LISTA ============
+function mostrarLista() {
+  const cont = document.getElementById('lista');
+  
+  // Filtrar productos según nivel
+  let filtrados = productos;
+  if (filtroActual !== 'todos') {
+    filtrados = productos.filter(p => obtenerNivelMasCritico(p).nivel === filtroActual);
+  }
+  
+  // Ordenar: primero los más críticos
+  const orden = { critico: 0, urgente: 1, proximo: 2, normal: 3 };
+  filtrados.sort((a, b) => {
+    const na = orden[obtenerNivelMasCritico(a).nivel];
+    const nb = orden[obtenerNivelMasCritico(b).nivel];
+    return na - nb;
+  });
+  
+  if (filtrados.length === 0) {
+    cont.innerHTML = '<p class="empty">No hay productos en este nivel</p>';
+    return;
+  }
+  
+  let html = '';
+  filtrados.forEach(p => {
+    const nivelInfo = obtenerNivelMasCritico(p);
+    const badgeClass = 'badge-' + nivelInfo.nivel;
+    const cardClass = 'nivel-' + nivelInfo.nivel;
+    const badgeTexto = nivelInfo.nivel.toUpperCase();
+    
+    html += `
+      <div class="prod-card ${cardClass}">
+        <div class="prod-header">
+          <div class="prod-name">${p.nombre}</div>
+          <span class="prod-badge ${badgeClass}">${badgeTexto}</span>
+        </div>
+    `;
+    
+    // Mostrar cada lote
+    if (p.lotes && p.lotes.length > 0) {
+      p.lotes.forEach(lote => {
+        const loteInfo = calcularNivel(lote.fechaVencimiento);
+        const diasClass = 'dias-' + loteInfo.nivel;
+        const fechaFormateada = formatearFecha(lote.fechaVencimiento);
+        
+        html += `
+          <div class="lote-info">
+            <span class="lote-fecha">📅 ${fechaFormateada}</span>
+            <span>Cant: ${lote.cantidad} un.</span>
+          </div>
+          <div class="lote-info">
+            <span>Estado:</span>
+            <span class="lote-dias ${diasClass}">${loteInfo.texto}</span>
+          </div>
+        `;
+      });
+    } else {
+      html += '<div class="lote-info" style="color:#888;font-style:italic;">Sin lotes registrados</div>';
+    }
+    
+    html += `
+        <div class="prod-actions">
+          <button class="action-btn btn-merma" onclick="marcarMerma(${p.id})">🗑️ Merma</button>
+          <button class="action-btn btn-lote" onclick="agregarLoteAProducto(${p.id})">+ Lote</button>
+          <button class="action-btn btn-edit" onclick="editarFecha(${p.id})">✏️ Editar</button>
+        </div>
+      </div>
+    `;
+  });
+  
+  cont.innerHTML = html;
+}
+
+// ============ ACCIONES ============
+function agregarLote() {
+  if (productos.length === 0) {
+    toast('❌ No hay productos. Primero creá productos en Stock', 'err');
+    return;
+  }
+  
+  // Mostrar lista de productos para elegir
+  let opciones = productos.map((p, i) => (i + 1) + '. ' + p.nombre).join('\n');
+  const seleccion = prompt('Elegí un producto (número):\n\n' + opciones);
+  if (!seleccion) return;
+  
+  const idx = parseInt(seleccion) - 1;
+  if (isNaN(idx) || idx < 0 || idx >= productos.length) {
+    toast('❌ Número inválido', 'err');
+    return;
+  }
+  
+  const producto = productos[idx];
+  agregarLoteAProducto(producto.id);
+}
+
+function agregarLoteAProducto(prodId) {
+  const producto = productos.find(p => p.id === prodId);
+  if (!producto) return;
+  
+  const cantidad = parseInt(prompt('Cantidad del lote:', '10'));
+  if (isNaN(cantidad) || cantidad <= 0) {
+    toast('❌ Cantidad inválida', 'err');
+    return;
+  }
+  
+  const fechaStr = prompt('Fecha de vencimiento (YYYY-MM-DD):\n\nEjemplo: 2026-08-15', diasDesdeHoy(30));
+  if (!fechaStr) return;
+  
+  // Validar formato de fecha
+  const fecha = new Date(fechaStr + 'T00:00:00');
+  if (isNaN(fecha.getTime())) {
+    toast('❌ Fecha inválida', 'err');
+    return;
+  }
+  
+  if (!producto.lotes) producto.lotes = [];
+  producto.lotes.push({
+    id: Date.now() + Math.random(),
+    cantidad: cantidad,
+    fechaVencimiento: fechaStr
+  });
+  
+  guardar();
+  actualizarStats();
+  mostrarLista();
+  verificarAlertasCriticas();
+  toast('✅ Lote agregado', 'ok');
+}
+
+function marcarMerma(prodId) {
+  const producto = productos.find(p => p.id === prodId);
+  if (!producto) return;
+  
+  if (!producto.lotes || producto.lotes.length === 0) {
+    toast('❌ No hay lotes para merma', 'err');
+    return;
+  }
+  
+  const motivo = prompt('Motivo de la merma:\n\n1. Vencido\n2. Dañado\n3. Defectuoso\n4. Otro\n\nIngresá el número:', '1');
+  if (!motivo) return;
+  
+  const motivos = { '1': 'Vencido', '2': 'Dañado', '3': 'Defectuoso', '4': 'Otro' };
+  const motivoTexto = motivos[motivo] || 'Otro';
+  
+  const cantidadMerma = parseInt(prompt('Cantidad a dar de baja:', producto.lotes[0].cantidad));
+  if (isNaN(cantidadMerma) || cantidadMerma <= 0) {
+    toast('❌ Cantidad inválida', 'err');
+    return;
+  }
+  
+  if (confirm('¿Confirmar merma de ' + cantidadMerma + ' unidades de "' + producto.nombre + '"?\n\nMotivo: ' + motivoTexto + '\n\nEsta acción se registrará en auditoría.')) {
+    // Descontar del stock
+    producto.stock = Math.max(0, producto.stock - cantidadMerma);
+    
+    // Descontar de los lotes (empezando por el más próximo a vencer - FEFO)
+    let restante = cantidadMerma;
+    producto.lotes.sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento));
+    
+    for (let i = 0; i < producto.lotes.length && restante > 0; i++) {
+      const lote = producto.lotes[i];
+      const descontar = Math.min(lote.cantidad, restante);
+      lote.cantidad -= descontar;
+      restante -= descontar;
+    }
+    
+    // Eliminar lotes vacíos
+    producto.lotes = producto.lotes.filter(l => l.cantidad > 0);
+    
+    // Registrar en auditoría
+    const auditoria = JSON.parse(localStorage.getItem('auditoria_v1') || '[]');
+    auditoria.unshift({
+      timestamp: new Date().toISOString(),
+      usuario: 'SISTEMA',
+      accion: 'MERMA',
+      detalle: producto.nombre + ' - ' + cantidadMerma + ' un. - Motivo: ' + motivoTexto
+    });
+    localStorage.setItem('auditoria_v1', JSON.stringify(auditoria));
+    
+    guardar();
+    actualizarStats();
+    mostrarLista();
+    verificarAlertasCriticas();
+    toast('🗑️ Merma registrada: ' + cantidadMerma + ' un.', 'ok');
+  }
+}
+
+function editarFecha(prodId) {
+  const producto = productos.find(p => p.id === prodId);
+  if (!producto || !producto.lotes || producto.lotes.length === 0) {
+    toast('❌ No hay lotes para editar', 'err');
+    return;
+  }
+  
+  // Si hay múltiples lotes, elegir cuál editar
+  let loteIdx = 0;
+  if (producto.lotes.length > 1) {
+    let opciones = producto.lotes.map((l, i) => (i + 1) + '. Vence: ' + formatearFecha(l.fechaVencimiento) + ' (' + l.cantidad + ' un.)').join('\n');
+    const sel = prompt('¿Qué lote querés editar?\n\n' + opciones);
+    if (!sel) return;
+    loteIdx = parseInt(sel) - 1;
+    if (isNaN(loteIdx) || loteIdx < 0 || loteIdx >= producto.lotes.length) {
+      toast('❌ Número inválido', 'err');
+      return;
+    }
+  }
+  
+  const nuevaFecha = prompt('Nueva fecha de vencimiento (YYYY-MM-DD):', producto.lotes[loteIdx].fechaVencimiento);
+  if (!nuevaFecha) return;
+  
+  const fecha = new Date(nuevaFecha + 'T00:00:00');
+  if (isNaN(fecha.getTime())) {
+    toast('❌ Fecha inválida', 'err');
+    return;
+  }
+  
+  producto.lotes[loteIdx].fechaVencimiento = nuevaFecha;
+  guardar();
+  actualizarStats();
+  mostrarLista();
+  verificarAlertasCriticas();
+  toast('✅ Fecha actualizada', 'ok');
+}
+
+// ============ EXPORTAR ============
+function exportarListado() {
+  let texto = 'REPORTE DE VENCIMIENTOS\n';
+  texto += 'Generado: ' + new Date().toLocaleString('es-AR') + '\n';
+  texto += '='.repeat(60) + '\n\n';
+  
+  const niveles = ['critico', 'urgente', 'proximo', 'normal'];
+  const nombres = { critico: '🔴 CRÍTICO', urgente: '🟠 URGENTE', proximo: '🟡 PRÓXIMO', normal: '🟢 NORMAL' };
+  
+  niveles.forEach(nivel => {
+    const prods = productos.filter(p => obtenerNivelMasCritico(p).nivel === nivel);
+    if (prods.length === 0) return;
+    
+    texto += nombres[nivel] + ' (' + prods.length + ' productos)\n';
+    texto += '-'.repeat(60) + '\n';
+    
+    prods.forEach(p => {
+      texto += '\n' + p.nombre + ' (Stock: ' + p.stock + ')\n';
+      if (p.lotes) {
+        p.lotes.forEach(lote => {
+          const info = calcularNivel(lote.fechaVencimiento);
+          texto += '  - Vence: ' + formatearFecha(lote.fechaVencimiento) + ' | Cant: ' + lote.cantidad + ' | ' + info.texto + '\n';
+        });
+      }
+    });
+    texto += '\n';
+  });
+  
+  const blob = new Blob([texto], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'vencimientos_' + new Date().toISOString().slice(0, 10) + '.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  toast('📤 Reporte exportado', 'ok');
+}
+
+// ============ UTILIDADES ============
+function formatearFecha(fechaStr) {
+  const fecha = new Date(fechaStr + 'T00:00:00');
+  return fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function toast(msg, tipo) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + tipo;
+  setTimeout(() => t.className = 'toast ' + tipo, 2500);
+}
+
+iniciar();
+</script>
+</body>
+</html>
