@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📦 Proveedores - Mejorar 2</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 15px; }
+.card { background: white; border-radius: 20px; max-width: 500px; margin: 0 auto; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; }
+.header h1 { font-size: 20px; margin-bottom: 5px; }
+.header p { font-size: 12px; opacity: 0.9; }
+.content { padding: 20px; }
+
+.info { background: #e8f5e9; border: 2px solid #2a9d4a; border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #2a6b3a; line-height: 1.5; }
+
+.search { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 14px; margin-bottom: 12px; }
+.search:focus { outline: none; border-color: #667eea; }
+
+.btn-add { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 15px; }
+.btn-add:active { transform: scale(0.98); }
+
+.prov-card { background: #f8f9fa; border-radius: 14px; padding: 14px; margin-bottom: 10px; border-left: 4px solid #667eea; }
+.prov-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.prov-name { font-weight: 700; font-size: 15px; color: #333; }
+.prov-cuit { font-size: 11px; color: #888; font-family: monospace; margin-top: 2px; }
+.prov-actions { display: flex; gap: 6px; }
+.icon-btn { background: white; border: 1px solid #ddd; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+.icon-btn:active { background: #f0f0f0; }
+
+.prov-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; margin-bottom: 10px; }
+.info-item { display: flex; align-items: center; gap: 5px; color: #555; }
+.info-item .label { color: #888; }
+.info-item .value { font-weight: 600; color: #333; }
+
+.prov-contact { display: flex; gap: 6px; padding-top: 10px; border-top: 1px solid #e0e0e0; }
+.contact-btn { flex: 1; padding: 8px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px; }
+.btn-call { background: #e3f2fd; color: #1565c0; }
+.btn-whatsapp { background: #e8f5e9; color: #2a6b3a; }
+.btn-email { background: #fff3e0; color: #e65100; }
+.contact-btn:active { transform: scale(0.96); }
+
+.prov-meta { display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e0e0e0; }
+.meta-item { display: flex; align-items: center; gap: 4px; }
+.meta-value { font-weight: 700; color: #667eea; }
+
+.empty { text-align: center; color: #888; padding: 30px; font-size: 13px; }
+
+.stats { background: #f8f9fa; border-radius: 14px; padding: 15px; margin-top: 15px; }
+.stats h3 { font-size: 14px; color: #333; margin-bottom: 10px; }
+.stat-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px solid #e0e0e0; }
+.stat-row:last-child { border-bottom: none; }
+.stat-row strong { color: #667eea; }
+
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 22px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; transition: opacity 0.3s; max-width: 90%; text-align: center; }
+.toast.show { opacity: 1; }
+.toast.ok { background: #2a9d4a; }
+.toast.err { background: #d33; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <h1>📦 Proveedores</h1>
+    <p>Gestión de proveedores del negocio</p>
+  </div>
+  <div class="content">
+    <div class="info">
+      <b>Cómo usar:</b><br>
+      1. Tocá "+ Nuevo Proveedor" para agregar<br>
+      2. Completá los datos del proveedor<br>
+      3. Desde la tarjeta podés llamar, enviar WhatsApp o email directo
+    </div>
+
+    <input type="text" class="search" id="buscador" placeholder="🔍 Buscar por nombre, CUIT o teléfono..." oninput="mostrarLista()">
+    
+    <button class="btn-add" onclick="nuevoProveedor()">+ Nuevo Proveedor</button>
+    
+    <div id="lista"></div>
+
+    <div class="stats">
+      <h3>📊 Estadísticas</h3>
+      <div class="stat-row">
+        <span>Total de proveedores:</span>
+        <strong id="stat-total">0</strong>
+      </div>
+      <div class="stat-row">
+        <span>Margen promedio:</span>
+        <strong id="stat-margen">0%</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ DATOS INICIALES ============
+const PROVEEDORES_INICIALES = [
+  { 
+    id: 1, 
+    nombre: 'Coca-Cola FEMSA', 
+    cuit: '30-56789012-3', 
+    telefono: '1145678901', 
+    whatsapp: '5491145678901', 
+    email: 'ventas@cocacola.com.ar', 
+    direccion: 'Av. Del Libertador 1234, CABA',
+    tiempoReposicion: 3,
+    margenGlobal: 25,
+    creado: new Date().toISOString()
+  },
+  { 
+    id: 2, 
+    nombre: 'Arcor S.A.', 
+    cuit: '30-61234567-8', 
+    telefono: '3514567890', 
+    whatsapp: '5493514567890', 
+    email: 'pedidos@arcor.com', 
+    direccion: 'Av. San Martín 500, Córdoba',
+    tiempoReposicion: 5,
+    margenGlobal: 30,
+    creado: new Date().toISOString()
+  },
+  { 
+    id: 3, 
+    nombre: 'Molinos Río de la Plata', 
+    cuit: '30-54321098-7', 
+    telefono: '1143215678', 
+    whatsapp: '5491143215678', 
+    email: 'ventas@molinos.com.ar', 
+    direccion: 'Av. Paseo Colón 850, CABA',
+    tiempoReposicion: 7,
+    margenGlobal: 20,
+    creado: new Date().toISOString()
+  }
+];
+
+let proveedores = [];
+
+// ============ INICIO ============
+function iniciar() {
+  const guardados = localStorage.getItem('proveedores_v1');
+  if (guardados) {
+    try { proveedores = JSON.parse(guardados); }
+    catch(e) { proveedores = [...PROVEEDORES_INICIALES]; guardar(); }
+  } else {
+    proveedores = [...PROVEEDORES_INICIALES];
+    guardar();
+  }
+  mostrarLista();
+  actualizarStats();
+  console.log('✅ Proveedores iniciado. Total:', proveedores.length);
+}
+
+function guardar() {
+  localStorage.setItem('proveedores_v1', JSON.stringify(proveedores));
+}
+
+// ============ LISTA ============
+function mostrarLista() {
+  const busq = (document.getElementById('buscador').value || '').toLowerCase();
+  const cont = document.getElementById('lista');
+  const filtrados = proveedores.filter(p => 
+    p.nombre.toLowerCase().includes(busq) || 
+    (p.cuit && p.cuit.includes(busq)) ||
+    (p.telefono && p.telefono.includes(busq))
+  );
+  
+  if (filtrados.length === 0) {
+    cont.innerHTML = '<p class="empty">No se encontraron proveedores</p>';
+    return;
+  }
+  
+  let html = '';
+  filtrados.forEach(p => {
+    html += `
+      <div class="prov-card">
+        <div class="prov-header">
+          <div>
+            <div class="prov-name">${p.nombre}</div>
+            <div class="prov-cuit">CUIT: ${p.cuit || 'Sin CUIT'}</div>
+          </div>
+          <div class="prov-actions">
+            <button class="icon-btn" onclick="editar(${p.id})" title="Editar">✏️</button>
+            <button class="icon-btn" onclick="eliminar(${p.id})" title="Eliminar">🗑️</button>
+          </div>
+        </div>
+        
+        <div class="prov-info">
+          <div class="info-item">
+            <span class="label">📞</span>
+            <span class="value">${p.telefono || '-'}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">📧</span>
+            <span class="value" style="font-size:11px">${p.email || '-'}</span>
+          </div>
+          <div class="info-item" style="grid-column: span 2">
+            <span class="label">📍</span>
+            <span class="value" style="font-size:11px">${p.direccion || '-'}</span>
+          </div>
+        </div>
+        
+        <div class="prov-contact">
+          ${p.telefono ? `<a href="tel:${p.telefono}" class="contact-btn btn-call">📞 Llamar</a>` : ''}
+          ${p.whatsapp ? `<a href="https://wa.me/${p.whatsapp}" target="_blank" class="contact-btn btn-whatsapp">💬 WhatsApp</a>` : ''}
+          ${p.email ? `<a href="mailto:${p.email}" class="contact-btn btn-email">📧 Email</a>` : ''}
+        </div>
+        
+        <div class="prov-meta">
+          <div class="meta-item">
+            ⏱️ Reposición: <span class="meta-value">${p.tiempoReposicion || 0} días</span>
+          </div>
+          <div class="meta-item">
+            💰 Margen: <span class="meta-value">${p.margenGlobal || 0}%</span>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  cont.innerHTML = html;
+}
+
+// ============ ALTA / EDICIÓN ============
+function nuevoProveedor() {
+  const nombre = prompt('Nombre del proveedor:');
+  if (!nombre) return;
+  
+  const cuit = prompt('CUIT (ej: 30-12345678-9):') || '';
+  const telefono = prompt('Teléfono:') || '';
+  const whatsapp = prompt('WhatsApp (con código país, ej: 5491112345678):') || '';
+  const email = prompt('Email:') || '';
+  const direccion = prompt('Dirección:') || '';
+  const tiempoReposicion = parseInt(prompt('Tiempo de reposición (en días):', '5')) || 5;
+  const margenGlobal = parseFloat(prompt('Margen de ganancia global (%):', '25')) || 25;
+  
+  const nuevoId = proveedores.length > 0 ? Math.max(...proveedores.map(p => p.id)) + 1 : 1;
+  proveedores.push({
+    id: nuevoId,
+    nombre,
+    cuit,
+    telefono,
+    whatsapp,
+    email,
+    direccion,
+    tiempoReposicion,
+    margenGlobal,
+    creado: new Date().toISOString()
+  });
+  
+  guardar();
+  mostrarLista();
+  actualizarStats();
+  toast('✅ Proveedor creado', 'ok');
+}
+
+function editar(id) {
+  const p = proveedores.find(x => x.id === id);
+  if (!p) return;
+  
+  const nombre = prompt('Nombre:', p.nombre);
+  if (nombre === null) return;
+  
+  const cuit = prompt('CUIT:', p.cuit || '');
+  if (cuit === null) return;
+  
+  const telefono = prompt('Teléfono:', p.telefono || '');
+  if (telefono === null) return;
+  
+  const whatsapp = prompt('WhatsApp:', p.whatsapp || '');
+  if (whatsapp === null) return;
+  
+  const email = prompt('Email:', p.email || '');
+  if (email === null) return;
+  
+  const direccion = prompt('Dirección:', p.direccion || '');
+  if (direccion === null) return;
+  
+  const tiempoReposicion = parseInt(prompt('Tiempo de reposición (días):', p.tiempoReposicion || 5));
+  if (isNaN(tiempoReposicion)) return;
+  
+  const margenGlobal = parseFloat(prompt('Margen de ganancia global (%):', p.margenGlobal || 25));
+  if (isNaN(margenGlobal)) return;
+  
+  p.nombre = nombre;
+  p.cuit = cuit;
+  p.telefono = telefono;
+  p.whatsapp = whatsapp;
+  p.email = email;
+  p.direccion = direccion;
+  p.tiempoReposicion = tiempoReposicion;
+  p.margenGlobal = margenGlobal;
+  
+  guardar();
+  mostrarLista();
+  actualizarStats();
+  toast('✅ Proveedor actualizado', 'ok');
+}
+
+function eliminar(id) {
+  const p = proveedores.find(x => x.id === id);
+  if (!p) return;
+  
+  if (confirm('¿Eliminar al proveedor "' + p.nombre + '"?\n\nEsta acción no se puede deshacer.')) {
+    proveedores = proveedores.filter(x => x.id !== id);
+    guardar();
+    mostrarLista();
+    actualizarStats();
+    toast('🗑️ Proveedor eliminado', 'ok');
+  }
+}
+
+// ============ ESTADÍSTICAS ============
+function actualizarStats() {
+  document.getElementById('stat-total').textContent = proveedores.length;
+  
+  if (proveedores.length > 0) {
+    const margenProm = proveedores.reduce((s, p) => s + (p.margenGlobal || 0), 0) / proveedores.length;
+    document.getElementById('stat-margen').textContent = margenProm.toFixed(1) + '%';
+  } else {
+    document.getElementById('stat-margen').textContent = '0%';
+  }
+}
+
+// ============ TOAST ============
+function toast(msg, tipo) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + tipo;
+  setTimeout(() => t.className = 'toast ' + tipo, 2500);
+}
+
+iniciar();
+</script>
+</body>
+</html>
