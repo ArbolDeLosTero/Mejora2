@@ -14,77 +14,86 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .content { padding: 20px; }
 
 .info { background: #e8f5e9; border: 2px solid #2a9d4a; border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #2a6b3a; line-height: 1.5; }
-.warning { background: #fff3cd; border: 2px solid #f0ad4e; border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #856404; line-height: 1.5; }
-.auto-box { background: #e3f2fd; border: 2px solid #1565c0; border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #0d47a1; line-height: 1.5; }
 
-.section { background: #f8f9fa; border-radius: 14px; padding: 15px; margin-bottom: 15px; }
-.section h3 { font-size: 14px; color: #333; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.tabs { display: flex; gap: 5px; margin-bottom: 20px; background: #f0f0f5; padding: 4px; border-radius: 12px; }
+.tab { flex: 1; padding: 12px; border: none; border-radius: 10px; background: transparent; font-size: 13px; font-weight: 600; cursor: pointer; color: #666; transition: all 0.2s; }
+.tab.active { background: white; color: #667eea; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
-.btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 10px; text-align: left; display: flex; align-items: center; gap: 10px; }
+.section { display: none; }
+.section.active { display: block; }
+
+.section-title { font-size: 16px; font-weight: 700; color: #333; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 600; }
+.form-group input, .form-group select, .form-group textarea { 
+  width: 100%; 
+  padding: 10px; 
+  border: 2px solid #e0e0e0; 
+  border-radius: 10px; 
+  font-size: 14px; 
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { 
+  outline: none; 
+  border-color: #667eea; 
+}
+.form-group textarea { resize: vertical; min-height: 60px; }
+
+.checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.checkbox-group input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+.checkbox-group label { font-size: 13px; color: #333; cursor: pointer; }
+
+.btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
 .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
 .btn-success { background: #2a9d4a; color: white; }
-.btn-danger { background: #d33; color: white; }
-.btn-secondary { background: #f0f0f5; color: #333; }
-.btn-universal { background: linear-gradient(135deg, #2a9d4a, #1e7a38); color: white; border: 2px solid #1e7a38; }
 .btn:active { transform: scale(0.98); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-icon { font-size: 20px; }
-.btn-text { flex: 1; }
-.btn-text small { display: block; font-size: 10px; opacity: 0.85; font-weight: 400; margin-top: 2px; }
 
-.printer-card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 8px; border: 2px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
-.printer-card.selected { border-color: #2a9d4a; background: #f0fdf4; }
-.printer-info { flex: 1; }
-.printer-name { font-weight: 700; font-size: 14px; color: #333; }
-.printer-detail { font-size: 11px; color: #888; margin-top: 2px; font-family: monospace; }
-.printer-type { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; margin-top: 4px; }
-.type-usb { background: #e3f2fd; color: #1565c0; }
-.type-bt { background: #f3e5f5; color: #7b1fa2; }
-.type-serial { background: #fff3e0; color: #e65100; }
-.type-nfc { background: #e8f5e9; color: #2a6b3a; }
-.auto-badge { background: #1565c0; color: white; font-size: 9px; padding: 2px 6px; border-radius: 8px; margin-left: 6px; font-weight: 700; }
-.remove-btn { background: #ffebee; color: #d33; border: none; padding: 6px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; margin-left: 6px; }
+.selector-ancho { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
+.ancho-btn { padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; background: white; font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.2s; }
+.ancho-btn.active { border-color: #667eea; background: #eef2ff; color: #667eea; }
 
-.status-box { border-radius: 12px; padding: 12px; text-align: center; margin-bottom: 15px; }
-.status-ok { background: #e8f5e9; border: 2px solid #2a9d4a; color: #2a6b3a; }
-.status-error { background: #ffebee; border: 2px solid #d33; color: #b71c1c; }
-.status-waiting { background: #fff3cd; border: 2px solid #f0ad4e; color: #856404; }
-.status-icon { font-size: 32px; margin-bottom: 5px; }
-.status-title { font-weight: 700; font-size: 14px; }
-.status-detail { font-size: 12px; margin-top: 3px; }
+.file-upload { position: relative; }
+.file-upload input[type="file"] { display: none; }
+.file-upload-label { 
+  display: block; 
+  padding: 12px; 
+  background: #f0f0f5; 
+  border: 2px dashed #ccc; 
+  border-radius: 10px; 
+  text-align: center; 
+  cursor: pointer; 
+  font-size: 13px; 
+  color: #666;
+}
+.file-upload-label:hover { background: #e9ecef; }
 
-.log-box { background: #1a1a2e; border-radius: 12px; padding: 12px; max-height: 200px; overflow-y: auto; }
-.log-item { font-family: monospace; font-size: 11px; color: #a0a0c0; padding: 4px 0; border-bottom: 1px solid #2a2a4e; }
-.log-item:last-child { border-bottom: none; }
-.log-time { color: #667eea; }
-.log-ok { color: #6bcf7f; }
-.log-err { color: #ff6b6b; }
-.log-info { color: #ffd93d; }
-
-.empty { text-align: center; color: #888; padding: 20px; font-size: 13px; }
+.preview-container { 
+  background: #f8f9fa; 
+  border: 2px solid #e0e0e0; 
+  border-radius: 12px; 
+  padding: 15px; 
+  margin-top: 20px; 
+}
+.preview-title { font-size: 13px; font-weight: 600; color: #666; margin-bottom: 10px; }
+.ticket-preview { 
+  background: white; 
+  border: 1px solid #ddd; 
+  padding: 15px; 
+  font-family: 'Courier New', monospace; 
+  font-size: 11px; 
+  line-height: 1.4; 
+  max-width: 300px; 
+  margin: 0 auto;
+}
+.ticket-preview .center { text-align: center; }
+.ticket-preview .bold { font-weight: bold; }
+.ticket-preview .separator { border-top: 1px dashed #333; margin: 8px 0; }
+.ticket-preview img { max-width: 100%; height: auto; margin-bottom: 10px; }
 
 .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 22px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 300; opacity: 0; transition: opacity 0.3s; max-width: 90%; text-align: center; }
 .toast.show { opacity: 1; }
 .toast.ok { background: #2a9d4a; }
 .toast.err { background: #d33; }
-
-.capability { display: flex; justify-content: space-between; padding: 6px 0; font-size: 12px; border-bottom: 1px solid #e0e0e0; }
-.capability:last-child { border-bottom: none; }
-.cap-ok { color: #2a9d4a; font-weight: 600; }
-.cap-no { color: #d33; font-weight: 600; }
-
-.mode-selector { display: flex; gap: 8px; margin-bottom: 15px; background: #f0f0f5; padding: 4px; border-radius: 12px; }
-.mode-btn { flex: 1; padding: 10px; border: none; border-radius: 10px; background: transparent; font-size: 12px; font-weight: 600; cursor: pointer; color: #666; transition: all 0.2s; }
-.mode-btn.active { background: white; color: #667eea; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-
-.ticket-preview { background: white; border: 2px dashed #ccc; border-radius: 12px; padding: 15px; margin-top: 15px; font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.4; max-width: 300px; margin-left: auto; margin-right: auto; }
-.ticket-preview .center { text-align: center; }
-.ticket-preview .bold { font-weight: bold; }
-.ticket-preview .separator { border-top: 1px dashed #333; margin: 8px 0; }
-
-.selector-ancho { display: flex; gap: 8px; margin-bottom: 15px; }
-.ancho-btn { flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 10px; background: white; font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; }
-.ancho-btn.active { border-color: #667eea; background: #eef2ff; color: #667eea; }
 </style>
 </head>
 <body>
@@ -92,179 +101,134 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 <div class="card">
   <div class="header">
     <h1>🖨️ Configurar Impresora</h1>
-    <p>Universal (cualquier impresora) + Directa (USB/BT/Serial/NFC)</p>
+    <p>Impresora + Ticket</p>
   </div>
   <div class="content">
 
-    <div class="info">
-      <b>🎯 Dos modos de impresión:</b><br>
-      • <b>Universal:</b> Funciona con CUALQUIER impresora (sin configuración)<br>
-      • <b>Directa:</b> Impresión rápida con ticketera térmica (corte automático)
+    <div class="tabs">
+      <button class="tab active" onclick="cambiarTab('impresora', this)">🖨️ Impresora</button>
+      <button class="tab" onclick="cambiarTab('ticket', this)">🎨 Ticket</button>
     </div>
 
-    <div class="mode-selector">
-      <button class="mode-btn active" onclick="cambiarModo('universal', this)">🌐 Universal</button>
-      <button class="mode-btn" onclick="cambiarModo('directa', this)">⚡ Directa</button>
-    </div>
-
-    <!-- Selector de ancho de papel -->
-    <div class="section">
-      <h3>📏 Ancho del papel</h3>
-      <div class="selector-ancho">
-        <button class="ancho-btn active" onclick="cambiarAncho(58, this)">58 mm</button>
-        <button class="ancho-btn" onclick="cambiarAncho(80, this)">80 mm</button>
-      </div>
-      <p style="font-size:11px;color:#666;">Tu Xprinter XP-58IIZ usa papel de <b>58mm</b>.</p>
-    </div>
-
-    <!-- MODO UNIVERSAL -->
-    <div id="modo-universal">
-      <div class="auto-box">
-        <b>✅ Modo Universal (Recomendado):</b><br>
-        Abre el ticket en una ventana nueva con formato de ticketera. Vos elegís tu impresora en el diálogo del navegador. <b>Funciona con cualquier impresora que tengas instalada en Windows.</b>
-      </div>
+    <!-- SECCIÓN 1: IMPRESORA -->
+    <div id="sec-impresora" class="section active">
+      <div class="section-title">🖨️ Configuración de Impresora</div>
       
-      <button class="btn btn-universal" onclick="imprimirTicketActual()">
-        <span class="btn-icon">🧾</span>
-        <span class="btn-text">
-          Imprimir ticket de venta
-          <small>Abre el diálogo de impresión con el ticket</small>
-        </span>
+      <div class="info">
+        <b>✅ Modo Universal:</b><br>
+        Detecta automáticamente todas las impresoras conectadas a tu dispositivo (USB, Bluetooth, WiFi, etc.). No requiere configuración adicional.
+      </div>
+
+      <div class="form-group">
+        <label>Tamaño del papel</label>
+        <div class="selector-ancho">
+          <button class="ancho-btn active" onclick="cambiarAncho(58, this)">58 mm</button>
+          <button class="ancho-btn" onclick="cambiarAncho(80, this)">80 mm</button>
+          <button class="ancho-btn" onclick="cambiarAncho(210, this)">A4</button>
+          <button class="ancho-btn" onclick="cambiarAncho(100, this)">100 mm</button>
+        </div>
+      </div>
+
+      <button class="btn btn-success" onclick="imprimirPrueba()">
+        🧪 Imprimir ticket de prueba
       </button>
 
-      <button class="btn btn-success" onclick="imprimirPruebaUniversal()">
-        <span class="btn-icon">🧪</span>
-        <span class="btn-text">Imprimir ticket de prueba</span>
-      </button>
-    </div>
-
-    <!-- MODO DIRECTA -->
-    <div id="modo-directa" style="display:none;">
-      <div class="warning">
-        <b>⚡ Modo Directa:</b><br>
-        Para ticketeras térmicas. Impresión rápida con corte automático.<br>
-        <b>⚠️ En Windows:</b> requiere reemplazar el driver con Zadig (configuración única).<br>
-        <b>✅ En Android con OTG:</b> funciona directo sin configuración.
-      </div>
-
-      <div class="section">
-        <h3>🔍 Compatibilidad del dispositivo</h3>
-        <div class="capability">
-          <span>🔌 WebUSB (USB / OTG)</span>
-          <span id="cap-usb" class="cap-no">Verificando...</span>
+      <div class="preview-container">
+        <div class="preview-title">👁️ Vista previa del ticket</div>
+        <div class="ticket-preview" id="ticket-preview">
+          <!-- Se genera dinámicamente -->
         </div>
-        <div class="capability">
-          <span>📶 Web Bluetooth (BLE)</span>
-          <span id="cap-bt" class="cap-no">Verificando...</span>
-        </div>
-        <div class="capability">
-          <span>🔗 Web Serial (RS-232)</span>
-          <span id="cap-serial" class="cap-no">Verificando...</span>
-        </div>
-        <div class="capability">
-          <span>📱 Web NFC</span>
-          <span id="cap-nfc" class="cap-no">Verificando...</span>
-        </div>
-        <div class="capability">
-          <span>🔒 HTTPS (requerido)</span>
-          <span id="cap-https" class="cap-no">Verificando...</span>
-        </div>
-      </div>
-
-      <div id="status-box" class="status-box status-waiting">
-        <div class="status-icon">⏳</div>
-        <div class="status-title">Sin impresora directa configurada</div>
-        <div class="status-detail">Conectá una ticketera térmica</div>
-      </div>
-
-      <div class="section">
-        <h3>🔌 Conectar ticketera</h3>
-        
-        <button class="btn btn-primary" onclick="conectarUSB()">
-          <span class="btn-icon">🔌</span>
-          <span class="btn-text">
-            USB / USB-OTG
-            <small>Cable directo o adaptador OTG al celular</small>
-          </span>
-        </button>
-        
-        <button class="btn btn-primary" onclick="conectarBluetooth()">
-          <span class="btn-icon">📶</span>
-          <span class="btn-text">
-            Bluetooth (BLE)
-            <small>Bluetooth Low Energy (no SPP clásico)</small>
-          </span>
-        </button>
-        
-        <button class="btn btn-primary" onclick="conectarSerial()">
-          <span class="btn-icon">🔗</span>
-          <span class="btn-text">
-            Serial RS-232 / USB-Serial
-            <small>Puerto COM o adaptador FTDI/Prolific</small>
-          </span>
-        </button>
-        
-        <button class="btn btn-primary" onclick="conectarNFC()">
-          <span class="btn-icon">📱</span>
-          <span class="btn-text">
-            NFC
-            <small>Solo Android Chrome - Impresoras portátiles</small>
-          </span>
-        </button>
-      </div>
-
-      <div class="section">
-        <h3>📋 Ticketeras guardadas</h3>
-        <div id="lista-impresoras">
-          <p class="empty">No hay ticketeras guardadas.<br>Conectá una usando los botones de arriba.</p>
-        </div>
-      </div>
-
-      <button class="btn btn-success" id="btn-probar" onclick="imprimirPruebaDirecta()" disabled>
-        <span class="btn-icon">🧪</span>
-        <span class="btn-text">Imprimir ticket de prueba (Directa)</span>
-      </button>
-      
-      <button class="btn btn-secondary" onclick="desconectar()">
-        <span class="btn-icon">🔌</span>
-        <span class="btn-text">Desconectar ticketera actual</span>
-      </button>
-    </div>
-
-    <div class="section">
-      <h3>👁️ Preview del ticket</h3>
-      <div class="ticket-preview" id="ticket-preview">
-        <div class="center bold" style="font-size: 14px;">MEJORAR 2</div>
-        <div class="center">Sistema de Gestión Comercial</div>
-        <div class="separator"></div>
-        <div>Ticket de prueba</div>
-        <div>Fecha: <span id="preview-fecha"></span></div>
-        <div class="separator"></div>
-        <div>Coca Cola 500ml    x2   $3.000</div>
-        <div>Yerba Taragüi 1kg  x1   $3.500</div>
-        <div>Alfajor            x3   $3.600</div>
-        <div class="separator"></div>
-        <div class="bold" style="font-size: 13px;">TOTAL:          $10.100</div>
-        <div>Método: EFECTIVO</div>
-        <div>Recibido: $15.000</div>
-        <div>Vuelto: $4.900</div>
-        <div class="separator"></div>
-        <div class="center">¡Gracias por su compra!</div>
       </div>
     </div>
 
-    <div class="section">
-      <h3>📝 Registro de actividad</h3>
-      <div class="log-box" id="log-box">
-        <div class="log-item"><span class="log-info">Sistema iniciado. Listo para imprimir.</span></div>
-      </div>
-    </div>
+    <!-- SECCIÓN 2: TICKET -->
+    <div id="sec-ticket" class="section">
+      <div class="section-title">🎨 Configuración del Ticket</div>
 
-    <div class="warning">
-      <b>⚠️ Importante:</b><br>
-      • <b>Modo Universal:</b> Funciona con cualquier impresora instalada en Windows/Mac<br>
-      • <b>Modo Directa:</b> Solo ticketeras térmicas, requiere configuración en Windows<br>
-      • <b>Android con OTG:</b> Modo Directa funciona sin configuración
+      <!-- ENCABEZADO -->
+      <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+        <h3 style="font-size: 14px; margin-bottom: 12px; color: #333;">📝 Encabezado (parte superior)</h3>
+        
+        <div class="form-group">
+          <label>Imagen / Logo (opcional)</label>
+          <div class="file-upload">
+            <input type="file" id="logo-input" accept="image/*" onchange="cargarLogo(event)">
+            <label for="logo-input" class="file-upload-label">
+              📷 Subir imagen (PNG, JPG)
+            </label>
+          </div>
+          <div id="logo-preview" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="form-group">
+          <label>Nombre del negocio</label>
+          <input type="text" id="negocio-nombre" placeholder="Ej: Kiosco Don Juan" oninput="actualizarPreview()">
+        </div>
+
+        <div class="form-group">
+          <label>Ubicación / Dirección</label>
+          <input type="text" id="negocio-ubicacion" placeholder="Ej: Av. Siempre Viva 1234" oninput="actualizarPreview()">
+        </div>
+
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="text" id="negocio-telefono" placeholder="Ej: 11-1234-5678" oninput="actualizarPreview()">
+        </div>
+      </div>
+
+      <!-- PIE DE PÁGINA -->
+      <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+        <h3 style="font-size: 14px; margin-bottom: 12px; color: #333;">📝 Pie de página (parte inferior)</h3>
+        
+        <div class="form-group">
+          <label>Mensaje personalizado</label>
+          <textarea id="pie-mensaje" placeholder="Ej: ¡Gracias por su compra!" oninput="actualizarPreview()"></textarea>
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="mostrar-fecha" checked onchange="actualizarPreview()">
+          <label for="mostrar-fecha">Mostrar fecha y hora</label>
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="mostrar-numero-ticket" checked onchange="actualizarPreview()">
+          <label for="mostrar-numero-ticket">Mostrar número de ticket</label>
+        </div>
+      </div>
+
+      <!-- FORMATO DE TEXTO -->
+      <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+        <h3 style="font-size: 14px; margin-bottom: 12px; color: #333;">🔤 Formato de texto</h3>
+        
+        <div class="form-group">
+          <label>Fuente</label>
+          <select id="texto-fuente" onchange="actualizarPreview()">
+            <option value="'Courier New', monospace">Courier New (recomendado para ticketeras)</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="'Times New Roman', serif">Times New Roman</option>
+            <option value="Verdana, sans-serif">Verdana</option>
+            <option value="'Comic Sans MS', cursive">Comic Sans</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Tamaño de letra: <span id="tamano-label">11px</span></label>
+          <input type="range" id="texto-tamano" min="8" max="18" value="11" oninput="actualizarTamano()">
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="texto-negrita" onchange="actualizarPreview()">
+          <label for="texto-negrita">Aplicar negritas a todo el texto</label>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="guardarConfiguracion()">
+        💾 Guardar configuración
+      </button>
+
+      <button class="btn btn-success" onclick="imprimirPrueba()">
+        🧪 Probar impresión con esta configuración
+      </button>
     </div>
 
   </div>
@@ -276,83 +240,271 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 // ============================================================
 // ESTADO GLOBAL
 // ============================================================
-let modoActual = 'universal';
-let impresoraDirecta = null;
-let tipoConexion = null;
-let anchoPapel = 58; // 58mm o 80mm
-const STORAGE_KEY = 'impresoras_guardadas_v1';
+let anchoPapel = 58;
+let logoBase64 = null;
 
 // ============================================================
 // INICIALIZACIÓN
 // ============================================================
 function iniciar() {
-  document.getElementById('preview-fecha').textContent = new Date().toLocaleString('es-AR');
-  verificarCompatibilidad();
-  renderListaImpresoras();
-  intentarReconexionAutomatica();
+  cargarConfiguracion();
+  actualizarPreview();
 }
 
 // ============================================================
-// CAMBIO DE MODO
+// CAMBIO DE TAB
 // ============================================================
-function cambiarModo(modo, btn) {
-  modoActual = modo;
-  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+function cambiarTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('modo-universal').style.display = modo === 'universal' ? 'block' : 'none';
-  document.getElementById('modo-directa').style.display = modo === 'directa' ? 'block' : 'none';
-  log('info', 'Modo cambiado a: ' + modo);
+  document.getElementById('sec-' + tab).classList.add('active');
 }
 
 // ============================================================
-// CAMBIO DE ANCHO DE PAPEL
+// CAMBIO DE ANCHO
 // ============================================================
 function cambiarAncho(ancho, btn) {
   anchoPapel = ancho;
   document.querySelectorAll('.ancho-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  log('info', 'Ancho de papel cambiado a: ' + ancho + 'mm');
   toast('📏 Ancho: ' + ancho + 'mm', 'ok');
+  actualizarPreview();
 }
 
 // ============================================================
-// COMPATIBILIDAD
+// CARGAR LOGO
 // ============================================================
-function verificarCompatibilidad() {
-  const caps = {
-    usb: 'usb' in navigator,
-    bt: 'bluetooth' in navigator,
-    serial: 'serial' in navigator,
-    nfc: 'NDEFReader' in window,
-    https: location.protocol === 'https:' || location.hostname === 'localhost'
+function cargarLogo(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    logoBase64 = e.target.result;
+    document.getElementById('logo-preview').innerHTML = `<img src="${logoBase64}" style="max-width: 150px; border-radius: 8px;">`;
+    actualizarPreview();
+    toast('✅ Logo cargado', 'ok');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ============================================================
+// ACTUALIZAR TAMAÑO
+// ============================================================
+function actualizarTamano() {
+  const tamano = document.getElementById('texto-tamano').value;
+  document.getElementById('tamano-label').textContent = tamano + 'px';
+  actualizarPreview();
+}
+
+// ============================================================
+// ACTUALIZAR PREVIEW
+// ============================================================
+function actualizarPreview() {
+  const preview = document.getElementById('ticket-preview');
+  
+  const nombre = document.getElementById('negocio-nombre').value || 'MEJORAR 2';
+  const ubicacion = document.getElementById('negocio-ubicacion').value;
+  const telefono = document.getElementById('negocio-telefono').value;
+  const pieMensaje = document.getElementById('pie-mensaje').value || '¡Gracias por su compra!';
+  const mostrarFecha = document.getElementById('mostrar-fecha').checked;
+  const mostrarNumero = document.getElementById('mostrar-numero-ticket').checked;
+  const fuente = document.getElementById('texto-fuente').value;
+  const tamano = document.getElementById('texto-tamano').value;
+  const negrita = document.getElementById('texto-negrita').checked;
+  
+  let html = '';
+  
+  // Logo
+  if (logoBase64) {
+    html += `<img src="${logoBase64}">`;
+  }
+  
+  // Encabezado
+  html += `<div class="center ${negrita ? 'bold' : ''}" style="font-size: ${parseInt(tamano) + 3}px;">${nombre}</div>`;
+  
+  if (ubicacion) {
+    html += `<div class="center" style="font-size: ${tamano}px;">${ubicacion}</div>`;
+  }
+  
+  if (telefono) {
+    html += `<div class="center" style="font-size: ${tamano}px;">Tel: ${telefono}</div>`;
+  }
+  
+  html += '<div class="separator"></div>';
+  
+  // Contenido del ticket (ejemplo)
+  if (mostrarNumero) {
+    html += `<div style="font-size: ${tamano}px;">N° Ticket: #1234</div>`;
+  }
+  
+  if (mostrarFecha) {
+    html += `<div style="font-size: ${tamano}px;">Fecha: ${new Date().toLocaleString('es-AR')}</div>`;
+  }
+  
+  html += '<div class="separator"></div>';
+  
+  // Productos de ejemplo
+  html += `<div style="font-size: ${tamano}px;">Coca Cola 500ml    x2   $3.000</div>`;
+  html += `<div style="font-size: ${tamano}px;">Yerba Taragüi 1kg  x1   $3.500</div>`;
+  html += `<div style="font-size: ${tamano}px;">Alfajor            x3   $3.600</div>`;
+  
+  html += '<div class="separator"></div>';
+  
+  // Total
+  html += `<div class="${negrita ? 'bold' : ''}" style="font-size: ${parseInt(tamano) + 2}px;">TOTAL:          $10.100</div>`;
+  
+  html += '<div class="separator"></div>';
+  
+  // Pie de página
+  html += `<div class="center" style="font-size: ${tamano}px;">${pieMensaje}</div>`;
+  
+  preview.style.fontFamily = fuente;
+  preview.style.fontSize = tamano + 'px';
+  preview.innerHTML = html;
+}
+
+// ============================================================
+// GUARDAR CONFIGURACIÓN
+// ============================================================
+function guardarConfiguracion() {
+  const config = {
+    anchoPapel: anchoPapel,
+    logo: logoBase64,
+    negocioNombre: document.getElementById('negocio-nombre').value,
+    negocioUbicacion: document.getElementById('negocio-ubicacion').value,
+    negocioTelefono: document.getElementById('negocio-telefono').value,
+    pieMensaje: document.getElementById('pie-mensaje').value,
+    mostrarFecha: document.getElementById('mostrar-fecha').checked,
+    mostrarNumero: document.getElementById('mostrar-numero-ticket').checked,
+    textoFuente: document.getElementById('texto-fuente').value,
+    textoTamano: document.getElementById('texto-tamano').value,
+    textoNegrita: document.getElementById('texto-negrita').checked
   };
   
-  Object.keys(caps).forEach(key => {
-    const el = document.getElementById('cap-' + key);
-    if (el) {
-      el.textContent = caps[key] ? '✅ Disponible' : '❌ No disponible';
-      el.className = caps[key] ? 'cap-ok' : 'cap-no';
-    }
-  });
-  
-  log('info', 'Compatibilidad: USB=' + caps.usb + ', BT=' + caps.bt + ', Serial=' + caps.serial + ', NFC=' + caps.nfc);
+  localStorage.setItem('ticket_config_v1', JSON.stringify(config));
+  toast('✅ Configuración guardada', 'ok');
 }
 
 // ============================================================
-// MODO UNIVERSAL - IMPRIMIR TICKET
+// CARGAR CONFIGURACIÓN
 // ============================================================
-
-// Genera el HTML del ticket con formato de ticketera
-function generarHTMLTicket(esPrueba = false) {
-  const fecha = new Date().toLocaleString('es-AR');
-  const ancho = anchoPapel + 'mm';
+function cargarConfiguracion() {
+  const guardada = localStorage.getItem('ticket_config_v1');
+  if (!guardada) return;
   
-  return `
+  try {
+    const config = JSON.parse(guardada);
+    
+    anchoPapel = config.anchoPapel || 58;
+    logoBase64 = config.logo || null;
+    
+    document.getElementById('negocio-nombre').value = config.negocioNombre || '';
+    document.getElementById('negocio-ubicacion').value = config.negocioUbicacion || '';
+    document.getElementById('negocio-telefono').value = config.negocioTelefono || '';
+    document.getElementById('pie-mensaje').value = config.pieMensaje || '';
+    document.getElementById('mostrar-fecha').checked = config.mostrarFecha !== false;
+    document.getElementById('mostrar-numero-ticket').checked = config.mostrarNumero !== false;
+    document.getElementById('texto-fuente').value = config.textoFuente || "'Courier New', monospace";
+    document.getElementById('texto-tamano').value = config.textoTamano || 11;
+    document.getElementById('texto-negrita').checked = config.textoNegrita || false;
+    
+    if (logoBase64) {
+      document.getElementById('logo-preview').innerHTML = `<img src="${logoBase64}" style="max-width: 150px; border-radius: 8px;">`;
+    }
+    
+    // Actualizar selector de ancho
+    document.querySelectorAll('.ancho-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if (btn.textContent.includes(anchoPapel + ' mm') || btn.textContent.includes(anchoPapel === 210 ? 'A4' : '')) {
+        btn.classList.add('active');
+      }
+    });
+    
+    document.getElementById('tamano-label').textContent = config.textoTamano + 'px';
+    
+  } catch(e) {
+    console.error('Error cargando configuración:', e);
+  }
+}
+
+// ============================================================
+// IMPRIMIR PRUEBA
+// ============================================================
+function imprimirPrueba() {
+  const nombre = document.getElementById('negocio-nombre').value || 'MEJORAR 2';
+  const ubicacion = document.getElementById('negocio-ubicacion').value;
+  const telefono = document.getElementById('negocio-telefono').value;
+  const pieMensaje = document.getElementById('pie-mensaje').value || '¡Gracias por su compra!';
+  const mostrarFecha = document.getElementById('mostrar-fecha').checked;
+  const mostrarNumero = document.getElementById('mostrar-numero-ticket').checked;
+  const fuente = document.getElementById('texto-fuente').value;
+  const tamano = document.getElementById('texto-tamano').value;
+  const negrita = document.getElementById('texto-negrita').checked;
+  
+  const ancho = anchoPapel + 'mm';
+  const fecha = new Date().toLocaleString('es-AR');
+  
+  let contenido = '';
+  
+  if (logoBase64) {
+    contenido += `<div class="center"><img src="${logoBase64}" style="max-width: 100%; height: auto;"></div>`;
+  }
+  
+  contenido += `<div class="center ${negrita ? 'bold' : ''}" style="font-size: ${parseInt(tamano) + 3}px;">${nombre}</div>`;
+  
+  if (ubicacion) {
+    contenido += `<div class="center">${ubicacion}</div>`;
+  }
+  
+  if (telefono) {
+    contenido += `<div class="center">Tel: ${telefono}</div>`;
+  }
+  
+  contenido += '<div class="separator"></div>';
+  
+  contenido += `<div class="bold center">TICKET DE PRUEBA</div>`;
+  
+  if (mostrarNumero) {
+    contenido += `<div class="item"><span>N° Ticket:</span><span>#${String(Math.floor(Math.random()*9999)).padStart(4,'0')}</span></div>`;
+  }
+  
+  if (mostrarFecha) {
+    contenido += `<div class="item"><span>Fecha:</span><span>${fecha}</span></div>`;
+  }
+  
+  contenido += '<div class="separator"></div>';
+  
+  contenido += `<div class="item bold"><span>Producto</span><span>Total</span></div>`;
+  contenido += '<div class="separator" style="border-top-style:dotted;margin:1mm 0;"></div>';
+  
+  contenido += `<div class="item"><span class="item-nombre">Coca Cola 500ml</span><span>x2</span><span class="item-total">$3.000</span></div>`;
+  contenido += `<div class="item"><span class="item-nombre">Yerba Taragüi 1kg</span><span>x1</span><span class="item-total">$3.500</span></div>`;
+  contenido += `<div class="item"><span class="item-nombre">Alfajor</span><span>x3</span><span class="item-total">$3.600</span></div>`;
+  
+  contenido += '<div class="separator"></div>';
+  
+  contenido += `<div class="item"><span>Subtotal:</span><span>$10.100</span></div>`;
+  contenido += `<div class="item ${negrita ? 'bold' : ''}" style="font-size: ${parseInt(tamano) + 2}px;"><span>TOTAL:</span><span>$10.100</span></div>`;
+  
+  contenido += '<div class="separator"></div>';
+  
+  contenido += `<div class="item"><span>Método de pago:</span><span>EFECTIVO</span></div>`;
+  contenido += `<div class="item"><span>Recibido:</span><span>$15.000</span></div>`;
+  contenido += `<div class="item bold"><span>Vuelto:</span><span>$4.900</span></div>`;
+  
+  contenido += '<div class="separator"></div>';
+  
+  contenido += `<div class="center ${negrita ? 'bold' : ''}">${pieMensaje}</div>`;
+  contenido += `<div class="center" style="font-size:9px;margin-top:2mm;">Ticket generado el ${fecha}</div>`;
+  
+  const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Ticket - Mejorar 2</title>
+  <title>Ticket - ${nombre}</title>
   <style>
     @page {
       size: ${ancho} auto;
@@ -360,18 +512,18 @@ function generarHTMLTicket(esPrueba = false) {
     }
     * { box-sizing: border-box; }
     body {
-      font-family: 'Courier New', monospace;
-      font-size: 11px;
+      font-family: ${fuente};
+      font-size: ${tamano}px;
       width: ${ancho};
       margin: 0;
       padding: 2mm;
       line-height: 1.3;
       color: #000;
+      ${negrita ? 'font-weight: bold;' : ''}
     }
     .center { text-align: center; }
     .right { text-align: right; }
     .bold { font-weight: bold; }
-    .grande { font-size: 14px; font-weight: bold; }
     .separator {
       border-top: 1px dashed #000;
       margin: 3mm 0;
@@ -389,42 +541,7 @@ function generarHTMLTicket(esPrueba = false) {
   </style>
 </head>
 <body>
-  <div class="center grande">MEJORAR 2</div>
-  <div class="center">Sistema de Gestión Comercial</div>
-  <div class="center" style="font-size:9px;">🌸 Desarrollado por MiMo</div>
-  <div class="separator"></div>
-  
-  ${esPrueba ? '<div class="bold center">TICKET DE PRUEBA</div>' : '<div class="bold">VENTA</div>'}
-  <div class="item"><span>Fecha:</span><span>${fecha}</span></div>
-  <div class="item"><span>N° Ticket:</span><span>#${String(Math.floor(Math.random()*9999)).padStart(4,'0')}</span></div>
-  
-  <div class="separator"></div>
-  
-  <div class="item bold"><span>Producto</span><span>Total</span></div>
-  <div class="separator" style="border-top-style:dotted;margin:1mm 0;"></div>
-  
-  <div class="item"><span class="item-nombre">Coca Cola 500ml</span><span>x2</span><span class="item-total">$3.000</span></div>
-  <div class="item"><span class="item-nombre">Yerba Taragüi 1kg</span><span>x1</span><span class="item-total">$3.500</span></div>
-  <div class="item"><span class="item-nombre">Alfajor</span><span>x3</span><span class="item-total">$3.600</span></div>
-  
-  <div class="separator"></div>
-  
-  <div class="item"><span>Subtotal:</span><span>$10.100</span></div>
-  <div class="item grande"><span>TOTAL:</span><span>$10.100</span></div>
-  
-  <div class="separator"></div>
-  
-  <div class="item"><span>Método de pago:</span><span>EFECTIVO</span></div>
-  <div class="item"><span>Recibido:</span><span>$15.000</span></div>
-  <div class="item bold"><span>Vuelto:</span><span>$4.900</span></div>
-  
-  <div class="separator"></div>
-  
-  <div class="center bold">¡Gracias por su compra!</div>
-  <div class="center" style="font-size:9px;margin-top:2mm;">
-    Ticket generado el ${fecha}
-  </div>
-  
+  ${contenido}
   <script>
     window.onload = function() {
       setTimeout(function() { window.print(); }, 300);
@@ -433,18 +550,11 @@ function generarHTMLTicket(esPrueba = false) {
 </body>
 </html>
   `;
-}
-
-// Imprime ticket de prueba (universal)
-function imprimirPruebaUniversal() {
-  log('info', 'Generando ticket de prueba universal...');
   
-  const html = generarHTMLTicket(true);
   const ventana = window.open('', '_blank', 'width=400,height=600');
   
   if (!ventana) {
     toast('❌ Bloqueador de ventanas emergentes. Permití popups para este sitio.', 'err');
-    log('err', 'Popup bloqueado por el navegador');
     return;
   }
   
@@ -452,610 +562,11 @@ function imprimirPruebaUniversal() {
   ventana.document.close();
   
   toast('✅ Ticket abierto. Elegí tu impresora.', 'ok');
-  log('ok', '✅ Ticket de prueba abierto en nueva ventana');
-}
-
-// Imprime ticket de venta (universal)
-function imprimirTicketActual() {
-  log('info', 'Generando ticket de venta...');
-  
-  const html = generarHTMLTicket(false);
-  const ventana = window.open('', '_blank', 'width=400,height=600');
-  
-  if (!ventana) {
-    toast('❌ Bloqueador de ventanas emergentes. Permití popups.', 'err');
-    return;
-  }
-  
-  ventana.document.write(html);
-  ventana.document.close();
-  
-  toast('✅ Ticket abierto. Elegí tu impresora.', 'ok');
-  log('ok', '✅ Ticket de venta abierto en nueva ventana');
 }
 
 // ============================================================
-// MODO DIRECTA - RECONEXIÓN AUTOMÁTICA
+// TOAST
 // ============================================================
-async function intentarReconexionAutomatica() {
-  const guardadas = obtenerImpresorasGuardadas();
-  if (guardadas.length === 0) {
-    log('info', 'No hay impresoras directas guardadas');
-    return;
-  }
-  
-  const ultima = guardadas[guardadas.length - 1];
-  log('info', 'Intentando reconectar: ' + ultima.nombre + ' (' + ultima.tipo + ')');
-  
-  try {
-    if (ultima.tipo === 'usb' && 'usb' in navigator) {
-      const dispositivos = await navigator.usb.getDevices();
-      const encontrado = dispositivos.find(d => 
-        d.vendorId === ultima.vendorId && d.productId === ultima.productId
-      );
-      
-      if (encontrado) {
-        log('ok', '✅ Impresora USB encontrada, reconectando...');
-        await reconectarUSB(encontrado);
-        return;
-      }
-    }
-    
-    if (ultima.tipo === 'bluetooth' && 'bluetooth' in navigator) {
-      const dispositivos = await navigator.bluetooth.getDevices();
-      const encontrado = dispositivos.find(d => d.id === ultima.deviceId);
-      
-      if (encontrado) {
-        log('ok', '✅ Impresora BT encontrada, reconectando...');
-        await reconectarBluetooth(encontrado);
-        return;
-      }
-    }
-    
-    if (ultima.tipo === 'serial' && 'serial' in navigator) {
-      const puertos = await navigator.serial.getPorts();
-      if (puertos.length > 0) {
-        log('ok', '✅ Puerto serial encontrado, reconectando...');
-        await reconectarSerial(puertos[0]);
-        return;
-      }
-    }
-    
-    log('info', 'La impresora guardada no está conectada actualmente');
-    
-  } catch(err) {
-    log('err', 'Error en reconexión: ' + err.message);
-  }
-}
-
-// ============================================================
-// CONEXIÓN USB / OTG
-// ============================================================
-async function conectarUSB() {
-  if (!('usb' in navigator)) {
-    toast('❌ WebUSB no disponible', 'err');
-    return;
-  }
-  
-  try {
-    log('info', 'Abriendo selector USB...');
-    
-    const dispositivo = await navigator.usb.requestDevice({
-      filters: [
-        { classCode: 7 },
-        { vendorId: 0x0416 },
-        { vendorId: 0x0483 },
-        { vendorId: 0x04b8 },
-        { vendorId: 0x0493 },
-        { vendorId: 0x04a8 },
-        { vendorId: 0x04b9 },
-        { vendorId: 0x0a5f },
-        { vendorId: 0x067b },
-        { vendorId: 0x1a86 },
-      ]
-    });
-    
-    await reconectarUSB(dispositivo);
-    
-    guardarImpresora({
-      nombre: dispositivo.productName || 'Impresora USB',
-      tipo: 'usb',
-      vendorId: dispositivo.vendorId,
-      productId: dispositivo.productId,
-      fabricante: dispositivo.manufacturerName || 'Desconocido'
-    });
-    
-  } catch(err) {
-    manejarError(err, 'USB');
-  }
-}
-
-async function reconectarUSB(dispositivo) {
-  try {
-    await dispositivo.open();
-    
-    if (dispositivo.configuration === null) {
-      await dispositivo.selectConfiguration(1);
-    }
-    
-    const interfaces = dispositivo.configuration.interfaces;
-    let ifaceImpresora = null;
-    let endpointOut = null;
-    
-    for (const iface of interfaces) {
-      const alt = iface.alternate;
-      if (alt.interfaceClass === 7) {
-        ifaceImpresora = iface;
-        for (const ep of alt.endpoints) {
-          if (ep.direction === 'out') {
-            endpointOut = ep;
-            break;
-          }
-        }
-        break;
-      }
-    }
-    
-    if (!ifaceImpresora || !endpointOut) {
-      throw new Error('No es una impresora compatible');
-    }
-    
-    await dispositivo.claimInterface(ifaceImpresora.interfaceNumber);
-    
-    impresoraDirecta = {
-      dispositivo,
-      interfaz: ifaceImpresora.interfaceNumber,
-      endpoint: endpointOut.endpointNumber,
-      nombre: dispositivo.productName || 'Impresora USB',
-      fabricante: dispositivo.manufacturerName || 'Desconocido'
-    };
-    tipoConexion = 'usb';
-    
-    actualizarEstado('ok', '✅', 'Impresora conectada', impresoraDirecta.nombre + ' (USB)');
-    document.getElementById('btn-probar').disabled = false;
-    
-    log('ok', '✅ Conectado: ' + impresoraDirecta.nombre);
-    toast('✅ ' + impresoraDirecta.nombre + ' conectada', 'ok');
-    
-    dispositivo.addEventListener('disconnect', () => {
-      log('err', 'Impresora USB desconectada');
-      actualizarEstado('error', '❌', 'Desconectada', 'La impresora fue desconectada');
-      document.getElementById('btn-probar').disabled = true;
-    });
-    
-  } catch(err) {
-    throw err;
-  }
-}
-
-// ============================================================
-// CONEXIÓN BLUETOOTH
-// ============================================================
-async function conectarBluetooth() {
-  if (!('bluetooth' in navigator)) {
-    toast('❌ Web Bluetooth no disponible', 'err');
-    return;
-  }
-  
-  try {
-    log('info', 'Abriendo selector Bluetooth...');
-    
-    const dispositivo = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true,
-      optionalServices: [
-        '000018f0-0000-1000-8000-00805f9b34fb',
-        'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
-        '0000ffe0-0000-1000-8000-00805f9b34fb',
-        '0000ffe1-0000-1000-8000-00805f9b34fb',
-      ]
-    });
-    
-    await reconectarBluetooth(dispositivo);
-    
-    guardarImpresora({
-      nombre: dispositivo.name || 'Impresora Bluetooth',
-      tipo: 'bluetooth',
-      deviceId: dispositivo.id
-    });
-    
-  } catch(err) {
-    manejarError(err, 'Bluetooth');
-  }
-}
-
-async function reconectarBluetooth(dispositivo) {
-  try {
-    const server = await dispositivo.gatt.connect();
-    
-    impresoraDirecta = {
-      dispositivo,
-      server,
-      nombre: dispositivo.name || 'Impresora Bluetooth'
-    };
-    tipoConexion = 'bluetooth';
-    
-    actualizarEstado('ok', '✅', 'Impresora conectada', impresoraDirecta.nombre + ' (Bluetooth)');
-    document.getElementById('btn-probar').disabled = false;
-    
-    log('ok', '✅ Conectado: ' + impresoraDirecta.nombre);
-    toast('✅ ' + impresoraDirecta.nombre + ' conectada', 'ok');
-    
-    dispositivo.addEventListener('gattserverdisconnected', () => {
-      log('err', 'Impresora Bluetooth desconectada');
-      actualizarEstado('error', '❌', 'Desconectada', 'La impresora se desconectó');
-      document.getElementById('btn-probar').disabled = true;
-    });
-    
-  } catch(err) {
-    throw err;
-  }
-}
-
-// ============================================================
-// CONEXIÓN SERIAL
-// ============================================================
-async function conectarSerial() {
-  if (!('serial' in navigator)) {
-    toast('❌ Web Serial no disponible', 'err');
-    return;
-  }
-  
-  try {
-    log('info', 'Abriendo selector serial...');
-    
-    const puerto = await navigator.serial.requestPort({
-      filters: [
-        { usbVendorId: 0x0403 },
-        { usbVendorId: 0x10c4 },
-        { usbVendorId: 0x067b },
-        { usbVendorId: 0x1a86 },
-      ]
-    });
-    
-    await reconectarSerial(puerto);
-    
-    guardarImpresora({
-      nombre: 'Impresora Serial',
-      tipo: 'serial',
-      baudRate: 9600
-    });
-    
-  } catch(err) {
-    manejarError(err, 'Serial');
-  }
-}
-
-async function reconectarSerial(puerto) {
-  try {
-    await puerto.open({ baudRate: 9600 });
-    
-    impresoraDirecta = {
-      puerto,
-      nombre: 'Impresora Serial',
-      baudRate: 9600
-    };
-    tipoConexion = 'serial';
-    
-    actualizarEstado('ok', '✅', 'Impresora conectada', 'Serial a 9600 baudios');
-    document.getElementById('btn-probar').disabled = false;
-    
-    log('ok', '✅ Puerto serial abierto');
-    toast('✅ Impresora Serial conectada', 'ok');
-    
-  } catch(err) {
-    throw err;
-  }
-}
-
-// ============================================================
-// CONEXIÓN NFC
-// ============================================================
-async function conectarNFC() {
-  if (!('NDEFReader' in window)) {
-    toast('❌ Web NFC no disponible (solo Android Chrome)', 'err');
-    return;
-  }
-  
-  try {
-    log('info', 'Iniciando lector NFC...');
-    
-    const ndef = new NDEFReader();
-    await ndef.scan();
-    
-    impresoraDirecta = {
-      ndef,
-      nombre: 'Impresora NFC'
-    };
-    tipoConexion = 'nfc';
-    
-    ndef.onreading = (event) => {
-      log('ok', 'Tag NFC detectado');
-    };
-    
-    actualizarEstado('ok', '✅', 'NFC activo', 'Acerca la impresora al celular');
-    document.getElementById('btn-probar').disabled = false;
-    
-    log('ok', '✅ NFC activado');
-    toast('✅ NFC activo', 'ok');
-    
-    guardarImpresora({
-      nombre: 'Impresora NFC',
-      tipo: 'nfc'
-    });
-    
-  } catch(err) {
-    manejarError(err, 'NFC');
-  }
-}
-
-// ============================================================
-// IMPRIMIR PRUEBA (DIRECTA - ESC/POS)
-// ============================================================
-async function imprimirPruebaDirecta() {
-  if (!impresoraDirecta) {
-    toast('❌ No hay impresora directa conectada', 'err');
-    return;
-  }
-  
-  try {
-    log('info', 'Enviando ticket de prueba (directa)...');
-    const ticket = generarTicketPruebaESCPOS();
-    
-    if (tipoConexion === 'usb') {
-      await impresoraDirecta.dispositivo.transferOut(impresoraDirecta.endpoint, ticket);
-    } else if (tipoConexion === 'bluetooth') {
-      await enviarBluetooth(ticket);
-    } else if (tipoConexion === 'serial') {
-      const writer = impresoraDirecta.puerto.writable.getWriter();
-      await writer.write(ticket);
-      writer.releaseLock();
-    } else if (tipoConexion === 'nfc') {
-      toast('⚠️ NFC: impresión no soportada en este modo', 'err');
-      return;
-    }
-    
-    toast('✅ Ticket enviado', 'ok');
-    log('ok', '✅ Ticket enviado (' + ticket.length + ' bytes)');
-    
-  } catch(err) {
-    log('err', 'Error imprimiendo: ' + err.message);
-    toast('❌ Error: ' + err.message, 'err');
-  }
-}
-
-async function enviarBluetooth(datos) {
-  const services = await impresoraDirecta.server.getPrimaryServices();
-  let characteristic = null;
-  
-  for (const service of services) {
-    try {
-      const chars = await service.getCharacteristics();
-      for (const char of chars) {
-        if (char.properties.write || char.properties.writeWithoutResponse) {
-          characteristic = char;
-          break;
-        }
-      }
-      if (characteristic) break;
-    } catch(e) {}
-  }
-  
-  if (!characteristic) {
-    throw new Error('No se encontró characteristic de escritura');
-  }
-  
-  const chunkSize = 512;
-  for (let i = 0; i < datos.length; i += chunkSize) {
-    const chunk = datos.slice(i, i + chunkSize);
-    await characteristic.writeValueWithoutResponse(chunk);
-  }
-}
-
-// ============================================================
-// TICKET ESC/POS
-// ============================================================
-function generarTicketPruebaESCPOS() {
-  const datos = [];
-  
-  datos.push(0x1B, 0x40);
-  datos.push(0x1B, 0x61, 0x01);
-  datos.push(0x1B, 0x21, 0x30);
-  agregarTexto(datos, 'MEJORAR 2\n');
-  
-  datos.push(0x1B, 0x21, 0x00);
-  agregarTexto(datos, 'Sistema de Gestion Comercial\n\n');
-  
-  datos.push(0x1B, 0x61, 0x00);
-  agregarTexto(datos, 'Ticket de prueba\n');
-  agregarTexto(datos, 'Fecha: ' + new Date().toLocaleString('es-AR') + '\n\n');
-  
-  agregarTexto(datos, '--------------------------------\n');
-  agregarTexto(datos, 'Coca Cola 500ml    x2   $3.000\n');
-  agregarTexto(datos, 'Yerba Taragui 1kg  x1   $3.500\n');
-  agregarTexto(datos, 'Alfajor            x3   $3.600\n');
-  
-  agregarTexto(datos, '--------------------------------\n');
-  
-  datos.push(0x1B, 0x21, 0x20);
-  agregarTexto(datos, 'TOTAL:          $10.100\n');
-  datos.push(0x1B, 0x21, 0x00);
-  
-  agregarTexto(datos, '\nMetodo: EFECTIVO\n');
-  agregarTexto(datos, 'Recibido: $15.000\n');
-  agregarTexto(datos, 'Vuelto: $4.900\n\n');
-  
-  datos.push(0x1B, 0x61, 0x01);
-  agregarTexto(datos, 'Gracias por su compra!\n\n\n');
-  
-  datos.push(0x1D, 0x56, 0x00);
-  
-  return new Uint8Array(datos);
-}
-
-function agregarTexto(arr, texto) {
-  for (let i = 0; i < texto.length; i++) {
-    arr.push(texto.charCodeAt(i) & 0xFF);
-  }
-}
-
-// ============================================================
-// DESCONECTAR
-// ============================================================
-async function desconectar() {
-  if (!impresoraDirecta) {
-    toast('No hay impresora conectada', 'err');
-    return;
-  }
-  
-  try {
-    if (tipoConexion === 'usb') {
-      await impresoraDirecta.dispositivo.close();
-    } else if (tipoConexion === 'bluetooth') {
-      impresoraDirecta.dispositivo.gatt.disconnect();
-    } else if (tipoConexion === 'serial') {
-      await impresoraDirecta.puerto.close();
-    }
-    
-    impresoraDirecta = null;
-    tipoConexion = null;
-    
-    actualizarEstado('waiting', '⏳', 'Desconectada', 'Conectá una impresora');
-    document.getElementById('btn-probar').disabled = true;
-    
-    toast('🔌 Desconectada', 'ok');
-    log('ok', 'Impresora desconectada');
-    
-  } catch(err) {
-    log('err', 'Error al desconectar: ' + err.message);
-  }
-}
-
-// ============================================================
-// GESTIÓN DE IMPRESORAS GUARDADAS
-// ============================================================
-function obtenerImpresorasGuardadas() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  } catch(e) {
-    return [];
-  }
-}
-
-function guardarImpresora(nueva) {
-  let guardadas = obtenerImpresorasGuardadas();
-  
-  guardadas = guardadas.filter(g => {
-    if (g.tipo !== nueva.tipo) return true;
-    if (g.tipo === 'usb') return !(g.vendorId === nueva.vendorId && g.productId === nueva.productId);
-    if (g.tipo === 'bluetooth') return g.deviceId !== nueva.deviceId;
-    return false;
-  });
-  
-  guardadas.push(nueva);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(guardadas));
-  
-  renderListaImpresoras();
-}
-
-function eliminarImpresora(idx) {
-  if (!confirm('¿Eliminar esta impresora guardada?')) return;
-  
-  let guardadas = obtenerImpresorasGuardadas();
-  guardadas.splice(idx, 1);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(guardadas));
-  
-  renderListaImpresoras();
-  toast('🗑️ Impresora eliminada', 'ok');
-}
-
-function renderListaImpresoras() {
-  const cont = document.getElementById('lista-impresoras');
-  const guardadas = obtenerImpresorasGuardadas();
-  
-  if (guardadas.length === 0) {
-    cont.innerHTML = '<p class="empty">No hay ticketeras guardadas.</p>';
-    return;
-  }
-  
-  let html = '';
-  guardadas.forEach((p, i) => {
-    const esActual = impresoraDirecta && p.nombre === impresoraDirecta.nombre;
-    const tipoTexto = {
-      'usb': '🔌 USB/OTG',
-      'bluetooth': '📶 Bluetooth',
-      'serial': '🔗 Serial',
-      'nfc': '📱 NFC'
-    }[p.tipo] || p.tipo;
-    
-    const tipoClass = 'type-' + p.tipo;
-    const detalle = p.tipo === 'usb' ? `VID:${p.vendorId?.toString(16).padStart(4,'0')} PID:${p.productId?.toString(16).padStart(4,'0')}` :
-                    p.tipo === 'bluetooth' ? `ID: ${p.deviceId?.substring(0,12)}...` :
-                    p.tipo === 'serial' ? `${p.baudRate} baudios` : '';
-    
-    html += `
-      <div class="printer-card ${esActual ? 'selected' : ''}">
-        <div class="printer-info">
-          <div class="printer-name">
-            ${p.nombre}
-            ${esActual ? '<span class="auto-badge">CONECTADA</span>' : ''}
-          </div>
-          <div class="printer-detail">${detalle}</div>
-          <span class="printer-type ${tipoClass}">${tipoTexto}</span>
-        </div>
-        <div>
-          <button class="remove-btn" onclick="eliminarImpresora(${i})">🗑️</button>
-        </div>
-      </div>
-    `;
-  });
-  
-  cont.innerHTML = html;
-}
-
-// ============================================================
-// UI
-// ============================================================
-function actualizarEstado(tipo, icono, titulo, detalle) {
-  const box = document.getElementById('status-box');
-  box.className = 'status-box status-' + tipo;
-  box.innerHTML = `
-    <div class="status-icon">${icono}</div>
-    <div class="status-title">${titulo}</div>
-    <div class="status-detail">${detalle}</div>
-  `;
-}
-
-function manejarError(err, tipo) {
-  log('err', 'Error ' + tipo + ': ' + err.message);
-  
-  if (err.name === 'NotFoundError') {
-    toast('❌ No se seleccionó ningún dispositivo', 'err');
-  } else if (err.name === 'SecurityError') {
-    toast('❌ Permiso denegado', 'err');
-  } else if (err.message && err.message.includes('Access denied')) {
-    toast('❌ Driver de Windows bloquea el acceso. Usá Modo Universal o Zadig.', 'err');
-    log('err', '⚠️ Windows tiene un driver genérico que bloquea WebUSB. Soluciones: 1) Usá Modo Universal, 2) Reemplazá el driver con Zadig, 3) Probá en Android con OTG');
-  } else {
-    toast('❌ Error: ' + err.message, 'err');
-  }
-}
-
-function log(tipo, mensaje) {
-  const logBox = document.getElementById('log-box');
-  const hora = new Date().toLocaleTimeString('es-AR');
-  const clase = tipo === 'ok' ? 'log-ok' : tipo === 'err' ? 'log-err' : 'log-info';
-  
-  const item = document.createElement('div');
-  item.className = 'log-item';
-  item.innerHTML = `<span class="log-time">[${hora}]</span> <span class="${clase}">${mensaje}</span>`;
-  
-  logBox.insertBefore(item, logBox.firstChild);
-  
-  while (logBox.children.length > 50) {
-    logBox.removeChild(logBox.lastChild);
-  }
-}
-
 function toast(msg, tipo) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -1064,7 +575,7 @@ function toast(msg, tipo) {
 }
 
 // ============================================================
-// INICIAR APP
+// INICIAR
 // ============================================================
 iniciar();
 </script>
