@@ -25,15 +25,17 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .btn-success { background: #2a9d4a; color: white; }
 .btn-danger { background: #d33; color: white; }
 .btn-secondary { background: #f0f0f5; color: #333; }
+.btn-universal { background: linear-gradient(135deg, #2a9d4a, #1e7a38); color: white; border: 2px solid #1e7a38; }
 .btn:active { transform: scale(0.98); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-icon { font-size: 20px; }
 .btn-text { flex: 1; }
 .btn-text small { display: block; font-size: 10px; opacity: 0.85; font-weight: 400; margin-top: 2px; }
 
+.recommended-badge { background: #ffd93d; color: #333; font-size: 9px; padding: 2px 6px; border-radius: 8px; margin-left: 6px; font-weight: 700; }
+
 .printer-card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 8px; border: 2px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
 .printer-card.selected { border-color: #2a9d4a; background: #f0fdf4; }
-.printer-card.auto { border-color: #1565c0; background: #e3f2fd; }
 .printer-info { flex: 1; }
 .printer-name { font-weight: 700; font-size: 14px; color: #333; }
 .printer-detail { font-size: 11px; color: #888; margin-top: 2px; font-family: monospace; }
@@ -43,15 +45,12 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .type-serial { background: #fff3e0; color: #e65100; }
 .type-nfc { background: #e8f5e9; color: #2a6b3a; }
 .auto-badge { background: #1565c0; color: white; font-size: 9px; padding: 2px 6px; border-radius: 8px; margin-left: 6px; font-weight: 700; }
-.select-btn { background: #667eea; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
-.select-btn.active { background: #2a9d4a; }
 .remove-btn { background: #ffebee; color: #d33; border: none; padding: 6px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; margin-left: 6px; }
 
 .status-box { border-radius: 12px; padding: 12px; text-align: center; margin-bottom: 15px; }
 .status-ok { background: #e8f5e9; border: 2px solid #2a9d4a; color: #2a6b3a; }
 .status-error { background: #ffebee; border: 2px solid #d33; color: #b71c1c; }
 .status-waiting { background: #fff3cd; border: 2px solid #f0ad4e; color: #856404; }
-.status-auto { background: #e3f2fd; border: 2px solid #1565c0; color: #0d47a1; }
 .status-icon { font-size: 32px; margin-bottom: 5px; }
 .status-title { font-weight: 700; font-size: 14px; }
 .status-detail { font-size: 12px; margin-top: 3px; }
@@ -75,6 +74,15 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .capability:last-child { border-bottom: none; }
 .cap-ok { color: #2a9d4a; font-weight: 600; }
 .cap-no { color: #d33; font-weight: 600; }
+
+.mode-selector { display: flex; gap: 8px; margin-bottom: 15px; background: #f0f0f5; padding: 4px; border-radius: 12px; }
+.mode-btn { flex: 1; padding: 10px; border: none; border-radius: 10px; background: transparent; font-size: 12px; font-weight: 600; cursor: pointer; color: #666; transition: all 0.2s; }
+.mode-btn.active { background: white; color: #667eea; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+.ticket-preview { background: white; border: 2px dashed #ccc; border-radius: 12px; padding: 15px; margin-top: 15px; font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.4; max-width: 300px; margin-left: auto; margin-right: auto; }
+.ticket-preview .center { text-align: center; }
+.ticket-preview .bold { font-weight: bold; }
+.ticket-preview .separator { border-top: 1px dashed #333; margin: 8px 0; }
 </style>
 </head>
 <body>
@@ -82,128 +90,167 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 <div class="card">
   <div class="header">
     <h1>🖨️ Configurar Impresora</h1>
-    <p>USB · OTG · Bluetooth · Serial · NFC</p>
+    <p>Universal (cualquier impresora) + Directa (USB/BT/Serial/NFC)</p>
   </div>
   <div class="content">
 
-    <!-- Info -->
     <div class="info">
-      <b>🎯 Cómo funciona:</b><br>
-      1. Conectá la impresora (USB, OTG, Bluetooth o Serial)<br>
-      2. Tocá el botón del tipo de conexión correspondiente<br>
-      3. Autorizá la impresora <b>una sola vez</b><br>
-      4. La próxima vez que abras la app, se conectará <b>automáticamente</b>
+      <b>🎯 Dos modos de impresión:</b><br>
+      • <b>Universal:</b> Funciona con CUALQUIER impresora (sin configuración)<br>
+      • <b>Directa:</b> Impresión rápida con ticketera térmica (corte automático)
     </div>
 
-    <!-- Auto-reconexión -->
-    <div class="auto-box">
-      <b>🔄 Reconexión automática:</b><br>
-      Una vez autorizada, la impresora se conectará sola cada vez que abras la app. No necesitás hacer nada.
+    <div class="mode-selector">
+      <button class="mode-btn active" onclick="cambiarModo('universal', this)">🌐 Universal</button>
+      <button class="mode-btn" onclick="cambiarModo('directa', this)">⚡ Directa</button>
     </div>
 
-    <!-- Compatibilidad -->
-    <div class="section">
-      <h3>🔍 Compatibilidad del dispositivo</h3>
-      <div class="capability">
-        <span>🔌 WebUSB (USB / OTG)</span>
-        <span id="cap-usb" class="cap-no">Verificando...</span>
+    <!-- MODO UNIVERSAL -->
+    <div id="modo-universal">
+      <div class="auto-box">
+        <b>✅ Modo Universal (Recomendado):</b><br>
+        Funciona con cualquier impresora que tengas conectada a tu dispositivo. No requiere configuración. El sistema usará el diálogo de impresión del navegador.
       </div>
-      <div class="capability">
-        <span>📶 Web Bluetooth (BLE)</span>
-        <span id="cap-bt" class="cap-no">Verificando...</span>
-      </div>
-      <div class="capability">
-        <span>🔗 Web Serial (RS-232)</span>
-        <span id="cap-serial" class="cap-no">Verificando...</span>
-      </div>
-      <div class="capability">
-        <span>📱 Web NFC</span>
-        <span id="cap-nfc" class="cap-no">Verificando...</span>
-      </div>
-      <div class="capability">
-        <span>🔒 HTTPS (requerido)</span>
-        <span id="cap-https" class="cap-no">Verificando...</span>
-      </div>
-    </div>
-
-    <!-- Estado actual -->
-    <div id="status-box" class="status-box status-waiting">
-      <div class="status-icon">⏳</div>
-      <div class="status-title">Sin impresora configurada</div>
-      <div class="status-detail">Conectá una impresora y tocá el botón correspondiente</div>
-    </div>
-
-    <!-- Botones de conexión -->
-    <div class="section">
-      <h3>🔌 Conectar impresora</h3>
       
-      <button class="btn btn-primary" onclick="conectarUSB()">
+      <button class="btn btn-universal" onclick="imprimirUniversal()">
+        <span class="btn-icon">🖨️</span>
+        <span class="btn-text">
+          Imprimir con impresora universal
+          <small>Abre el diálogo de impresión del navegador</small>
+        </span>
+      </button>
+
+      <button class="btn btn-success" onclick="imprimirPruebaUniversal()">
+        <span class="btn-icon">🧪</span>
+        <span class="btn-text">Imprimir ticket de prueba (Universal)</span>
+      </button>
+    </div>
+
+    <!-- MODO DIRECTA -->
+    <div id="modo-directa" style="display:none;">
+      <div class="warning">
+        <b>⚡ Modo Directa:</b><br>
+        Para ticketeras térmicas (Xprinter, Epson, etc.). Impresión rápida con corte automático. Requiere autorización inicial (una sola vez).
+      </div>
+
+      <div class="section">
+        <h3>🔍 Compatibilidad del dispositivo</h3>
+        <div class="capability">
+          <span>🔌 WebUSB (USB / OTG)</span>
+          <span id="cap-usb" class="cap-no">Verificando...</span>
+        </div>
+        <div class="capability">
+          <span>📶 Web Bluetooth (BLE)</span>
+          <span id="cap-bt" class="cap-no">Verificando...</span>
+        </div>
+        <div class="capability">
+          <span>🔗 Web Serial (RS-232)</span>
+          <span id="cap-serial" class="cap-no">Verificando...</span>
+        </div>
+        <div class="capability">
+          <span>📱 Web NFC</span>
+          <span id="cap-nfc" class="cap-no">Verificando...</span>
+        </div>
+        <div class="capability">
+          <span>🔒 HTTPS (requerido)</span>
+          <span id="cap-https" class="cap-no">Verificando...</span>
+        </div>
+      </div>
+
+      <div id="status-box" class="status-box status-waiting">
+        <div class="status-icon">⏳</div>
+        <div class="status-title">Sin impresora directa configurada</div>
+        <div class="status-detail">Conectá una ticketera térmica</div>
+      </div>
+
+      <div class="section">
+        <h3>🔌 Conectar ticketera</h3>
+        
+        <button class="btn btn-primary" onclick="conectarUSB()">
+          <span class="btn-icon">🔌</span>
+          <span class="btn-text">
+            USB / USB-OTG
+            <small>Cable directo o adaptador OTG al celular</small>
+          </span>
+        </button>
+        
+        <button class="btn btn-primary" onclick="conectarBluetooth()">
+          <span class="btn-icon">📶</span>
+          <span class="btn-text">
+            Bluetooth (BLE)
+            <small>Bluetooth Low Energy (no SPP clásico)</small>
+          </span>
+        </button>
+        
+        <button class="btn btn-primary" onclick="conectarSerial()">
+          <span class="btn-icon">🔗</span>
+          <span class="btn-text">
+            Serial RS-232 / USB-Serial
+            <small>Puerto COM o adaptador FTDI/Prolific</small>
+          </span>
+        </button>
+        
+        <button class="btn btn-primary" onclick="conectarNFC()">
+          <span class="btn-icon">📱</span>
+          <span class="btn-text">
+            NFC
+            <small>Solo Android Chrome - Impresoras portátiles</small>
+          </span>
+        </button>
+      </div>
+
+      <div class="section">
+        <h3>📋 Ticketeras guardadas</h3>
+        <div id="lista-impresoras">
+          <p class="empty">No hay ticketeras guardadas.<br>Conectá una usando los botones de arriba.</p>
+        </div>
+      </div>
+
+      <button class="btn btn-success" id="btn-probar" onclick="imprimirPruebaDirecta()" disabled>
+        <span class="btn-icon">🧪</span>
+        <span class="btn-text">Imprimir ticket de prueba (Directa)</span>
+      </button>
+      
+      <button class="btn btn-secondary" onclick="desconectar()">
         <span class="btn-icon">🔌</span>
-        <span class="btn-text">
-          USB / USB-OTG
-          <small>Cable directo o adaptador OTG al celular</small>
-        </span>
-      </button>
-      
-      <button class="btn btn-primary" onclick="conectarBluetooth()">
-        <span class="btn-icon">📶</span>
-        <span class="btn-text">
-          Bluetooth (BLE)
-          <small>Bluetooth Low Energy (no SPP clásico)</small>
-        </span>
-      </button>
-      
-      <button class="btn btn-primary" onclick="conectarSerial()">
-        <span class="btn-icon">🔗</span>
-        <span class="btn-text">
-          Serial RS-232 / USB-Serial
-          <small>Puerto COM o adaptador FTDI/Prolific</small>
-        </span>
-      </button>
-      
-      <button class="btn btn-primary" onclick="conectarNFC()">
-        <span class="btn-icon">📱</span>
-        <span class="btn-text">
-          NFC
-          <small>Solo Android Chrome - Impresoras portátiles</small>
-        </span>
+        <span class="btn-text">Desconectar ticketera actual</span>
       </button>
     </div>
 
-    <!-- Lista de impresoras -->
     <div class="section">
-      <h3>📋 Impresoras guardadas</h3>
-      <div id="lista-impresoras">
-        <p class="empty">No hay impresoras guardadas.<br>Conectá una usando los botones de arriba.</p>
+      <h3>👁️ Preview del ticket</h3>
+      <div class="ticket-preview" id="ticket-preview">
+        <div class="center bold" style="font-size: 14px;">MEJORAR 2</div>
+        <div class="center">Sistema de Gestión Comercial</div>
+        <div class="separator"></div>
+        <div>Ticket de prueba</div>
+        <div>Fecha: <span id="preview-fecha"></span></div>
+        <div class="separator"></div>
+        <div>Coca Cola 500ml    x2   $3.000</div>
+        <div>Yerba Taragüi 1kg  x1   $3.500</div>
+        <div>Alfajor            x3   $3.600</div>
+        <div class="separator"></div>
+        <div class="bold" style="font-size: 13px;">TOTAL:          $10.100</div>
+        <div>Método: EFECTIVO</div>
+        <div>Recibido: $15.000</div>
+        <div>Vuelto: $4.900</div>
+        <div class="separator"></div>
+        <div class="center">¡Gracias por su compra!</div>
       </div>
     </div>
 
-    <!-- Acciones -->
-    <button class="btn btn-success" id="btn-probar" onclick="imprimirPrueba()" disabled>
-      <span class="btn-icon">🧪</span>
-      <span class="btn-text">Imprimir ticket de prueba</span>
-    </button>
-    
-    <button class="btn btn-secondary" onclick="desconectar()">
-      <span class="btn-icon">🔌</span>
-      <span class="btn-text">Desconectar impresora actual</span>
-    </button>
-
-    <!-- Log -->
     <div class="section">
       <h3>📝 Registro de actividad</h3>
       <div class="log-box" id="log-box">
-        <div class="log-item"><span class="log-info">Sistema iniciado.</span></div>
+        <div class="log-item"><span class="log-info">Sistema iniciado. Listo para imprimir.</span></div>
       </div>
     </div>
 
-    <!-- Advertencia -->
     <div class="warning">
       <b>⚠️ Importante:</b><br>
-      • <b>Primera vez:</b> Siempre pide autorización del usuario (seguridad del navegador)<br>
-      • <b>Siguientes veces:</b> Conexión 100% automática<br>
-      • <b>Bluetooth clásico SPP:</b> No soportado en web (solo BLE)<br>
-      • <b>iOS Safari:</b> No soporta ninguna API (solo Chrome Android)
+      • <b>Modo Universal:</b> Funciona con cualquier impresora, sin configuración<br>
+      • <b>Modo Directa:</b> Solo ticketeras térmicas, requiere autorización inicial<br>
+      • <b>Reconexión automática:</b> Una vez autorizada, la ticketera se conecta sola
     </div>
 
   </div>
@@ -212,20 +259,39 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 <div class="toast" id="toast"></div>
 
 <script>
-// ============ ESTADO GLOBAL ============
-let impresoraActual = null;
+// ============================================================
+// ESTADO GLOBAL
+// ============================================================
+let modoActual = 'universal';
+let impresoraDirecta = null;
 let tipoConexion = null;
 const STORAGE_KEY = 'impresoras_guardadas_v1';
 
-// ============ INICIALIZACIÓN ============
-async function iniciar() {
+// ============================================================
+// INICIALIZACIÓN
+// ============================================================
+function iniciar() {
+  document.getElementById('preview-fecha').textContent = new Date().toLocaleString('es-AR');
   verificarCompatibilidad();
   renderListaImpresoras();
-  
-  // Intentar reconexión automática
-  await intentarReconexionAutomatica();
+  intentarReconexionAutomatica();
 }
 
+// ============================================================
+// CAMBIO DE MODO
+// ============================================================
+function cambiarModo(modo, btn) {
+  modoActual = modo;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('modo-universal').style.display = modo === 'universal' ? 'block' : 'none';
+  document.getElementById('modo-directa').style.display = modo === 'directa' ? 'block' : 'none';
+  log('info', 'Modo cambiado a: ' + modo);
+}
+
+// ============================================================
+// COMPATIBILIDAD
+// ============================================================
 function verificarCompatibilidad() {
   const caps = {
     usb: 'usb' in navigator,
@@ -246,22 +312,89 @@ function verificarCompatibilidad() {
   log('info', 'Compatibilidad: USB=' + caps.usb + ', BT=' + caps.bt + ', Serial=' + caps.serial + ', NFC=' + caps.nfc);
 }
 
-// ============ RECONEXIÓN AUTOMÁTICA ============
+// ============================================================
+// MODO UNIVERSAL - window.print()
+// ============================================================
+function imprimirUniversal() {
+  log('info', 'Abriendo diálogo de impresión universal...');
+  window.print();
+}
+
+function imprimirPruebaUniversal() {
+  log('info', 'Generando ticket de prueba universal...');
+  
+  const ventana = window.open('', '_blank');
+  ventana.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Ticket de prueba - Mejorar 2</title>
+      <style>
+        @page { size: 80mm auto; margin: 0; }
+        body { 
+          font-family: 'Courier New', monospace; 
+          font-size: 12px; 
+          width: 80mm; 
+          margin: 0; 
+          padding: 5mm;
+          line-height: 1.4;
+        }
+        .center { text-align: center; }
+        .bold { font-weight: bold; }
+        .grande { font-size: 16px; font-weight: bold; }
+        .separator { border-top: 1px dashed #000; margin: 5px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="center grande">MEJORAR 2</div>
+      <div class="center">Sistema de Gestión Comercial</div>
+      <div class="separator"></div>
+      <div><b>Ticket de prueba</b></div>
+      <div>Fecha: ${new Date().toLocaleString('es-AR')}</div>
+      <div class="separator"></div>
+      <div>Coca Cola 500ml    x2   $3.000</div>
+      <div>Yerba Taragüi 1kg  x1   $3.500</div>
+      <div>Alfajor            x3   $3.600</div>
+      <div class="separator"></div>
+      <div class="grande">TOTAL:          $10.100</div>
+      <div class="separator"></div>
+      <div>Método de pago: EFECTIVO</div>
+      <div>Recibido: $15.000</div>
+      <div>Vuelto: $4.900</div>
+      <div class="separator"></div>
+      <div class="center"><b>¡Gracias por su compra!</b></div>
+      <div class="center" style="font-size: 10px; margin-top: 10px;">
+        Ticket generado el ${new Date().toLocaleString('es-AR')}
+      </div>
+      <script>
+        window.onload = function() { 
+          setTimeout(function() { window.print(); }, 500);
+        };
+      <\/script>
+    </body>
+    </html>
+  `);
+  ventana.document.close();
+  
+  toast('✅ Ticket de prueba generado', 'ok');
+  log('ok', '✅ Ticket universal abierto en nueva ventana');
+}
+
+// ============================================================
+// MODO DIRECTA - RECONEXIÓN AUTOMÁTICA
+// ============================================================
 async function intentarReconexionAutomatica() {
   const guardadas = obtenerImpresorasGuardadas();
   if (guardadas.length === 0) {
-    log('info', 'No hay impresoras guardadas para reconectar');
+    log('info', 'No hay impresoras directas guardadas');
     return;
   }
   
-  log('info', 'Intentando reconexión automática...');
-  
-  const ultima = guardadas[guardadas.length - 1]; // La última usada
-  log('info', 'Última impresora: ' + ultima.nombre + ' (' + ultima.tipo + ')');
+  const ultima = guardadas[guardadas.length - 1];
+  log('info', 'Intentando reconectar: ' + ultima.nombre + ' (' + ultima.tipo + ')');
   
   try {
     if (ultima.tipo === 'usb' && 'usb' in navigator) {
-      // WebUSB: obtener dispositivos ya autorizados
       const dispositivos = await navigator.usb.getDevices();
       const encontrado = dispositivos.find(d => 
         d.vendorId === ultima.vendorId && d.productId === ultima.productId
@@ -275,7 +408,6 @@ async function intentarReconexionAutomatica() {
     }
     
     if (ultima.tipo === 'bluetooth' && 'bluetooth' in navigator) {
-      // Web Bluetooth: obtener dispositivos ya autorizados
       const dispositivos = await navigator.bluetooth.getDevices();
       const encontrado = dispositivos.find(d => d.id === ultima.deviceId);
       
@@ -287,7 +419,6 @@ async function intentarReconexionAutomatica() {
     }
     
     if (ultima.tipo === 'serial' && 'serial' in navigator) {
-      // Web Serial: obtener puertos ya autorizados
       const puertos = await navigator.serial.getPorts();
       if (puertos.length > 0) {
         log('ok', '✅ Puerto serial encontrado, reconectando...');
@@ -299,11 +430,13 @@ async function intentarReconexionAutomatica() {
     log('info', 'La impresora guardada no está conectada actualmente');
     
   } catch(err) {
-    log('err', 'Error en reconexión automática: ' + err.message);
+    log('err', 'Error en reconexión: ' + err.message);
   }
 }
 
-// ============ CONEXIÓN USB / OTG ============
+// ============================================================
+// CONEXIÓN USB / OTG
+// ============================================================
 async function conectarUSB() {
   if (!('usb' in navigator)) {
     toast('❌ WebUSB no disponible', 'err');
@@ -315,19 +448,21 @@ async function conectarUSB() {
     
     const dispositivo = await navigator.usb.requestDevice({
       filters: [
-        { classCode: 7 },        // Clase impresora
-        { vendorId: 0x0416 },    // Xprinter
-        { vendorId: 0x0483 },    // STMicro
-        { vendorId: 0x04b8 },    // Epson
-        { vendorId: 0x0493 },    // Otras ticketeras
-        { vendorId: 0x04a8 },    // Citizen
-        { vendorId: 0x04b9 },    // Rongta
+        { classCode: 7 },
+        { vendorId: 0x0416 },
+        { vendorId: 0x0483 },
+        { vendorId: 0x04b8 },
+        { vendorId: 0x0493 },
+        { vendorId: 0x04a8 },
+        { vendorId: 0x04b9 },
+        { vendorId: 0x0a5f },
+        { vendorId: 0x067b },
+        { vendorId: 0x1a86 },
       ]
     });
     
     await reconectarUSB(dispositivo);
     
-    // Guardar para reconexión automática futura
     guardarImpresora({
       nombre: dispositivo.productName || 'Impresora USB',
       tipo: 'usb',
@@ -373,7 +508,7 @@ async function reconectarUSB(dispositivo) {
     
     await dispositivo.claimInterface(ifaceImpresora.interfaceNumber);
     
-    impresoraActual = {
+    impresoraDirecta = {
       dispositivo,
       interfaz: ifaceImpresora.interfaceNumber,
       endpoint: endpointOut.endpointNumber,
@@ -382,13 +517,12 @@ async function reconectarUSB(dispositivo) {
     };
     tipoConexion = 'usb';
     
-    actualizarEstado('ok', '✅', 'Impresora conectada', impresoraActual.nombre + ' (USB)');
+    actualizarEstado('ok', '✅', 'Impresora conectada', impresoraDirecta.nombre + ' (USB)');
     document.getElementById('btn-probar').disabled = false;
     
-    log('ok', '✅ Conectado: ' + impresoraActual.nombre);
-    toast('✅ ' + impresoraActual.nombre + ' conectada', 'ok');
+    log('ok', '✅ Conectado: ' + impresoraDirecta.nombre);
+    toast('✅ ' + impresoraDirecta.nombre + ' conectada', 'ok');
     
-    // Monitorear desconexión
     dispositivo.addEventListener('disconnect', () => {
       log('err', 'Impresora USB desconectada');
       actualizarEstado('error', '❌', 'Desconectada', 'La impresora fue desconectada');
@@ -400,7 +534,9 @@ async function reconectarUSB(dispositivo) {
   }
 }
 
-// ============ CONEXIÓN BLUETOOTH ============
+// ============================================================
+// CONEXIÓN BLUETOOTH
+// ============================================================
 async function conectarBluetooth() {
   if (!('bluetooth' in navigator)) {
     toast('❌ Web Bluetooth no disponible', 'err');
@@ -416,6 +552,7 @@ async function conectarBluetooth() {
         '000018f0-0000-1000-8000-00805f9b34fb',
         'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
         '0000ffe0-0000-1000-8000-00805f9b34fb',
+        '0000ffe1-0000-1000-8000-00805f9b34fb',
       ]
     });
     
@@ -436,18 +573,18 @@ async function reconectarBluetooth(dispositivo) {
   try {
     const server = await dispositivo.gatt.connect();
     
-    impresoraActual = {
+    impresoraDirecta = {
       dispositivo,
       server,
       nombre: dispositivo.name || 'Impresora Bluetooth'
     };
     tipoConexion = 'bluetooth';
     
-    actualizarEstado('ok', '✅', 'Impresora conectada', impresoraActual.nombre + ' (Bluetooth)');
+    actualizarEstado('ok', '✅', 'Impresora conectada', impresoraDirecta.nombre + ' (Bluetooth)');
     document.getElementById('btn-probar').disabled = false;
     
-    log('ok', '✅ Conectado: ' + impresoraActual.nombre);
-    toast('✅ ' + impresoraActual.nombre + ' conectada', 'ok');
+    log('ok', '✅ Conectado: ' + impresoraDirecta.nombre);
+    toast('✅ ' + impresoraDirecta.nombre + ' conectada', 'ok');
     
     dispositivo.addEventListener('gattserverdisconnected', () => {
       log('err', 'Impresora Bluetooth desconectada');
@@ -460,7 +597,9 @@ async function reconectarBluetooth(dispositivo) {
   }
 }
 
-// ============ CONEXIÓN SERIAL ============
+// ============================================================
+// CONEXIÓN SERIAL
+// ============================================================
 async function conectarSerial() {
   if (!('serial' in navigator)) {
     toast('❌ Web Serial no disponible', 'err');
@@ -472,10 +611,10 @@ async function conectarSerial() {
     
     const puerto = await navigator.serial.requestPort({
       filters: [
-        { usbVendorId: 0x0403 },  // FTDI
-        { usbVendorId: 0x10c4 },  // Silicon Labs
-        { usbVendorId: 0x067b },  // Prolific
-        { usbVendorId: 0x1a86 },  // CH340 (muy común en adaptadores chinos)
+        { usbVendorId: 0x0403 },
+        { usbVendorId: 0x10c4 },
+        { usbVendorId: 0x067b },
+        { usbVendorId: 0x1a86 },
       ]
     });
     
@@ -496,7 +635,7 @@ async function reconectarSerial(puerto) {
   try {
     await puerto.open({ baudRate: 9600 });
     
-    impresoraActual = {
+    impresoraDirecta = {
       puerto,
       nombre: 'Impresora Serial',
       baudRate: 9600
@@ -514,7 +653,9 @@ async function reconectarSerial(puerto) {
   }
 }
 
-// ============ CONEXIÓN NFC ============
+// ============================================================
+// CONEXIÓN NFC
+// ============================================================
 async function conectarNFC() {
   if (!('NDEFReader' in window)) {
     toast('❌ Web NFC no disponible (solo Android Chrome)', 'err');
@@ -527,7 +668,7 @@ async function conectarNFC() {
     const ndef = new NDEFReader();
     await ndef.scan();
     
-    impresoraActual = {
+    impresoraDirecta = {
       ndef,
       nombre: 'Impresora NFC'
     };
@@ -535,7 +676,6 @@ async function conectarNFC() {
     
     ndef.onreading = (event) => {
       log('ok', 'Tag NFC detectado');
-      // Procesar tag NFC según el tipo de impresora
     };
     
     actualizarEstado('ok', '✅', 'NFC activo', 'Acerca la impresora al celular');
@@ -554,25 +694,30 @@ async function conectarNFC() {
   }
 }
 
-// ============ IMPRIMIR PRUEBA ============
-async function imprimirPrueba() {
-  if (!impresoraActual) {
-    toast('❌ No hay impresora conectada', 'err');
+// ============================================================
+// IMPRIMIR PRUEBA (DIRECTA)
+// ============================================================
+async function imprimirPruebaDirecta() {
+  if (!impresoraDirecta) {
+    toast('❌ No hay impresora directa conectada', 'err');
     return;
   }
   
   try {
-    log('info', 'Enviando ticket de prueba...');
-    const ticket = generarTicketPrueba();
+    log('info', 'Enviando ticket de prueba (directa)...');
+    const ticket = generarTicketPruebaESCPOS();
     
     if (tipoConexion === 'usb') {
-      await impresoraActual.dispositivo.transferOut(impresoraActual.endpoint, ticket);
+      await impresoraDirecta.dispositivo.transferOut(impresoraDirecta.endpoint, ticket);
     } else if (tipoConexion === 'bluetooth') {
       await enviarBluetooth(ticket);
     } else if (tipoConexion === 'serial') {
-      const writer = impresoraActual.puerto.writable.getWriter();
+      const writer = impresoraDirecta.puerto.writable.getWriter();
       await writer.write(ticket);
       writer.releaseLock();
+    } else if (tipoConexion === 'nfc') {
+      toast('⚠️ NFC: impresión no soportada en este modo', 'err');
+      return;
     }
     
     toast('✅ Ticket enviado', 'ok');
@@ -585,7 +730,7 @@ async function imprimirPrueba() {
 }
 
 async function enviarBluetooth(datos) {
-  const services = await impresoraActual.server.getPrimaryServices();
+  const services = await impresoraDirecta.server.getPrimaryServices();
   let characteristic = null;
   
   for (const service of services) {
@@ -612,19 +757,21 @@ async function enviarBluetooth(datos) {
   }
 }
 
-function generarTicketPrueba() {
+// ============================================================
+// TICKET DE PRUEBA ESC/POS
+// ============================================================
+function generarTicketPruebaESCPOS() {
   const datos = [];
   
-  datos.push(0x1B, 0x40); // Inicializar
-  datos.push(0x1B, 0x61, 0x01); // Centrar
-  datos.push(0x1B, 0x21, 0x30); // Doble tamaño
-  
+  datos.push(0x1B, 0x40);
+  datos.push(0x1B, 0x61, 0x01);
+  datos.push(0x1B, 0x21, 0x30);
   agregarTexto(datos, 'MEJORAR 2\n');
   
-  datos.push(0x1B, 0x21, 0x00); // Normal
+  datos.push(0x1B, 0x21, 0x00);
   agregarTexto(datos, 'Sistema de Gestion Comercial\n\n');
   
-  datos.push(0x1B, 0x61, 0x00); // Izquierda
+  datos.push(0x1B, 0x61, 0x00);
   agregarTexto(datos, 'Ticket de prueba\n');
   agregarTexto(datos, 'Fecha: ' + new Date().toLocaleString('es-AR') + '\n\n');
   
@@ -632,9 +779,10 @@ function generarTicketPrueba() {
   agregarTexto(datos, 'Coca Cola 500ml    x2   $3.000\n');
   agregarTexto(datos, 'Yerba Taragui 1kg  x1   $3.500\n');
   agregarTexto(datos, 'Alfajor            x3   $3.600\n');
+  
   agregarTexto(datos, '--------------------------------\n');
   
-  datos.push(0x1B, 0x21, 0x20); // Doble ancho
+  datos.push(0x1B, 0x21, 0x20);
   agregarTexto(datos, 'TOTAL:          $10.100\n');
   datos.push(0x1B, 0x21, 0x00);
   
@@ -642,10 +790,10 @@ function generarTicketPrueba() {
   agregarTexto(datos, 'Recibido: $15.000\n');
   agregarTexto(datos, 'Vuelto: $4.900\n\n');
   
-  datos.push(0x1B, 0x61, 0x01); // Centrar
+  datos.push(0x1B, 0x61, 0x01);
   agregarTexto(datos, 'Gracias por su compra!\n\n\n');
   
-  datos.push(0x1D, 0x56, 0x00); // Cortar
+  datos.push(0x1D, 0x56, 0x00);
   
   return new Uint8Array(datos);
 }
@@ -656,23 +804,25 @@ function agregarTexto(arr, texto) {
   }
 }
 
-// ============ DESCONECTAR ============
+// ============================================================
+// DESCONECTAR
+// ============================================================
 async function desconectar() {
-  if (!impresoraActual) {
+  if (!impresoraDirecta) {
     toast('No hay impresora conectada', 'err');
     return;
   }
   
   try {
     if (tipoConexion === 'usb') {
-      await impresoraActual.dispositivo.close();
+      await impresoraDirecta.dispositivo.close();
     } else if (tipoConexion === 'bluetooth') {
-      impresoraActual.dispositivo.gatt.disconnect();
+      impresoraDirecta.dispositivo.gatt.disconnect();
     } else if (tipoConexion === 'serial') {
-      await impresoraActual.puerto.close();
+      await impresoraDirecta.puerto.close();
     }
     
-    impresoraActual = null;
+    impresoraDirecta = null;
     tipoConexion = null;
     
     actualizarEstado('waiting', '⏳', 'Desconectada', 'Conectá una impresora');
@@ -686,7 +836,9 @@ async function desconectar() {
   }
 }
 
-// ============ GESTIÓN DE IMPRESORAS GUARDADAS ============
+// ============================================================
+// GESTIÓN DE IMPRESORAS GUARDADAS
+// ============================================================
 function obtenerImpresorasGuardadas() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -698,7 +850,6 @@ function obtenerImpresorasGuardadas() {
 function guardarImpresora(nueva) {
   let guardadas = obtenerImpresorasGuardadas();
   
-  // Eliminar duplicados (mismo tipo + mismo identificador)
   guardadas = guardadas.filter(g => {
     if (g.tipo !== nueva.tipo) return true;
     if (g.tipo === 'usb') return !(g.vendorId === nueva.vendorId && g.productId === nueva.productId);
@@ -729,13 +880,13 @@ function renderListaImpresoras() {
   const guardadas = obtenerImpresorasGuardadas();
   
   if (guardadas.length === 0) {
-    cont.innerHTML = '<p class="empty">No hay impresoras guardadas.<br>Conectá una usando los botones de arriba.</p>';
+    cont.innerHTML = '<p class="empty">No hay ticketeras guardadas.<br>Conectá una usando los botones de arriba.</p>';
     return;
   }
   
   let html = '';
   guardadas.forEach((p, i) => {
-    const esActual = impresoraActual && p.nombre === impresoraActual.nombre;
+    const esActual = impresoraDirecta && p.nombre === impresoraDirecta.nombre;
     const tipoTexto = {
       'usb': '🔌 USB/OTG',
       'bluetooth': '📶 Bluetooth',
@@ -768,7 +919,9 @@ function renderListaImpresoras() {
   cont.innerHTML = html;
 }
 
-// ============ UI ============
+// ============================================================
+// UI
+// ============================================================
 function actualizarEstado(tipo, icono, titulo, detalle) {
   const box = document.getElementById('status-box');
   box.className = 'status-box status-' + tipo;
@@ -814,7 +967,9 @@ function toast(msg, tipo) {
   setTimeout(() => t.className = 'toast ' + tipo, 2500);
 }
 
-// ============ INICIAR ============
+// ============================================================
+// INICIAR APP
+// ============================================================
 iniciar();
 </script>
 </body>
