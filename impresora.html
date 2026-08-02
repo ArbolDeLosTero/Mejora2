@@ -7,13 +7,14 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
 body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 15px; }
-.card { background: white; border-radius: 20px; max-width: 500px; margin: 0 auto; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.card { background: white; border-radius: 20px; max-width: 600px; margin: 0 auto; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
 .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; }
 .header h1 { font-size: 20px; margin-bottom: 5px; }
 .header p { font-size: 12px; opacity: 0.9; }
 .content { padding: 20px; }
 
 .info { background: #e8f5e9; border: 2px solid #2a9d4a; border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #2a6b3a; line-height: 1.5; }
+.warning { background: #fff3cd; border: 2px solid #f0ad4e; border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #856404; line-height: 1.5; }
 
 .tabs { display: flex; gap: 5px; margin-bottom: 20px; background: #f0f0f5; padding: 4px; border-radius: 12px; }
 .tab { flex: 1; padding: 12px; border: none; border-radius: 10px; background: transparent; font-size: 13px; font-weight: 600; cursor: pointer; color: #666; transition: all 0.2s; }
@@ -27,16 +28,9 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .form-group { margin-bottom: 15px; }
 .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 600; }
 .form-group input, .form-group select, .form-group textarea { 
-  width: 100%; 
-  padding: 10px; 
-  border: 2px solid #e0e0e0; 
-  border-radius: 10px; 
-  font-size: 14px; 
+  width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; 
 }
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus { 
-  outline: none; 
-  border-color: #667eea; 
-}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; }
 .form-group textarea { resize: vertical; min-height: 60px; }
 
 .checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
@@ -46,54 +40,102 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
 .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
 .btn-success { background: #2a9d4a; color: white; }
+.btn-danger { background: #d33; color: white; }
+.btn-secondary { background: #f0f0f5; color: #333; }
 .btn:active { transform: scale(0.98); }
 
 .selector-ancho { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
-.ancho-btn { padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; background: white; font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.2s; }
+.ancho-btn { padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; background: white; font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; }
 .ancho-btn.active { border-color: #667eea; background: #eef2ff; color: #667eea; }
 
 .file-upload { position: relative; }
 .file-upload input[type="file"] { display: none; }
 .file-upload-label { 
-  display: block; 
-  padding: 12px; 
-  background: #f0f0f5; 
-  border: 2px dashed #ccc; 
-  border-radius: 10px; 
-  text-align: center; 
-  cursor: pointer; 
-  font-size: 13px; 
-  color: #666;
+  display: block; padding: 12px; background: #f0f0f5; border: 2px dashed #ccc; 
+  border-radius: 10px; text-align: center; cursor: pointer; font-size: 13px; color: #666;
 }
-.file-upload-label:hover { background: #e9ecef; }
 
+/* Bloques de configuración */
+.config-block { background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+.config-block h3 { font-size: 14px; margin-bottom: 12px; color: #333; display: flex; align-items: center; gap: 8px; }
+
+/* Horarios */
+.horarios-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 12px; }
+.horarios-table th { background: #667eea; color: white; padding: 8px; text-align: left; }
+.horarios-table td { padding: 6px; border-bottom: 1px solid #e0e0e0; }
+.horarios-table input[type="time"] { width: 80px; padding: 4px; border: 1px solid #ddd; border-radius: 6px; font-size: 11px; }
+.horarios-table input[type="checkbox"] { width: 16px; height: 16px; }
+.dia-nombre { font-weight: 600; }
+.dia-cerrado { color: #d33; font-style: italic; }
+
+.agrupar-info { background: #e3f2fd; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 12px; color: #0d47a1; }
+.agrupar-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; padding: 8px; background: white; border-radius: 8px; }
+.agrupar-row select { flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; }
+
+/* Preview del ticket */
 .preview-container { 
-  background: #f8f9fa; 
-  border: 2px solid #e0e0e0; 
-  border-radius: 12px; 
-  padding: 15px; 
-  margin-top: 20px; 
+  background: #f8f9fa; border: 2px solid #e0e0e0; border-radius: 12px; 
+  padding: 15px; margin-top: 20px; 
 }
-.preview-title { font-size: 13px; font-weight: 600; color: #666; margin-bottom: 10px; }
-.ticket-preview { 
-  background: white; 
-  border: 1px solid #ddd; 
-  padding: 15px; 
-  font-family: 'Courier New', monospace; 
-  font-size: 11px; 
-  line-height: 1.4; 
-  max-width: 300px; 
-  margin: 0 auto;
+.preview-title { 
+  font-size: 13px; font-weight: 600; color: #666; margin-bottom: 10px; 
+  display: flex; justify-content: space-between; align-items: center;
 }
-.ticket-preview .center { text-align: center; }
-.ticket-preview .bold { font-weight: bold; }
-.ticket-preview .separator { border-top: 1px dashed #333; margin: 8px 0; }
-.ticket-preview img { max-width: 100%; height: auto; margin-bottom: 10px; }
+.preview-hint { font-size: 10px; color: #888; font-weight: 400; }
 
+.ticket-preview { 
+  background: white; border: 2px solid #ddd; padding: 10px; 
+  font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.4; 
+  max-width: 320px; margin: 0 auto; position: relative;
+  min-height: 400px;
+}
+
+/* Elementos arrastrables en el preview */
+.preview-element {
+  position: relative;
+  cursor: move;
+  padding: 4px;
+  border: 2px dashed transparent;
+  transition: border-color 0.2s;
+  user-select: none;
+}
+.preview-element:hover { border-color: #667eea; }
+.preview-element.selected { border-color: #667eea; background: rgba(102, 126, 234, 0.05); }
+.preview-element.dragging { opacity: 0.7; }
+
+/* Handles de resize */
+.resize-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #667eea;
+  border: 2px solid white;
+  border-radius: 50%;
+  display: none;
+  z-index: 10;
+}
+.preview-element.selected .resize-handle { display: block; }
+.resize-handle.tl { top: -6px; left: -6px; cursor: nwse-resize; }
+.resize-handle.tr { top: -6px; right: -6px; cursor: nesw-resize; }
+.resize-handle.bl { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.resize-handle.br { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+/* Separadores */
+.ticket-separator { border-top: 1px dashed #333; margin: 6px 0; }
+
+/* Toast */
 .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 22px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 300; opacity: 0; transition: opacity 0.3s; max-width: 90%; text-align: center; }
 .toast.show { opacity: 1; }
 .toast.ok { background: #2a9d4a; }
 .toast.err { background: #d33; }
+
+/* Modal para editar elemento */
+.modal-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal-bg.active { display: flex; }
+.modal { background: white; border-radius: 20px; padding: 25px; max-width: 400px; width: 100%; max-height: 90vh; overflow-y: auto; }
+.modal h3 { font-size: 16px; margin-bottom: 15px; color: #333; }
+.modal-buttons { display: flex; gap: 10px; margin-top: 15px; }
+.modal-buttons .btn { margin-bottom: 0; }
 </style>
 </head>
 <body>
@@ -101,7 +143,7 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 <div class="card">
   <div class="header">
     <h1>🖨️ Configurar Impresora</h1>
-    <p>Impresora + Ticket</p>
+    <p>Impresora + Ticket Personalizado</p>
   </div>
   <div class="content">
 
@@ -116,7 +158,7 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
       
       <div class="info">
         <b>✅ Modo Universal:</b><br>
-        Detecta automáticamente todas las impresoras conectadas a tu dispositivo (USB, Bluetooth, WiFi, etc.). No requiere configuración adicional.
+        Detecta automáticamente todas las impresoras conectadas a tu dispositivo (USB, Bluetooth, WiFi, OTG, etc.).
       </div>
 
       <div class="form-group">
@@ -129,15 +171,14 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
         </div>
       </div>
 
-      <button class="btn btn-success" onclick="imprimirPrueba()">
-        🧪 Imprimir ticket de prueba
-      </button>
+      <button class="btn btn-success" onclick="imprimirPrueba()">🧪 Imprimir ticket de prueba</button>
 
       <div class="preview-container">
-        <div class="preview-title">👁️ Vista previa del ticket</div>
-        <div class="ticket-preview" id="ticket-preview">
-          <!-- Se genera dinámicamente -->
+        <div class="preview-title">
+          <span>👁️ Vista previa</span>
+          <span class="preview-hint">Ancho: <span id="ancho-actual">58</span>mm</span>
         </div>
+        <div class="ticket-preview" id="ticket-preview-impresora"></div>
       </div>
     </div>
 
@@ -145,17 +186,19 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
     <div id="sec-ticket" class="section">
       <div class="section-title">🎨 Configuración del Ticket</div>
 
+      <div class="warning">
+        <b>💡 Tip:</b> Arrastrá los elementos en el preview para reorganizarlos. Arrastrá las esquinas para cambiar el tamaño.
+      </div>
+
       <!-- ENCABEZADO -->
-      <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
-        <h3 style="font-size: 14px; margin-bottom: 12px; color: #333;">📝 Encabezado (parte superior)</h3>
+      <div class="config-block">
+        <h3>📝 Encabezado (parte superior)</h3>
         
         <div class="form-group">
           <label>Imagen / Logo (opcional)</label>
           <div class="file-upload">
             <input type="file" id="logo-input" accept="image/*" onchange="cargarLogo(event)">
-            <label for="logo-input" class="file-upload-label">
-              📷 Subir imagen (PNG, JPG)
-            </label>
+            <label for="logo-input" class="file-upload-label">📷 Subir imagen (PNG, JPG)</label>
           </div>
           <div id="logo-preview" style="margin-top: 10px;"></div>
         </div>
@@ -174,11 +217,38 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
           <label>Teléfono</label>
           <input type="text" id="negocio-telefono" placeholder="Ej: 11-1234-5678" oninput="actualizarPreview()">
         </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="mostrar-horarios" checked onchange="actualizarPreview()">
+          <label for="mostrar-horarios">Mostrar horarios en el ticket</label>
+        </div>
+      </div>
+
+      <!-- HORARIOS -->
+      <div class="config-block">
+        <h3>🕐 Horarios del Kiosco</h3>
+        
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+          <button class="btn btn-secondary" style="flex:1; margin:0;" onclick="agruparDias()">🔗 Agrupar días iguales</button>
+          <button class="btn btn-secondary" style="flex:1; margin:0;" onclick="desagruparDias()">🔓 Desagrupar</button>
+        </div>
+
+        <div id="horarios-container">
+          <!-- Tabla de horarios se genera dinámicamente -->
+        </div>
+
+        <div class="form-group" style="margin-top: 10px;">
+          <label>Formato de visualización</label>
+          <select id="formato-horarios" onchange="actualizarPreview()">
+            <option value="compacto">Compacto (Lun-Vie: 8-12 / 14-20)</option>
+            <option value="completo">Completo (Lunes a Viernes: 08:00 - 12:00)</option>
+          </select>
+        </div>
       </div>
 
       <!-- PIE DE PÁGINA -->
-      <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
-        <h3 style="font-size: 14px; margin-bottom: 12px; color: #333;">📝 Pie de página (parte inferior)</h3>
+      <div class="config-block">
+        <h3>📝 Pie de página (parte inferior)</h3>
         
         <div class="form-group">
           <label>Mensaje personalizado</label>
@@ -197,17 +267,16 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
       </div>
 
       <!-- FORMATO DE TEXTO -->
-      <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
-        <h3 style="font-size: 14px; margin-bottom: 12px; color: #333;">🔤 Formato de texto</h3>
+      <div class="config-block">
+        <h3>🔤 Formato de texto</h3>
         
         <div class="form-group">
           <label>Fuente</label>
           <select id="texto-fuente" onchange="actualizarPreview()">
-            <option value="'Courier New', monospace">Courier New (recomendado para ticketeras)</option>
+            <option value="'Courier New', monospace">Courier New (recomendado)</option>
             <option value="Arial, sans-serif">Arial</option>
             <option value="'Times New Roman', serif">Times New Roman</option>
             <option value="Verdana, sans-serif">Verdana</option>
-            <option value="'Comic Sans MS', cursive">Comic Sans</option>
           </select>
         </div>
 
@@ -222,13 +291,18 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
         </div>
       </div>
 
-      <button class="btn btn-primary" onclick="guardarConfiguracion()">
-        💾 Guardar configuración
-      </button>
+      <button class="btn btn-primary" onclick="guardarConfiguracion()">💾 Guardar configuración</button>
+      <button class="btn btn-success" onclick="imprimirPrueba()">🧪 Probar impresión</button>
 
-      <button class="btn btn-success" onclick="imprimirPrueba()">
-        🧪 Probar impresión con esta configuración
-      </button>
+      <!-- PREVIEW INTERACTIVO -->
+      <div class="preview-container">
+        <div class="preview-title">
+          <span>👁️ Preview Interactivo</span>
+          <span class="preview-hint">Arrastrá para mover · Esquinas para redimensionar</span>
+        </div>
+        <div class="ticket-preview" id="ticket-preview-interactivo"></div>
+      </div>
+
     </div>
 
   </div>
@@ -242,12 +316,28 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 // ============================================================
 let anchoPapel = 58;
 let logoBase64 = null;
+let elementosOrden = ['logo', 'nombre', 'ubicacion', 'telefono', 'horarios'];
+let elementoSeleccionado = null;
+let modoAgrupado = false;
+
+const DIAS_SEMANA = [
+  { id: 'lun', nombre: 'Lunes', activo: true, apertura1: '08:00', cierre1: '12:00', apertura2: '14:00', cierre2: '20:00', dobleTurno: true },
+  { id: 'mar', nombre: 'Martes', activo: true, apertura1: '08:00', cierre1: '12:00', apertura2: '14:00', cierre2: '20:00', dobleTurno: true },
+  { id: 'mie', nombre: 'Miércoles', activo: true, apertura1: '08:00', cierre1: '12:00', apertura2: '14:00', cierre2: '20:00', dobleTurno: true },
+  { id: 'jue', nombre: 'Jueves', activo: true, apertura1: '08:00', cierre1: '12:00', apertura2: '14:00', cierre2: '20:00', dobleTurno: true },
+  { id: 'vie', nombre: 'Viernes', activo: true, apertura1: '08:00', cierre1: '12:00', apertura2: '14:00', cierre2: '20:00', dobleTurno: true },
+  { id: 'sab', nombre: 'Sábado', activo: true, apertura1: '09:00', cierre1: '13:00', apertura2: '', cierre2: '', dobleTurno: false },
+  { id: 'dom', nombre: 'Domingo', activo: false, apertura1: '', cierre1: '', apertura2: '', cierre2: '', dobleTurno: false }
+];
+
+let horarios = JSON.parse(JSON.stringify(DIAS_SEMANA));
 
 // ============================================================
 // INICIALIZACIÓN
 // ============================================================
 function iniciar() {
   cargarConfiguracion();
+  renderHorarios();
   actualizarPreview();
 }
 
@@ -268,12 +358,13 @@ function cambiarAncho(ancho, btn) {
   anchoPapel = ancho;
   document.querySelectorAll('.ancho-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  document.getElementById('ancho-actual').textContent = ancho;
   toast('📏 Ancho: ' + ancho + 'mm', 'ok');
   actualizarPreview();
 }
 
 // ============================================================
-// CARGAR LOGO
+// LOGO
 // ============================================================
 function cargarLogo(event) {
   const file = event.target.files[0];
@@ -289,9 +380,6 @@ function cargarLogo(event) {
   reader.readAsDataURL(file);
 }
 
-// ============================================================
-// ACTUALIZAR TAMAÑO
-// ============================================================
 function actualizarTamano() {
   const tamano = document.getElementById('texto-tamano').value;
   document.getElementById('tamano-label').textContent = tamano + 'px';
@@ -299,74 +387,578 @@ function actualizarTamano() {
 }
 
 // ============================================================
-// ACTUALIZAR PREVIEW
+// HORARIOS
+// ============================================================
+function renderHorarios() {
+  const cont = document.getElementById('horarios-container');
+  
+  if (modoAgrupado) {
+    renderHorariosAgrupados(cont);
+  } else {
+    renderHorariosTabla(cont);
+  }
+}
+
+function renderHorariosTabla(cont) {
+  let html = '<table class="horarios-table">';
+  html += '<tr><th>✓</th><th>Día</th><th>Turno 1</th><th>2° Turno</th></tr>';
+  
+  horarios.forEach((dia, i) => {
+    html += `<tr>
+      <td><input type="checkbox" ${dia.activo ? 'checked' : ''} onchange="toggleDia(${i}, this.checked)"></td>
+      <td class="dia-nombre ${!dia.activo ? 'dia-cerrado' : ''}">${dia.nombre}</td>
+      <td>
+        ${dia.activo ? `
+          <input type="time" value="${dia.apertura1}" onchange="cambiarHorario(${i}, 'apertura1', this.value)">
+          <span>-</span>
+          <input type="time" value="${dia.cierre1}" onchange="cambiarHorario(${i}, 'cierre1', this.value)">
+        ` : '<span class="dia-cerrado">Cerrado</span>'}
+      </td>
+      <td>
+        ${dia.activo ? `
+          <input type="checkbox" ${dia.dobleTurno ? 'checked' : ''} onchange="toggleDobleTurno(${i}, this.checked)" style="margin-right:4px;">
+          ${dia.dobleTurno ? `
+            <input type="time" value="${dia.apertura2}" onchange="cambiarHorario(${i}, 'apertura2', this.value)">
+            <span>-</span>
+            <input type="time" value="${dia.cierre2}" onchange="cambiarHorario(${i}, 'cierre2', this.value)">
+          ` : ''}
+        ` : ''}
+      </td>
+    </tr>`;
+  });
+  
+  html += '</table>';
+  cont.innerHTML = html;
+}
+
+function renderHorariosAgrupados(cont) {
+  const grupos = agruparDiasSimilares();
+  
+  let html = '<div class="agrupar-info">📅 Días agrupados por horario similar</div>';
+  
+  grupos.forEach((grupo, idx) => {
+    const diasTexto = grupo.dias.map(d => d.nombre).join(', ');
+    html += `<div class="agrupar-row">
+      <div style="flex:2; font-size:12px;">
+        <div style="font-weight:600;">${diasTexto}</div>
+        <div style="color:#666; font-size:11px;">${grupo.activo ? formatearHorarioGrupo(grupo.dias[0]) : 'Cerrado'}</div>
+      </div>
+    </div>`;
+  });
+  
+  cont.innerHTML = html;
+}
+
+function agruparDiasSimilares() {
+  const grupos = [];
+  const usados = new Set();
+  
+  horarios.forEach((dia, i) => {
+    if (usados.has(i)) return;
+    
+    const grupo = { dias: [dia], indices: [i] };
+    usados.add(i);
+    
+    horarios.forEach((otro, j) => {
+      if (i === j || usados.has(j)) return;
+      if (sonHorariosIguales(dia, otro)) {
+        grupo.dias.push(otro);
+        grupo.indices.push(j);
+        usados.add(j);
+      }
+    });
+    
+    grupos.push(grupo);
+  });
+  
+  return grupos;
+}
+
+function sonHorariosIguales(a, b) {
+  return a.activo === b.activo &&
+         a.apertura1 === b.apertura1 &&
+         a.cierre1 === b.cierre1 &&
+         a.dobleTurno === b.dobleTurno &&
+         a.apertura2 === b.apertura2 &&
+         a.cierre2 === b.cierre2;
+}
+
+function formatearHorarioGrupo(dia) {
+  if (!dia.activo) return 'Cerrado';
+  let texto = `${dia.apertura1} - ${dia.cierre1}`;
+  if (dia.dobleTurno && dia.apertura2) {
+    texto += ` / ${dia.apertura2} - ${dia.cierre2}`;
+  }
+  return texto;
+}
+
+function toggleDia(idx, activo) {
+  horarios[idx].activo = activo;
+  if (!activo) {
+    horarios[idx].apertura1 = '';
+    horarios[idx].cierre1 = '';
+    horarios[idx].apertura2 = '';
+    horarios[idx].cierre2 = '';
+    horarios[idx].dobleTurno = false;
+  } else {
+    horarios[idx].apertura1 = '08:00';
+    horarios[idx].cierre1 = '12:00';
+  }
+  renderHorarios();
+  actualizarPreview();
+}
+
+function cambiarHorario(idx, campo, valor) {
+  horarios[idx][campo] = valor;
+  actualizarPreview();
+}
+
+function toggleDobleTurno(idx, activo) {
+  horarios[idx].dobleTurno = activo;
+  if (activo && !horarios[idx].apertura2) {
+    horarios[idx].apertura2 = '14:00';
+    horarios[idx].cierre2 = '20:00';
+  }
+  renderHorarios();
+  actualizarPreview();
+}
+
+function agruparDias() {
+  modoAgrupado = true;
+  renderHorarios();
+  toast('🔗 Días agrupados', 'ok');
+}
+
+function desagruparDias() {
+  modoAgrupado = false;
+  renderHorarios();
+  toast('🔓 Días desagrupados', 'ok');
+}
+
+// ============================================================
+// FORMATO DE HORARIOS PARA EL TICKET
+// ============================================================
+function formatearHorariosTicket() {
+  const formato = document.getElementById('formato-horarios').value;
+  const grupos = agruparDiasSimilares();
+  let lineas = [];
+  
+  grupos.forEach(grupo => {
+    const dia = grupo.dias[0];
+    const diasTexto = grupo.dias.map(d => {
+      if (formato === 'compacto') {
+        return d.nombre.substring(0, 3);
+      } else {
+        return d.nombre;
+      }
+    }).join(formato === 'compacto' ? '-' : ', ');
+    
+    if (!dia.activo) {
+      lineas.push(`${diasTexto}: Cerrado`);
+    } else {
+      let horario = `${dia.apertura1}-${dia.cierre1}`;
+      if (dia.dobleTurno && dia.apertura2) {
+        horario += ` / ${dia.apertura2}-${dia.cierre2}`;
+      }
+      lineas.push(`${diasTexto}: ${horario}`);
+    }
+  });
+  
+  return lineas;
+}
+
+// ============================================================
+// PREVIEW INTERACTIVO (con drag & drop)
 // ============================================================
 function actualizarPreview() {
-  const preview = document.getElementById('ticket-preview');
+  actualizarPreviewSimple();
+  actualizarPreviewInteractivo();
+}
+
+function actualizarPreviewSimple() {
+  const preview = document.getElementById('ticket-preview-impresora');
+  if (!preview) return;
+  preview.innerHTML = generarContenidoTicket();
+  aplicarEstiloPreview(preview);
+}
+
+function actualizarPreviewInteractivo() {
+  const preview = document.getElementById('ticket-preview-interactivo');
+  if (!preview) return;
   
+  preview.innerHTML = '';
+  aplicarEstiloPreview(preview);
+  
+  // Crear elementos arrastrables según el orden
+  elementosOrden.forEach(tipo => {
+    const elem = crearElementoArrastrable(tipo);
+    if (elem) preview.appendChild(elem);
+  });
+  
+  // Separador
+  const sep1 = document.createElement('div');
+  sep1.className = 'ticket-separator';
+  preview.appendChild(sep1);
+  
+  // Contenido del medio (no editable)
+  const contenido = document.createElement('div');
+  contenido.style.cssText = 'padding: 8px 4px; color: #555; font-size: 11px;';
+  contenido.innerHTML = `
+    <div style="text-align:center; font-weight:bold; margin-bottom:4px;">VENTA</div>
+    <div>N° Ticket: #1234</div>
+    <div>Fecha: ${new Date().toLocaleString('es-AR')}</div>
+    <div class="ticket-separator"></div>
+    <div style="display:flex; justify-content:space-between;"><span>Producto</span><span>Total</span></div>
+    <div style="border-top:1px dotted #333; margin:2px 0;"></div>
+    <div style="display:flex; justify-content:space-between;"><span>Coca Cola 500ml</span><span>x2 $3.000</span></div>
+    <div style="display:flex; justify-content:space-between;"><span>Yerba Taragüi 1kg</span><span>x1 $3.500</span></div>
+    <div style="display:flex; justify-content:space-between;"><span>Alfajor</span><span>x3 $3.600</span></div>
+    <div class="ticket-separator"></div>
+    <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:13px;"><span>TOTAL:</span><span>$10.100</span></div>
+    <div class="ticket-separator"></div>
+    <div style="display:flex; justify-content:space-between;"><span>Método:</span><span>EFECTIVO</span></div>
+    <div style="display:flex; justify-content:space-between;"><span>Recibido:</span><span>$15.000</span></div>
+    <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>Vuelto:</span><span>$4.900</span></div>
+  `;
+  preview.appendChild(contenido);
+  
+  // Separador
+  const sep2 = document.createElement('div');
+  sep2.className = 'ticket-separator';
+  preview.appendChild(sep2);
+  
+  // Pie de página (arrastrable)
+  const pieElementos = ['mensaje', 'fecha', 'numero'];
+  pieElementos.forEach(tipo => {
+    const elem = crearElementoArrastrable(tipo);
+    if (elem) preview.appendChild(elem);
+  });
+}
+
+function crearElementoArrastrable(tipo) {
   const nombre = document.getElementById('negocio-nombre').value || 'MEJORAR 2';
   const ubicacion = document.getElementById('negocio-ubicacion').value;
   const telefono = document.getElementById('negocio-telefono').value;
+  const mostrarHorarios = document.getElementById('mostrar-horarios').checked;
   const pieMensaje = document.getElementById('pie-mensaje').value || '¡Gracias por su compra!';
   const mostrarFecha = document.getElementById('mostrar-fecha').checked;
   const mostrarNumero = document.getElementById('mostrar-numero-ticket').checked;
+  const negrita = document.getElementById('texto-negrita').checked;
+  const tamano = document.getElementById('texto-tamano').value;
+  
+  let contenido = '';
+  let visible = true;
+  
+  switch(tipo) {
+    case 'logo':
+      if (!logoBase64) return null;
+      contenido = `<img src="${logoBase64}" style="max-width:100%; height:auto; display:block; margin:0 auto;">`;
+      break;
+    case 'nombre':
+      contenido = `<div style="text-align:center; font-weight:${negrita?'bold':'normal'}; font-size:${parseInt(tamano)+3}px;">${nombre}</div>`;
+      break;
+    case 'ubicacion':
+      if (!ubicacion) return null;
+      contenido = `<div style="text-align:center;">${ubicacion}</div>`;
+      break;
+    case 'telefono':
+      if (!telefono) return null;
+      contenido = `<div style="text-align:center;">Tel: ${telefono}</div>`;
+      break;
+    case 'horarios':
+      if (!mostrarHorarios) return null;
+      const lineas = formatearHorariosTicket();
+      contenido = `<div style="text-align:center; font-size:${parseInt(tamano)-1}px;">${lineas.join('<br>')}</div>`;
+      break;
+    case 'mensaje':
+      contenido = `<div style="text-align:center; font-weight:${negrita?'bold':'normal'};">${pieMensaje}</div>`;
+      break;
+    case 'fecha':
+      if (!mostrarFecha) return null;
+      contenido = `<div style="text-align:center; font-size:${parseInt(tamano)-1}px;">${new Date().toLocaleString('es-AR')}</div>`;
+      break;
+    case 'numero':
+      if (!mostrarNumero) return null;
+      contenido = `<div style="text-align:center; font-size:${parseInt(tamano)-1}px;">N° Ticket: #1234</div>`;
+      break;
+  }
+  
+  const div = document.createElement('div');
+  div.className = 'preview-element';
+  div.dataset.tipo = tipo;
+  div.innerHTML = contenido + `
+    <div class="resize-handle tl" data-handle="tl"></div>
+    <div class="resize-handle tr" data-handle="tr"></div>
+    <div class="resize-handle bl" data-handle="bl"></div>
+    <div class="resize-handle br" data-handle="br"></div>
+  `;
+  
+  // Eventos de drag & drop
+  div.addEventListener('mousedown', iniciarDrag);
+  div.addEventListener('touchstart', iniciarDragTouch, { passive: false });
+  
+  return div;
+}
+
+function aplicarEstiloPreview(preview) {
   const fuente = document.getElementById('texto-fuente').value;
   const tamano = document.getElementById('texto-tamano').value;
   const negrita = document.getElementById('texto-negrita').checked;
   
-  let html = '';
-  
-  // Logo
-  if (logoBase64) {
-    html += `<img src="${logoBase64}">`;
-  }
-  
-  // Encabezado
-  html += `<div class="center ${negrita ? 'bold' : ''}" style="font-size: ${parseInt(tamano) + 3}px;">${nombre}</div>`;
-  
-  if (ubicacion) {
-    html += `<div class="center" style="font-size: ${tamano}px;">${ubicacion}</div>`;
-  }
-  
-  if (telefono) {
-    html += `<div class="center" style="font-size: ${tamano}px;">Tel: ${telefono}</div>`;
-  }
-  
-  html += '<div class="separator"></div>';
-  
-  // Contenido del ticket (ejemplo)
-  if (mostrarNumero) {
-    html += `<div style="font-size: ${tamano}px;">N° Ticket: #1234</div>`;
-  }
-  
-  if (mostrarFecha) {
-    html += `<div style="font-size: ${tamano}px;">Fecha: ${new Date().toLocaleString('es-AR')}</div>`;
-  }
-  
-  html += '<div class="separator"></div>';
-  
-  // Productos de ejemplo
-  html += `<div style="font-size: ${tamano}px;">Coca Cola 500ml    x2   $3.000</div>`;
-  html += `<div style="font-size: ${tamano}px;">Yerba Taragüi 1kg  x1   $3.500</div>`;
-  html += `<div style="font-size: ${tamano}px;">Alfajor            x3   $3.600</div>`;
-  
-  html += '<div class="separator"></div>';
-  
-  // Total
-  html += `<div class="${negrita ? 'bold' : ''}" style="font-size: ${parseInt(tamano) + 2}px;">TOTAL:          $10.100</div>`;
-  
-  html += '<div class="separator"></div>';
-  
-  // Pie de página
-  html += `<div class="center" style="font-size: ${tamano}px;">${pieMensaje}</div>`;
-  
   preview.style.fontFamily = fuente;
   preview.style.fontSize = tamano + 'px';
-  preview.innerHTML = html;
+  preview.style.fontWeight = negrita ? 'bold' : 'normal';
+}
+
+function generarContenidoTicket() {
+  const nombre = document.getElementById('negocio-nombre').value || 'MEJORAR 2';
+  const ubicacion = document.getElementById('negocio-ubicacion').value;
+  const telefono = document.getElementById('negocio-telefono').value;
+  const mostrarHorarios = document.getElementById('mostrar-horarios').checked;
+  const pieMensaje = document.getElementById('pie-mensaje').value || '¡Gracias por su compra!';
+  const mostrarFecha = document.getElementById('mostrar-fecha').checked;
+  const mostrarNumero = document.getElementById('mostrar-numero-ticket').checked;
+  const negrita = document.getElementById('texto-negrita').checked;
+  const tamano = document.getElementById('texto-tamano').value;
+  
+  let html = '';
+  
+  if (logoBase64) {
+    html += `<div style="text-align:center;"><img src="${logoBase64}" style="max-width:100%; height:auto;"></div>`;
+  }
+  
+  html += `<div style="text-align:center; font-weight:${negrita?'bold':'normal'}; font-size:${parseInt(tamano)+3}px;">${nombre}</div>`;
+  
+  if (ubicacion) html += `<div style="text-align:center;">${ubicacion}</div>`;
+  if (telefono) html += `<div style="text-align:center;">Tel: ${telefono}</div>`;
+  
+  if (mostrarHorarios) {
+    const lineas = formatearHorariosTicket();
+    html += `<div style="text-align:center; font-size:${parseInt(tamano)-1}px;">${lineas.join('<br>')}</div>`;
+  }
+  
+  html += '<div class="ticket-separator"></div>';
+  
+  if (mostrarNumero) html += `<div>N° Ticket: #1234</div>`;
+  if (mostrarFecha) html += `<div>Fecha: ${new Date().toLocaleString('es-AR')}</div>`;
+  
+  html += '<div class="ticket-separator"></div>';
+  html += `<div style="display:flex; justify-content:space-between;"><span>Producto</span><span>Total</span></div>`;
+  html += '<div style="border-top:1px dotted #333; margin:2px 0;"></div>';
+  html += `<div style="display:flex; justify-content:space-between;"><span>Coca Cola 500ml</span><span>x2 $3.000</span></div>`;
+  html += `<div style="display:flex; justify-content:space-between;"><span>Yerba Taragüi 1kg</span><span>x1 $3.500</span></div>`;
+  html += `<div style="display:flex; justify-content:space-between;"><span>Alfajor</span><span>x3 $3.600</span></div>`;
+  html += '<div class="ticket-separator"></div>';
+  html += `<div style="display:flex; justify-content:space-between; font-weight:${negrita?'bold':'normal'}; font-size:${parseInt(tamano)+2}px;"><span>TOTAL:</span><span>$10.100</span></div>`;
+  html += '<div class="ticket-separator"></div>';
+  html += `<div style="display:flex; justify-content:space-between;"><span>Método:</span><span>EFECTIVO</span></div>`;
+  html += `<div style="display:flex; justify-content:space-between;"><span>Recibido:</span><span>$15.000</span></div>`;
+  html += `<div style="display:flex; justify-content:space-between; font-weight:bold;"><span>Vuelto:</span><span>$4.900</span></div>`;
+  html += '<div class="ticket-separator"></div>';
+  html += `<div style="text-align:center; font-weight:${negrita?'bold':'normal'};">${pieMensaje}</div>`;
+  
+  return html;
 }
 
 // ============================================================
-// GUARDAR CONFIGURACIÓN
+// DRAG & DROP
+// ============================================================
+let dragData = null;
+
+function iniciarDrag(e) {
+  if (e.target.classList.contains('resize-handle')) {
+    iniciarResize(e);
+    return;
+  }
+  
+  e.preventDefault();
+  const elem = e.currentTarget;
+  
+  // Deseleccionar otros
+  document.querySelectorAll('.preview-element').forEach(el => el.classList.remove('selected'));
+  elem.classList.add('selected');
+  elementoSeleccionado = elem;
+  
+  const rect = elem.getBoundingClientRect();
+  const parentRect = elem.parentElement.getBoundingClientRect();
+  
+  dragData = {
+    elem: elem,
+    startX: e.clientX,
+    startY: e.clientY,
+    origTop: elem.offsetTop,
+    parent: elem.parentElement
+  };
+  
+  elem.classList.add('dragging');
+  
+  document.addEventListener('mousemove', moverDrag);
+  document.addEventListener('mouseup', terminarDrag);
+}
+
+function iniciarDragTouch(e) {
+  if (e.target.classList.contains('resize-handle')) {
+    iniciarResizeTouch(e);
+    return;
+  }
+  
+  e.preventDefault();
+  const elem = e.currentTarget;
+  const touch = e.touches[0];
+  
+  document.querySelectorAll('.preview-element').forEach(el => el.classList.remove('selected'));
+  elem.classList.add('selected');
+  elementoSeleccionado = elem;
+  
+  dragData = {
+    elem: elem,
+    startX: touch.clientX,
+    startY: touch.clientY,
+    origTop: elem.offsetTop,
+    parent: elem.parentElement
+  };
+  
+  elem.classList.add('dragging');
+  
+  document.addEventListener('touchmove', moverDragTouch, { passive: false });
+  document.addEventListener('touchend', terminarDragTouch);
+}
+
+function moverDrag(e) {
+  if (!dragData) return;
+  
+  const dy = e.clientY - dragData.startY;
+  const nuevoTop = dragData.origTop + dy;
+  dragData.elem.style.top = nuevoTop + 'px';
+  dragData.elem.style.position = 'relative';
+}
+
+function moverDragTouch(e) {
+  if (!dragData) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const dy = touch.clientY - dragData.startY;
+  const nuevoTop = dragData.origTop + dy;
+  dragData.elem.style.top = nuevoTop + 'px';
+  dragData.elem.style.position = 'relative';
+}
+
+function terminarDrag(e) {
+  if (!dragData) return;
+  
+  dragData.elem.classList.remove('dragging');
+  
+  // Reordenar elementos según posición
+  reordenarElementos();
+  
+  dragData = null;
+  document.removeEventListener('mousemove', moverDrag);
+  document.removeEventListener('mouseup', terminarDrag);
+}
+
+function terminarDragTouch(e) {
+  if (!dragData) return;
+  
+  dragData.elem.classList.remove('dragging');
+  reordenarElementos();
+  
+  dragData = null;
+  document.removeEventListener('touchmove', moverDragTouch);
+  document.removeEventListener('touchend', terminarDragTouch);
+}
+
+function reordenarElementos() {
+  const preview = document.getElementById('ticket-preview-interactivo');
+  const elementos = preview.querySelectorAll('.preview-element');
+  
+  const nuevosOrden = [];
+  elementos.forEach(el => {
+    nuevosOrden.push(el.dataset.tipo);
+  });
+  
+  elementosOrden = nuevosOrden;
+}
+
+// ============================================================
+// RESIZE
+// ============================================================
+let resizeData = null;
+
+function iniciarResize(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  
+  const handle = e.target;
+  const elem = handle.parentElement;
+  
+  resizeData = {
+    elem: elem,
+    handle: handle.dataset.handle,
+    startX: e.clientX,
+    startY: e.clientY,
+    origWidth: elem.offsetWidth,
+    origFontSize: parseFloat(window.getComputedStyle(elem).fontSize)
+  };
+  
+  document.addEventListener('mousemove', moverResize);
+  document.addEventListener('mouseup', terminarResize);
+}
+
+function iniciarResizeTouch(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  
+  const handle = e.target;
+  const elem = handle.parentElement;
+  const touch = e.touches[0];
+  
+  resizeData = {
+    elem: elem,
+    handle: handle.dataset.handle,
+    startX: touch.clientX,
+    startY: touch.clientY,
+    origWidth: elem.offsetWidth,
+    origFontSize: parseFloat(window.getComputedStyle(elem).fontSize)
+  };
+  
+  document.addEventListener('touchmove', moverResizeTouch, { passive: false });
+  document.addEventListener('touchend', terminarResizeTouch);
+}
+
+function moverResize(e) {
+  if (!resizeData) return;
+  
+  const dx = e.clientX - resizeData.startX;
+  const escala = 1 + (dx / 200);
+  const nuevoSize = Math.max(8, Math.min(24, resizeData.origFontSize * escala));
+  
+  resizeData.elem.style.fontSize = nuevoSize + 'px';
+}
+
+function moverResizeTouch(e) {
+  if (!resizeData) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const dx = touch.clientX - resizeData.startX;
+  const escala = 1 + (dx / 200);
+  const nuevoSize = Math.max(8, Math.min(24, resizeData.origFontSize * escala));
+  resizeData.elem.style.fontSize = nuevoSize + 'px';
+}
+
+function terminarResize() {
+  resizeData = null;
+  document.removeEventListener('mousemove', moverResize);
+  document.removeEventListener('mouseup', terminarResize);
+}
+
+function terminarResizeTouch() {
+  resizeData = null;
+  document.removeEventListener('touchmove', moverResizeTouch);
+  document.removeEventListener('touchend', terminarResizeTouch);
+}
+
+// ============================================================
+// GUARDAR / CARGAR CONFIGURACIÓN
 // ============================================================
 function guardarConfiguracion() {
   const config = {
@@ -375,23 +967,24 @@ function guardarConfiguracion() {
     negocioNombre: document.getElementById('negocio-nombre').value,
     negocioUbicacion: document.getElementById('negocio-ubicacion').value,
     negocioTelefono: document.getElementById('negocio-telefono').value,
+    mostrarHorarios: document.getElementById('mostrar-horarios').checked,
+    horarios: horarios,
     pieMensaje: document.getElementById('pie-mensaje').value,
     mostrarFecha: document.getElementById('mostrar-fecha').checked,
     mostrarNumero: document.getElementById('mostrar-numero-ticket').checked,
     textoFuente: document.getElementById('texto-fuente').value,
     textoTamano: document.getElementById('texto-tamano').value,
-    textoNegrita: document.getElementById('texto-negrita').checked
+    textoNegrita: document.getElementById('texto-negrita').checked,
+    formatoHorarios: document.getElementById('formato-horarios').value,
+    elementosOrden: elementosOrden
   };
   
-  localStorage.setItem('ticket_config_v1', JSON.stringify(config));
+  localStorage.setItem('ticket_config_v2', JSON.stringify(config));
   toast('✅ Configuración guardada', 'ok');
 }
 
-// ============================================================
-// CARGAR CONFIGURACIÓN
-// ============================================================
 function cargarConfiguracion() {
-  const guardada = localStorage.getItem('ticket_config_v1');
+  const guardada = localStorage.getItem('ticket_config_v2');
   if (!guardada) return;
   
   try {
@@ -403,26 +996,32 @@ function cargarConfiguracion() {
     document.getElementById('negocio-nombre').value = config.negocioNombre || '';
     document.getElementById('negocio-ubicacion').value = config.negocioUbicacion || '';
     document.getElementById('negocio-telefono').value = config.negocioTelefono || '';
+    document.getElementById('mostrar-horarios').checked = config.mostrarHorarios !== false;
     document.getElementById('pie-mensaje').value = config.pieMensaje || '';
     document.getElementById('mostrar-fecha').checked = config.mostrarFecha !== false;
     document.getElementById('mostrar-numero-ticket').checked = config.mostrarNumero !== false;
     document.getElementById('texto-fuente').value = config.textoFuente || "'Courier New', monospace";
     document.getElementById('texto-tamano').value = config.textoTamano || 11;
     document.getElementById('texto-negrita').checked = config.textoNegrita || false;
+    document.getElementById('formato-horarios').value = config.formatoHorarios || 'compacto';
+    
+    if (config.horarios) horarios = config.horarios;
+    if (config.elementosOrden) elementosOrden = config.elementosOrden;
     
     if (logoBase64) {
       document.getElementById('logo-preview').innerHTML = `<img src="${logoBase64}" style="max-width: 150px; border-radius: 8px;">`;
     }
     
+    document.getElementById('tamano-label').textContent = (config.textoTamano || 11) + 'px';
+    document.getElementById('ancho-actual').textContent = anchoPapel;
+    
     // Actualizar selector de ancho
     document.querySelectorAll('.ancho-btn').forEach(btn => {
       btn.classList.remove('active');
-      if (btn.textContent.includes(anchoPapel + ' mm') || btn.textContent.includes(anchoPapel === 210 ? 'A4' : '')) {
+      if (btn.textContent.includes(anchoPapel + ' mm') || (anchoPapel === 210 && btn.textContent.includes('A4'))) {
         btn.classList.add('active');
       }
     });
-    
-    document.getElementById('tamano-label').textContent = config.textoTamano + 'px';
     
   } catch(e) {
     console.error('Error cargando configuración:', e);
@@ -430,12 +1029,13 @@ function cargarConfiguracion() {
 }
 
 // ============================================================
-// IMPRIMIR PRUEBA
+// IMPRIMIR
 // ============================================================
 function imprimirPrueba() {
   const nombre = document.getElementById('negocio-nombre').value || 'MEJORAR 2';
   const ubicacion = document.getElementById('negocio-ubicacion').value;
   const telefono = document.getElementById('negocio-telefono').value;
+  const mostrarHorarios = document.getElementById('mostrar-horarios').checked;
   const pieMensaje = document.getElementById('pie-mensaje').value || '¡Gracias por su compra!';
   const mostrarFecha = document.getElementById('mostrar-fecha').checked;
   const mostrarNumero = document.getElementById('mostrar-numero-ticket').checked;
@@ -454,16 +1054,15 @@ function imprimirPrueba() {
   
   contenido += `<div class="center ${negrita ? 'bold' : ''}" style="font-size: ${parseInt(tamano) + 3}px;">${nombre}</div>`;
   
-  if (ubicacion) {
-    contenido += `<div class="center">${ubicacion}</div>`;
-  }
+  if (ubicacion) contenido += `<div class="center">${ubicacion}</div>`;
+  if (telefono) contenido += `<div class="center">Tel: ${telefono}</div>`;
   
-  if (telefono) {
-    contenido += `<div class="center">Tel: ${telefono}</div>`;
+  if (mostrarHorarios) {
+    const lineas = formatearHorariosTicket();
+    contenido += `<div class="center" style="font-size: ${parseInt(tamano) - 1}px;">${lineas.join('<br>')}</div>`;
   }
   
   contenido += '<div class="separator"></div>';
-  
   contenido += `<div class="bold center">TICKET DE PRUEBA</div>`;
   
   if (mostrarNumero) {
@@ -475,70 +1074,48 @@ function imprimirPrueba() {
   }
   
   contenido += '<div class="separator"></div>';
-  
   contenido += `<div class="item bold"><span>Producto</span><span>Total</span></div>`;
   contenido += '<div class="separator" style="border-top-style:dotted;margin:1mm 0;"></div>';
-  
   contenido += `<div class="item"><span class="item-nombre">Coca Cola 500ml</span><span>x2</span><span class="item-total">$3.000</span></div>`;
   contenido += `<div class="item"><span class="item-nombre">Yerba Taragüi 1kg</span><span>x1</span><span class="item-total">$3.500</span></div>`;
   contenido += `<div class="item"><span class="item-nombre">Alfajor</span><span>x3</span><span class="item-total">$3.600</span></div>`;
-  
   contenido += '<div class="separator"></div>';
-  
   contenido += `<div class="item"><span>Subtotal:</span><span>$10.100</span></div>`;
   contenido += `<div class="item ${negrita ? 'bold' : ''}" style="font-size: ${parseInt(tamano) + 2}px;"><span>TOTAL:</span><span>$10.100</span></div>`;
-  
   contenido += '<div class="separator"></div>';
-  
   contenido += `<div class="item"><span>Método de pago:</span><span>EFECTIVO</span></div>`;
   contenido += `<div class="item"><span>Recibido:</span><span>$15.000</span></div>`;
   contenido += `<div class="item bold"><span>Vuelto:</span><span>$4.900</span></div>`;
-  
   contenido += '<div class="separator"></div>';
-  
   contenido += `<div class="center ${negrita ? 'bold' : ''}">${pieMensaje}</div>`;
-  contenido += `<div class="center" style="font-size:9px;margin-top:2mm;">Ticket generado el ${fecha}</div>`;
+  contenido += `<div class="center" style="font-size:9px;margin-top:2mm;">Generado el ${fecha}</div>`;
   
   const html = `
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Ticket - ${nombre}</title>
-  <style>
-    @page {
-      size: ${ancho} auto;
-      margin: 2mm;
-    }
-    * { box-sizing: border-box; }
-    body {
-      font-family: ${fuente};
-      font-size: ${tamano}px;
-      width: ${ancho};
-      margin: 0;
-      padding: 2mm;
-      line-height: 1.3;
-      color: #000;
-      ${negrita ? 'font-weight: bold;' : ''}
-    }
-    .center { text-align: center; }
-    .right { text-align: right; }
-    .bold { font-weight: bold; }
-    .separator {
-      border-top: 1px dashed #000;
-      margin: 3mm 0;
-    }
-    .item {
-      display: flex;
-      justify-content: space-between;
-      margin: 1mm 0;
-    }
-    .item-nombre { flex: 1; }
-    .item-total { font-weight: bold; }
-    @media print {
-      body { margin: 0; padding: 2mm; }
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Ticket - ${nombre}</title>
+<style>
+  @page { size: ${ancho} auto; margin: 2mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: ${fuente};
+    font-size: ${tamano}px;
+    width: ${ancho};
+    margin: 0;
+    padding: 2mm;
+    line-height: 1.3;
+    color: #000;
+    ${negrita ? 'font-weight: bold;' : ''}
+  }
+  .center { text-align: center; }
+  .bold { font-weight: bold; }
+  .separator { border-top: 1px dashed #000; margin: 3mm 0; }
+  .item { display: flex; justify-content: space-between; margin: 1mm 0; }
+  .item-nombre { flex: 1; }
+  .item-total { font-weight: bold; }
+</style>
 </head>
 <body>
   ${contenido}
@@ -552,20 +1129,18 @@ function imprimirPrueba() {
   `;
   
   const ventana = window.open('', '_blank', 'width=400,height=600');
-  
   if (!ventana) {
-    toast('❌ Bloqueador de ventanas emergentes. Permití popups para este sitio.', 'err');
+    toast('❌ Permití ventanas emergentes', 'err');
     return;
   }
   
   ventana.document.write(html);
   ventana.document.close();
-  
-  toast('✅ Ticket abierto. Elegí tu impresora.', 'ok');
+  toast('✅ Ticket abierto', 'ok');
 }
 
 // ============================================================
-// TOAST
+// UTILIDADES
 // ============================================================
 function toast(msg, tipo) {
   const t = document.getElementById('toast');
