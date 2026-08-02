@@ -50,8 +50,9 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 /* Formularios */
 .form-group { margin-bottom: 12px; }
 .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 600; }
-.form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; }
-.form-group input:focus, .form-group select:focus { outline: none; border-color: #667eea; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; }
+.form-group textarea { resize: vertical; min-height: 60px; }
 
 /* Tarjetas */
 .panel { background: #f8f9fa; border-radius: 14px; padding: 15px; margin-bottom: 15px; }
@@ -156,6 +157,60 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 
 .section { display: none; }
 .section.active { display: block; }
+
+/* ========== IMPRESORA - CSS ========== */
+.info { background: #e8f5e9; border: 2px solid #2a9d4a; border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #2a6b3a; line-height: 1.5; }
+.warning { background: #fff3cd; border: 2px solid #f0ad4e; border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #856404; line-height: 1.5; }
+
+.selector-ancho { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
+.ancho-btn { padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; background: white; font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; }
+.ancho-btn.active { border-color: #667eea; background: #eef2ff; color: #667eea; }
+
+.file-upload { position: relative; }
+.file-upload input[type="file"] { display: none; }
+.file-upload-label { display: block; padding: 12px; background: #f0f0f5; border: 2px dashed #ccc; border-radius: 10px; text-align: center; cursor: pointer; font-size: 13px; color: #666; }
+
+.config-block { background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+.config-block h3 { font-size: 14px; margin-bottom: 12px; color: #333; display: flex; align-items: center; gap: 8px; }
+
+.horarios-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 12px; }
+.horarios-table th { background: #667eea; color: white; padding: 8px; text-align: left; }
+.horarios-table td { padding: 6px; border-bottom: 1px solid #e0e0e0; }
+.horarios-table input[type="time"] { width: 80px; padding: 4px; border: 1px solid #ddd; border-radius: 6px; font-size: 11px; }
+.horarios-table input[type="checkbox"] { width: 16px; height: 16px; }
+.dia-nombre { font-weight: 600; }
+.dia-cerrado { color: #d33; font-style: italic; }
+
+.agrupar-info { background: #e3f2fd; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 12px; color: #0d47a1; }
+.agrupar-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; padding: 8px; background: white; border-radius: 8px; }
+
+.checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.checkbox-group input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+.checkbox-group label { font-size: 13px; color: #333; cursor: pointer; }
+
+.preview-container { background: #f8f9fa; border: 2px solid #e0e0e0; border-radius: 12px; padding: 15px; margin-top: 20px; }
+.preview-title { font-size: 13px; font-weight: 600; color: #666; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+.preview-hint { font-size: 10px; color: #888; font-weight: 400; }
+
+.ticket-preview { background: white; border: 2px solid #ddd; padding: 10px; font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.4; max-width: 320px; margin: 0 auto; position: relative; min-height: 500px; }
+
+.zona-editable { position: relative; min-height: 100px; border: 2px dashed transparent; transition: border-color 0.2s; }
+.zona-editable:hover { border-color: #667eea; }
+.zona-editable-label { position: absolute; top: -10px; left: 10px; background: #667eea; color: white; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+
+.preview-element { position: absolute; cursor: move; padding: 4px; border: 2px dashed transparent; transition: border-color 0.2s; user-select: none; min-width: 50px; min-height: 20px; }
+.preview-element:hover { border-color: #667eea; }
+.preview-element.selected { border-color: #667eea; background: rgba(102, 126, 234, 0.05); }
+.preview-element.dragging { opacity: 0.7; z-index: 100; }
+
+.resize-handle { position: absolute; width: 12px; height: 12px; background: #667eea; border: 2px solid white; border-radius: 50%; display: none; z-index: 10; }
+.preview-element.selected .resize-handle { display: block; }
+.resize-handle.tl { top: -6px; left: -6px; cursor: nwse-resize; }
+.resize-handle.tr { top: -6px; right: -6px; cursor: nesw-resize; }
+.resize-handle.bl { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.resize-handle.br { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+.ticket-separator { border-top: 1px dashed #333; margin: 6px 0; }
 </style>
 </head>
 <body>
@@ -196,62 +251,51 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
       </div>
     </div>
 
-    <!-- VIEW: MENÚ PRINCIPAL -->
+    <!-- VIEW: MENÚ PRINCIPAL (ORDEN ACTUALIZADO) -->
     <div id="view-menu" class="view">
       <button class="menu-item" onclick="mostrarVista('caja')">
         <span class="menu-icon">🏪</span>
-        <div class="menu-text">
-          <div class="menu-title">Mi Caja</div>
-          <div class="menu-sub">Gestión de ventas</div>
-        </div>
+        <div class="menu-text"><div class="menu-title">Mi Caja</div><div class="menu-sub">Gestión de ventas</div></div>
         <span class="menu-arrow">›</span>
       </button>
       <button class="menu-item" onclick="mostrarVista('stock')">
         <span class="menu-icon">📊</span>
-        <div class="menu-text">
-          <div class="menu-title">Stock y Productos</div>
-          <div class="menu-sub">Inventario y escaneo</div>
-        </div>
+        <div class="menu-text"><div class="menu-title">Stock y Productos</div><div class="menu-sub">Inventario y escaneo</div></div>
         <span class="menu-arrow">›</span>
       </button>
       <button class="menu-item" onclick="mostrarVista('control-caja')">
         <span class="menu-icon">📡</span>
-        <div class="menu-text">
-          <div class="menu-title">Control de Caja</div>
-          <div class="menu-sub">Arqueo y auditoría</div>
-        </div>
+        <div class="menu-text"><div class="menu-title">Control de Caja</div><div class="menu-sub">Arqueo y auditoría</div></div>
         <span class="menu-arrow">›</span>
       </button>
       <button class="menu-item" onclick="mostrarVista('vencimientos')">
         <span class="menu-icon">📅</span>
-        <div class="menu-text">
-          <div class="menu-title">Vencimientos</div>
-          <div class="menu-sub">Control de lotes</div>
-        </div>
+        <div class="menu-text"><div class="menu-title">Vencimientos</div><div class="menu-sub">Control de lotes</div></div>
         <span class="menu-arrow">›</span>
       </button>
       <button class="menu-item" onclick="mostrarVista('proveedores')">
         <span class="menu-icon">📦</span>
-        <div class="menu-text">
-          <div class="menu-title">Proveedores</div>
-          <div class="menu-sub">Gestión de proveedores</div>
-        </div>
+        <div class="menu-text"><div class="menu-title">Proveedores</div><div class="menu-sub">Gestión de proveedores</div></div>
         <span class="menu-arrow">›</span>
       </button>
       <button class="menu-item" onclick="mostrarVista('licencia')">
         <span class="menu-icon">🔑</span>
-        <div class="menu-text">
-          <div class="menu-title">Licencia del Sistema</div>
-          <div class="menu-sub active" id="licencia-status">ACTIVA</div>
-        </div>
+        <div class="menu-text"><div class="menu-title">Licencia del Sistema</div><div class="menu-sub active" id="licencia-status">ACTIVA</div></div>
+        <span class="menu-arrow">›</span>
+      </button>
+      <button class="menu-item" onclick="mostrarVista('impresora')">
+        <span class="menu-icon">🖨️</span>
+        <div class="menu-text"><div class="menu-title">Ajuste de Impresora</div><div class="menu-sub">Configurar ticket</div></div>
+        <span class="menu-arrow">›</span>
+      </button>
+      <button class="menu-item" onclick="mostrarVista('impuestos')">
+        <span class="menu-icon">💰</span>
+        <div class="menu-text"><div class="menu-title">Impuestos</div><div class="menu-sub">Gestión impositiva</div></div>
         <span class="menu-arrow">›</span>
       </button>
       <button class="menu-item" onclick="mostrarVista('cuenta')">
         <span class="menu-icon">👤</span>
-        <div class="menu-text">
-          <div class="menu-title">Mi Cuenta</div>
-          <div class="menu-sub">Configuración</div>
-        </div>
+        <div class="menu-text"><div class="menu-title">Mi Cuenta</div><div class="menu-sub">Configuración</div></div>
         <span class="menu-arrow">›</span>
       </button>
       <button class="logout-btn" onclick="cerrarSesion()">Cerrar Sesión</button>
@@ -287,28 +331,19 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
     <!-- VIEW: CONTROL DE CAJA -->
     <div id="view-control-caja" class="view">
       <div id="status-caja" class="panel" style="text-align:center;"></div>
-      
       <div class="tabs">
         <button class="tab active" onclick="mostrarTabCaja('panel', this)">📊 Panel</button>
         <button class="tab" onclick="mostrarTabCaja('arqueo', this)">💵 Arqueo</button>
         <button class="tab" onclick="mostrarTabCaja('audit', this)">📝 Auditoría</button>
       </div>
-
       <div id="sec-apertura-caja" class="section active">
         <div class="panel">
           <h3>🔓 Apertura de Caja</h3>
-          <div class="form-group">
-            <label>Nombre del cajero</label>
-            <input type="text" id="cajero-nombre" placeholder="Ej: María">
-          </div>
-          <div class="form-group">
-            <label>Saldo inicial ($)</label>
-            <input type="number" id="saldo-inicial" value="0" min="0">
-          </div>
+          <div class="form-group"><label>Nombre del cajero</label><input type="text" id="cajero-nombre" placeholder="Ej: María"></div>
+          <div class="form-group"><label>Saldo inicial ($)</label><input type="number" id="saldo-inicial" value="0" min="0"></div>
           <button class="btn btn-success" onclick="abrirCaja()">🔓 Abrir Caja</button>
         </div>
       </div>
-
       <div id="sec-panel-caja" class="section">
         <div class="panel">
           <h3>📊 Resumen del Turno</h3>
@@ -318,19 +353,12 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
         </div>
         <button class="btn btn-danger" onclick="cerrarCaja()">🔒 Cerrar Turno</button>
       </div>
-
       <div id="sec-arqueo-caja" class="section">
         <div class="panel">
           <h3>💵 Conteo de Billetes y Monedas</h3>
           <div class="arqueo-grid" id="arqueo-grid"></div>
-          <div class="info-row">
-            <span>Efectivo contado:</span>
-            <strong id="arq-contado">$0</strong>
-          </div>
-          <div class="info-row">
-            <span>Efectivo esperado:</span>
-            <strong id="arq-esperado">$0</strong>
-          </div>
+          <div class="info-row"><span>Efectivo contado:</span><strong id="arq-contado">$0</strong></div>
+          <div class="info-row"><span>Efectivo esperado:</span><strong id="arq-esperado">$0</strong></div>
         </div>
         <div id="diff-box" class="difference-box diff-ok">
           <div style="font-size:12px;font-weight:600;">Diferencia</div>
@@ -338,13 +366,10 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
         </div>
         <button class="btn btn-primary" onclick="guardarArqueo()">💾 Guardar Arqueo</button>
       </div>
-
       <div id="sec-audit-caja" class="section">
         <div class="panel">
           <h3>📝 Registro de Auditoría</h3>
-          <div class="audit-box" id="audit-list">
-            <p class="empty">Sin registros</p>
-          </div>
+          <div class="audit-box" id="audit-list"><p class="empty">Sin registros</p></div>
         </div>
         <button class="btn btn-secondary" onclick="exportarAuditoria()">📤 Exportar Auditoría</button>
       </div>
@@ -394,14 +419,138 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
       </div>
     </div>
 
+    <!-- VIEW: IMPRESORA (NUEVO) -->
+    <div id="view-impresora" class="view">
+      <div class="tabs">
+        <button class="tab active" onclick="cambiarTabImpresora('impresora-config', this)">🖨️ Impresora</button>
+        <button class="tab" onclick="cambiarTabImpresora('ticket-config', this)">🎨 Ticket</button>
+      </div>
+
+      <!-- Sub-tab: Configuración de impresora -->
+      <div id="sub-impresora-config" class="section active">
+        <div class="info">
+          <b>✅ Modo Universal:</b><br>
+          Detecta automáticamente todas las impresoras conectadas a tu dispositivo.
+        </div>
+        <div class="form-group">
+          <label>Tamaño del papel</label>
+          <div class="selector-ancho">
+            <button class="ancho-btn active" onclick="cambiarAncho(58, this)">58 mm</button>
+            <button class="ancho-btn" onclick="cambiarAncho(80, this)">80 mm</button>
+            <button class="ancho-btn" onclick="cambiarAncho(210, this)">A4</button>
+            <button class="ancho-btn" onclick="cambiarAncho(100, this)">100 mm</button>
+          </div>
+        </div>
+        <button class="btn btn-success" onclick="imprimirPrueba()">🧪 Imprimir ticket de prueba</button>
+        <div class="preview-container">
+          <div class="preview-title">
+            <span>👁️ Vista previa</span>
+            <span class="preview-hint">Ancho: <span id="ancho-actual">58</span>mm</span>
+          </div>
+          <div class="ticket-preview" id="ticket-preview-impresora"></div>
+        </div>
+      </div>
+
+      <!-- Sub-tab: Configuración de ticket -->
+      <div id="sub-ticket-config" class="section">
+        <div class="warning">
+          <b>💡 Tip:</b> Hacé clic en un elemento para seleccionarlo, luego arrastralo para moverlo o usá las esquinas para redimensionarlo.
+        </div>
+
+        <div class="config-block">
+          <h3>📝 Encabezado (parte superior)</h3>
+          <div class="form-group">
+            <label>Imagen / Logo (opcional)</label>
+            <div class="file-upload">
+              <input type="file" id="logo-input" accept="image/*" onchange="cargarLogo(event)">
+              <label for="logo-input" class="file-upload-label">📷 Subir imagen (PNG, JPG)</label>
+            </div>
+            <div id="logo-preview" style="margin-top: 10px;"></div>
+          </div>
+          <div class="form-group"><label>Nombre del negocio</label><input type="text" id="negocio-nombre" placeholder="Ej: Kiosco Don Juan" oninput="actualizarPreview()"></div>
+          <div class="form-group"><label>Ubicación / Dirección</label><input type="text" id="negocio-ubicacion" placeholder="Ej: Av. Siempre Viva 1234" oninput="actualizarPreview()"></div>
+          <div class="form-group"><label>Teléfono</label><input type="text" id="negocio-telefono" placeholder="Ej: 11-1234-5678" oninput="actualizarPreview()"></div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="mostrar-horarios" checked onchange="actualizarPreview()">
+            <label for="mostrar-horarios">Mostrar horarios en el ticket</label>
+          </div>
+        </div>
+
+        <div class="config-block">
+          <h3>🕐 Horarios del Kiosco</h3>
+          <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+            <button class="btn btn-secondary" style="flex:1; margin:0;" onclick="agruparDias()">🔗 Agrupar días iguales</button>
+            <button class="btn btn-secondary" style="flex:1; margin:0;" onclick="desagruparDias()">🔓 Desagrupar</button>
+          </div>
+          <div id="horarios-container"></div>
+          <div class="form-group" style="margin-top: 10px;">
+            <label>Formato de visualización</label>
+            <select id="formato-horarios" onchange="actualizarPreview()">
+              <option value="compacto">Compacto (Lun-Vie: 8-12 / 14-20)</option>
+              <option value="completo">Completo (Lunes a Viernes: 08:00 - 12:00)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="config-block">
+          <h3>📝 Pie de página (parte inferior)</h3>
+          <div class="form-group"><label>Mensaje personalizado</label><textarea id="pie-mensaje" placeholder="Ej: ¡Gracias por su compra!" oninput="actualizarPreview()"></textarea></div>
+          <div class="checkbox-group"><input type="checkbox" id="mostrar-fecha" checked onchange="actualizarPreview()"><label for="mostrar-fecha">Mostrar fecha y hora</label></div>
+          <div class="checkbox-group"><input type="checkbox" id="mostrar-numero-ticket" checked onchange="actualizarPreview()"><label for="mostrar-numero-ticket">Mostrar número de ticket</label></div>
+        </div>
+
+        <div class="config-block">
+          <h3>🔤 Formato de texto</h3>
+          <div class="form-group">
+            <label>Fuente</label>
+            <select id="texto-fuente" onchange="actualizarPreview()">
+              <option value="'Courier New', monospace">Courier New (recomendado)</option>
+              <option value="Arial, sans-serif">Arial</option>
+              <option value="'Times New Roman', serif">Times New Roman</option>
+              <option value="Verdana, sans-serif">Verdana</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Tamaño de letra por defecto: <span id="tamano-label">11px</span></label>
+            <input type="range" id="texto-tamano" min="8" max="18" value="11" oninput="actualizarTamano()">
+          </div>
+          <div class="checkbox-group"><input type="checkbox" id="texto-negrita" onchange="actualizarPreview()"><label for="texto-negrita">Aplicar negritas a todo el texto</label></div>
+        </div>
+
+        <button class="btn btn-primary" onclick="guardarConfiguracion()">💾 Guardar configuración</button>
+        <button class="btn btn-success" onclick="imprimirPrueba()">🧪 Probar impresión</button>
+
+        <div class="preview-container">
+          <div class="preview-title">
+            <span>👁️ Preview Interactivo</span>
+            <span class="preview-hint">Clic para seleccionar · Arrastrá para mover · Esquinas para redimensionar</span>
+          </div>
+          <div class="ticket-preview" id="ticket-preview-interactivo"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: IMPUESTOS (PLACEHOLDER) -->
+    <div id="view-impuestos" class="view">
+      <div class="panel" style="text-align:center; padding:40px 20px;">
+        <div style="font-size:60px; margin-bottom:15px;">💰</div>
+        <h3 style="color:#333; margin-bottom:10px;">Módulo de Impuestos</h3>
+        <p style="color:#666; font-size:13px; line-height:1.6;">
+          Este módulo estará disponible próximamente.<br><br>
+          Aquí podrás gestionar:<br>
+          • IVA y otros impuestos<br>
+          • Reportes fiscales<br>
+          • Libros de IVA<br>
+          • Configuración de alícuotas
+        </p>
+      </div>
+    </div>
+
     <!-- VIEW: MI CUENTA -->
     <div id="view-cuenta" class="view">
       <div class="panel">
         <h3>🔐 Cambiar PIN</h3>
-        <div class="form-group">
-          <label>Nuevo PIN (4 dígitos)</label>
-          <input type="password" id="nuevo-pin" maxlength="4">
-        </div>
+        <div class="form-group"><label>Nuevo PIN (4 dígitos)</label><input type="password" id="nuevo-pin" maxlength="4"></div>
         <button class="btn btn-primary" onclick="cambiarPin()">Cambiar PIN</button>
       </div>
       <div class="panel">
@@ -429,23 +578,25 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 
 <div class="toast" id="toast"></div>
 
+<!-- ============================================================ -->
+<!-- JAVASCRIPT - SE CONTINÚA EN LA PARTE 2 -->
+<!-- ============================================================ -->
 <script>
-// ============ ESTADO GLOBAL ============
+// ============================================================
+// ESTADO GLOBAL
+// ============================================================
 let pinIngresado = '';
-const PIN_CORRECTO = localStorage.getItem('pin_v1') || '1234';
 let vistaActual = 'pin';
 let scannerActivo = null;
 let modoScanner = null;
 let ticket = [];
 
-// Datos
 let productos = [];
 let ventas = [];
 let proveedores = [];
 let turno = null;
 let auditoria = [];
 
-// Catálogos iniciales
 const PRODUCTOS_INICIALES = [
   { id: 1, nombre: 'Coca Cola 500ml', codigo: '7790080000509', precio: 1500, stock: 24, lotes: [{id:101, cantidad:24, fechaVencimiento: '2026-12-31'}] },
   { id: 2, nombre: 'Agua Mineral 500ml', codigo: '7790360111016', precio: 900, stock: 30, lotes: [{id:201, cantidad:30, fechaVencimiento: '2027-06-30'}] },
@@ -459,7 +610,9 @@ const PROVEEDORES_INICIALES = [
 
 const BILLETES = [20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5, 1];
 
-// ============ INICIALIZACIÓN ============
+// ============================================================
+// INICIALIZACIÓN
+// ============================================================
 function iniciar() {
   cargarDatos();
   actualizarDeviceID();
@@ -501,18 +654,17 @@ function actualizarDeviceID() {
   if (el) el.textContent = deviceId;
 }
 
-// ============ NAVEGACIÓN ============
+// ============================================================
+// NAVEGACIÓN
+// ============================================================
 function mostrarVista(vista) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + vista).classList.add('active');
   vistaActual = vista;
   
   const backBtn = document.getElementById('back-btn');
-  if (vista === 'menu' || vista === 'pin') {
-    backBtn.classList.remove('visible');
-  } else {
-    backBtn.classList.add('visible');
-  }
+  if (vista === 'menu' || vista === 'pin') backBtn.classList.remove('visible');
+  else backBtn.classList.add('visible');
   
   const titulos = {
     'menu': ['🌸 Mejorar 2', 'Sistema de Gestión Comercial'],
@@ -522,6 +674,8 @@ function mostrarVista(vista) {
     'vencimientos': ['📅 Vencimientos', 'Control de lotes'],
     'proveedores': ['📦 Proveedores', 'Gestión'],
     'licencia': ['🔑 Licencia', 'Estado'],
+    'impresora': ['🖨️ Impresora', 'Configuración'],
+    'impuestos': ['💰 Impuestos', 'Gestión impositiva'],
     'cuenta': ['👤 Mi Cuenta', 'Configuración']
   };
   
@@ -531,10 +685,10 @@ function mostrarVista(vista) {
   
   if (vista === 'caja') { renderTicket(); buscarProductoCaja(); }
   if (vista === 'stock') renderListaStock();
-  if (vista === 'control-caja') renderControlCaja();
+  if (vista === 'control-caja') { renderControlCaja(); renderAuditoria(); }
   if (vista === 'vencimientos') renderVencimientos();
   if (vista === 'proveedores') renderListaProveedores();
-  if (vista === 'control-caja') renderAuditoria();
+  if (vista === 'impresora') { iniciarImpresora(); }
 }
 
 function volverAlMenu() {
@@ -542,7 +696,9 @@ function volverAlMenu() {
   mostrarVista('menu');
 }
 
-// ============ PIN ============
+// ============================================================
+// PIN
+// ============================================================
 function presionarNumero(num) {
   if (pinIngresado.length < 4) {
     pinIngresado += num;
@@ -593,11 +749,12 @@ function cerrarSesion() {
   borrarPin();
 }
 
-// ============ SCANNER ============
+// ============================================================
+// SCANNER
+// ============================================================
 async function abrirScanner(modo) {
   modoScanner = modo;
   document.getElementById('scanner-modal').classList.add('active');
-  
   try {
     scannerActivo = new Html5Qrcode("reader");
     await scannerActivo.start(
@@ -623,21 +780,17 @@ async function cerrarScanner() {
 function procesarCodigo(codigo) {
   if (navigator.vibrate) navigator.vibrate(100);
   const prod = productos.find(p => p.codigo === codigo);
-  
   if (prod) {
-    if (modoScanner === 'caja') {
-      agregarAlTicket(prod.id);
-      cerrarScanner();
-    } else if (modoScanner === 'stock') {
-      toast('✅ ' + prod.nombre + ' - Stock: ' + prod.stock, 'ok');
-      cerrarScanner();
-    }
+    if (modoScanner === 'caja') { agregarAlTicket(prod.id); cerrarScanner(); }
+    else if (modoScanner === 'stock') { toast('✅ ' + prod.nombre + ' - Stock: ' + prod.stock, 'ok'); cerrarScanner(); }
   } else {
     toast('❌ Código no encontrado: ' + codigo, 'err');
   }
 }
 
-// ============ MI CAJA ============
+// ============================================================
+// MI CAJA
+// ============================================================
 function buscarProductoCaja() {
   const q = document.getElementById('buscador-caja').value.toLowerCase();
   const cont = document.getElementById('resultados-caja');
@@ -650,22 +803,14 @@ function buscarProductoCaja() {
   
   let html = '';
   filtrados.forEach(p => {
-    // CORRECCIÓN 1: Calcular stock disponible (stock real - cantidad en ticket)
     const enTicket = ticket.find(t => t.id === p.id);
     const stockDisponible = p.stock - (enTicket ? enTicket.cantidad : 0);
-    
     let stockClass = 'color:#2a9d4a;';
     let stockText = 'Stock: ' + stockDisponible;
-    if (stockDisponible <= 0) {
-      stockClass = 'color:#999;font-style:italic;';
-      stockText = 'Sin stock';
-    } else if (stockDisponible < 5) {
-      stockClass = 'color:#d33;font-weight:700;';
-      stockText = 'Stock bajo: ' + stockDisponible;
-    }
+    if (stockDisponible <= 0) { stockClass = 'color:#999;font-style:italic;'; stockText = 'Sin stock'; }
+    else if (stockDisponible < 5) { stockClass = 'color:#d33;font-weight:700;'; stockText = 'Stock bajo: ' + stockDisponible; }
     
     const disabled = stockDisponible <= 0;
-    
     html += `<div class="product-card" onclick="${disabled ? '' : 'agregarAlTicket(' + p.id + ')'}" style="cursor:${disabled ? 'not-allowed' : 'pointer'};opacity:${disabled ? '0.5' : '1'};">
       <div class="product-info">
         <div class="product-name">${p.nombre}</div>
@@ -680,24 +825,13 @@ function buscarProductoCaja() {
 function agregarAlTicket(id) {
   const prod = productos.find(p => p.id === id);
   if (!prod) return;
-  
   const existe = ticket.find(t => t.id === id);
   const cantActual = existe ? existe.cantidad : 0;
-  
-  if (cantActual >= prod.stock) {
-    toast('⚠️ Stock insuficiente', 'err');
-    return;
-  }
-  
-  if (existe) {
-    existe.cantidad++;
-    existe.subtotal = existe.cantidad * existe.precio;
-  } else {
-    ticket.push({ id: prod.id, nombre: prod.nombre, precio: prod.precio, cantidad: 1, subtotal: prod.precio });
-  }
-  
+  if (cantActual >= prod.stock) { toast('⚠️ Stock insuficiente', 'err'); return; }
+  if (existe) { existe.cantidad++; existe.subtotal = existe.cantidad * existe.precio; }
+  else { ticket.push({ id: prod.id, nombre: prod.nombre, precio: prod.precio, cantidad: 1, subtotal: prod.precio }); }
   renderTicket();
-  buscarProductoCaja(); // CORRECCIÓN 1: Actualizar preview de stock
+  buscarProductoCaja();
   toast('✅ ' + prod.nombre + ' agregado', 'ok');
 }
 
@@ -705,19 +839,12 @@ function cambiarCantidad(id, delta) {
   const item = ticket.find(t => t.id === id);
   const prod = productos.find(p => p.id === id);
   if (!item) return;
-  
   const nueva = item.cantidad + delta;
-  if (nueva <= 0) {
-    ticket = ticket.filter(t => t.id !== id);
-  } else if (nueva > prod.stock) {
-    toast('⚠️ Stock insuficiente', 'err');
-    return;
-  } else {
-    item.cantidad = nueva;
-    item.subtotal = nueva * item.precio;
-  }
+  if (nueva <= 0) { ticket = ticket.filter(t => t.id !== id); }
+  else if (nueva > prod.stock) { toast('⚠️ Stock insuficiente', 'err'); return; }
+  else { item.cantidad = nueva; item.subtotal = nueva * item.precio; }
   renderTicket();
-  buscarProductoCaja(); // CORRECCIÓN 1: Actualizar preview de stock
+  buscarProductoCaja();
 }
 
 function renderTicket() {
@@ -727,7 +854,6 @@ function renderTicket() {
     document.getElementById('ticket-total').textContent = '$0';
     return;
   }
-  
   let html = '', total = 0;
   ticket.forEach(item => {
     total += item.subtotal;
@@ -748,47 +874,24 @@ function renderTicket() {
 }
 
 function abrirPago() {
-  if (ticket.length === 0) {
-    toast('❌ Ticket vacío', 'err');
-    return;
-  }
+  if (ticket.length === 0) { toast('❌ Ticket vacío', 'err'); return; }
   const total = ticket.reduce((s, i) => s + i.subtotal, 0);
   const metodo = prompt('Método de pago:\n1. Efectivo\n2. Tarjeta\n3. Mercado Pago\n\nIngresá el número:', '1');
-  
   if (!metodo) return;
   const metodos = { '1': 'efectivo', '2': 'tarjeta', '3': 'mercadopago' };
   const metodoTexto = metodos[metodo];
-  
-  if (!metodoTexto) {
-    toast('❌ Opción inválida', 'err');
-    return;
-  }
+  if (!metodoTexto) { toast('❌ Opción inválida', 'err'); return; }
   
   let vuelto = 0;
   if (metodoTexto === 'efectivo') {
     const recibido = parseFloat(prompt('Total: $' + total + '\n\nMonto recibido:', total));
-    if (isNaN(recibido) || recibido < total) {
-      toast('❌ Monto inválido', 'err');
-      return;
-    }
+    if (isNaN(recibido) || recibido < total) { toast('❌ Monto inválido', 'err'); return; }
     vuelto = recibido - total;
   }
   
-  const venta = {
-    id: Date.now(),
-    fecha: new Date().toISOString(),
-    items: [...ticket],
-    total: total,
-    metodo: metodoTexto,
-    vuelto: vuelto
-  };
+  const venta = { id: Date.now(), fecha: new Date().toISOString(), items: [...ticket], total: total, metodo: metodoTexto, vuelto: vuelto };
   ventas.push(venta);
-  
-  ticket.forEach(item => {
-    const prod = productos.find(p => p.id === item.id);
-    if (prod) prod.stock -= item.cantidad;
-  });
-  
+  ticket.forEach(item => { const prod = productos.find(p => p.id === item.id); if (prod) prod.stock -= item.cantidad; });
   guardarTodo();
   
   let msg = '✅ Venta: $' + total + '\nMétodo: ' + metodoTexto.toUpperCase();
@@ -801,17 +904,14 @@ function abrirPago() {
   toast('✅ Venta registrada', 'ok');
 }
 
-// ============ STOCK ============
+// ============================================================
+// STOCK
+// ============================================================
 function renderListaStock() {
   const busq = (document.getElementById('buscador-stock')?.value || '').toLowerCase();
   const cont = document.getElementById('lista-stock');
   const filtrados = productos.filter(p => p.nombre.toLowerCase().includes(busq) || p.codigo.includes(busq));
-  
-  if (filtrados.length === 0) {
-    cont.innerHTML = '<p class="empty">No se encontraron productos</p>';
-    return;
-  }
-  
+  if (filtrados.length === 0) { cont.innerHTML = '<p class="empty">No se encontraron productos</p>'; return; }
   let html = '';
   filtrados.forEach(p => {
     html += `<div class="product-card">
@@ -830,13 +930,10 @@ function renderListaStock() {
 }
 
 function nuevoProducto() {
-  const nombre = prompt('Nombre:');
-  if (!nombre) return;
-  const codigo = prompt('Código de barras:');
-  if (!codigo) return;
+  const nombre = prompt('Nombre:'); if (!nombre) return;
+  const codigo = prompt('Código de barras:'); if (!codigo) return;
   const precio = parseFloat(prompt('Precio:', '0')) || 0;
   const stock = parseInt(prompt('Stock:', '0')) || 0;
-  
   const nuevoId = productos.length > 0 ? Math.max(...productos.map(p => p.id)) + 1 : 1;
   productos.push({ id: nuevoId, nombre, codigo, precio, stock, lotes: [{id:Date.now(), cantidad:stock, fechaVencimiento:'2027-12-31'}] });
   guardarTodo();
@@ -845,18 +942,11 @@ function nuevoProducto() {
 }
 
 function editarProducto(id) {
-  const p = productos.find(x => x.id === id);
-  if (!p) return;
-  
-  const nombre = prompt('Nombre:', p.nombre);
-  if (nombre === null) return;
-  const codigo = prompt('Código:', p.codigo);
-  if (codigo === null) return;
-  const precio = parseFloat(prompt('Precio:', p.precio));
-  if (isNaN(precio)) return;
-  const stock = parseInt(prompt('Stock:', p.stock));
-  if (isNaN(stock)) return;
-  
+  const p = productos.find(x => x.id === id); if (!p) return;
+  const nombre = prompt('Nombre:', p.nombre); if (nombre === null) return;
+  const codigo = prompt('Código:', p.codigo); if (codigo === null) return;
+  const precio = parseFloat(prompt('Precio:', p.precio)); if (isNaN(precio)) return;
+  const stock = parseInt(prompt('Stock:', p.stock)); if (isNaN(stock)) return;
   Object.assign(p, { nombre, codigo, precio, stock });
   guardarTodo();
   renderListaStock();
@@ -864,8 +954,7 @@ function editarProducto(id) {
 }
 
 function eliminarProducto(id) {
-  const p = productos.find(x => x.id === id);
-  if (!p) return;
+  const p = productos.find(x => x.id === id); if (!p) return;
   if (confirm('¿Eliminar "' + p.nombre + '"?')) {
     productos = productos.filter(x => x.id !== id);
     guardarTodo();
@@ -874,24 +963,22 @@ function eliminarProducto(id) {
   }
 }
 
-// ============ CONTROL DE CAJA ============
+// ============================================================
+// CONTROL DE CAJA
+// ============================================================
 function renderControlCaja() {
   const statusBox = document.getElementById('status-caja');
   const secApertura = document.getElementById('sec-apertura-caja');
   const secPanel = document.getElementById('sec-panel-caja');
-  
   if (turno && turno.estado === 'abierto') {
     statusBox.innerHTML = `<h3 style="color:#2a9d4a;">🔓 Caja Abierta</h3><p>Cajero: ${turno.cajero}</p>`;
     secApertura.classList.remove('active');
     secPanel.classList.add('active');
-    
     const ventasTurno = ventas.filter(v => new Date(v.fecha) >= new Date(turno.apertura));
     const total = ventasTurno.reduce((s, v) => s + v.total, 0);
-    
     document.getElementById('pnl-cajero').textContent = turno.cajero;
     document.getElementById('pnl-tickets').textContent = ventasTurno.length;
     document.getElementById('pnl-total').textContent = '$' + total;
-    
     calcularDiferencia();
   } else {
     statusBox.innerHTML = `<h3 style="color:#f0ad4e;">🔒 Caja Cerrada</h3>`;
@@ -904,66 +991,41 @@ function mostrarTabCaja(tab, btn) {
   document.querySelectorAll('#view-control-caja .tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('#view-control-caja .section').forEach(s => s.classList.remove('active'));
   btn.classList.add('active');
-  
   if (tab === 'panel') {
-    if (turno && turno.estado === 'abierto') {
-      document.getElementById('sec-panel-caja').classList.add('active');
-    } else {
-      document.getElementById('sec-apertura-caja').classList.add('active');
-    }
-  } else if (tab === 'arqueo') {
-    document.getElementById('sec-arqueo-caja').classList.add('active');
-    calcularDiferencia();
-  } else if (tab === 'audit') {
-    document.getElementById('sec-audit-caja').classList.add('active');
-    renderAuditoria();
-  }
+    if (turno && turno.estado === 'abierto') document.getElementById('sec-panel-caja').classList.add('active');
+    else document.getElementById('sec-apertura-caja').classList.add('active');
+  } else if (tab === 'arqueo') { document.getElementById('sec-arqueo-caja').classList.add('active'); calcularDiferencia(); }
+  else if (tab === 'audit') { document.getElementById('sec-audit-caja').classList.add('active'); renderAuditoria(); }
 }
 
 function abrirCaja() {
   const cajero = document.getElementById('cajero-nombre').value.trim();
   const saldo = parseFloat(document.getElementById('saldo-inicial').value) || 0;
-  
-  if (!cajero) {
-    toast('❌ Ingresá el nombre del cajero', 'err');
-    return;
-  }
-  
+  if (!cajero) { toast('❌ Ingresá el nombre del cajero', 'err'); return; }
   turno = { cajero, apertura: new Date().toISOString(), saldoInicial: saldo, estado: 'abierto' };
   localStorage.setItem('turno_activo', JSON.stringify(turno));
-  
   auditoria.unshift({ timestamp: new Date().toISOString(), usuario: cajero, accion: 'APERTURA', detalle: 'Saldo inicial $' + saldo });
   guardarTodo();
-  
   renderControlCaja();
   toast('✅ Caja abierta', 'ok');
 }
 
 function cerrarCaja() {
   if (!confirm('¿Cerrar el turno?')) return;
-  
   auditoria.unshift({ timestamp: new Date().toISOString(), usuario: turno.cajero, accion: 'CIERRE', detalle: 'Turno cerrado' });
-  
   turno = null;
   localStorage.removeItem('turno_activo');
   guardarTodo();
-  
   renderControlCaja();
   toast('✅ Turno cerrado', 'ok');
 }
 
-// ============ ARQUEO (CORRECCIÓN 2) ============
 function renderArqueoGrid() {
   const grid = document.getElementById('arqueo-grid');
   let html = '';
   BILLETES.forEach(valor => {
     const prefijo = valor >= 100 ? '$' : '🪙$';
-    html += `
-      <div class="arqueo-item">
-        <span class="arqueo-label">${prefijo}${valor}</span>
-        <input type="number" class="arqueo-input" data-valor="${valor}" value="0" min="0" oninput="calcularDiferencia()">
-      </div>
-    `;
+    html += `<div class="arqueo-item"><span class="arqueo-label">${prefijo}${valor}</span><input type="number" class="arqueo-input" data-valor="${valor}" value="0" min="0" oninput="calcularDiferencia()"></div>`;
   });
   grid.innerHTML = html;
 }
@@ -981,89 +1043,47 @@ function calcularContado() {
 function calcularDiferencia() {
   const contado = calcularContado();
   document.getElementById('arq-contado').textContent = '$' + contado;
-  
   let esperado = 0;
   if (turno && turno.estado === 'abierto') {
-    esperado = turno.saldoInicial + ventas.filter(v => {
-      return new Date(v.fecha) >= new Date(turno.apertura) && v.metodo === 'efectivo';
-    }).reduce((s, v) => s + v.total, 0);
+    esperado = turno.saldoInicial + ventas.filter(v => new Date(v.fecha) >= new Date(turno.apertura) && v.metodo === 'efectivo').reduce((s, v) => s + v.total, 0);
   }
   document.getElementById('arq-esperado').textContent = '$' + esperado;
-  
   const diff = contado - esperado;
   const diffBox = document.getElementById('diff-box');
   const diffValue = document.getElementById('diff-value');
-  
-  if (diff === 0) {
-    diffBox.className = 'difference-box diff-ok';
-    diffValue.textContent = '$0 ✅ Cuadrada';
-  } else if (diff > 0) {
-    diffBox.className = 'difference-box diff-pos';
-    diffValue.textContent = '+$' + diff + ' Sobrante';
-  } else {
-    diffBox.className = 'difference-box diff-neg';
-    diffValue.textContent = '-$' + Math.abs(diff) + ' Faltante';
-  }
+  if (diff === 0) { diffBox.className = 'difference-box diff-ok'; diffValue.textContent = '$0 ✅ Cuadrada'; }
+  else if (diff > 0) { diffBox.className = 'difference-box diff-pos'; diffValue.textContent = '+$' + diff + ' Sobrante'; }
+  else { diffBox.className = 'difference-box diff-neg'; diffValue.textContent = '-$' + Math.abs(diff) + ' Faltante'; }
 }
 
 function guardarArqueo() {
-  if (!turno || turno.estado !== 'abierto') {
-    toast('❌ Primero abrí la caja', 'err');
-    return;
-  }
-  
+  if (!turno || turno.estado !== 'abierto') { toast('❌ Primero abrí la caja', 'err'); return; }
   const contado = calcularContado();
-  const esperado = turno.saldoInicial + ventas.filter(v => {
-    return new Date(v.fecha) >= new Date(turno.apertura) && v.metodo === 'efectivo';
-  }).reduce((s, v) => s + v.total, 0);
+  const esperado = turno.saldoInicial + ventas.filter(v => new Date(v.fecha) >= new Date(turno.apertura) && v.metodo === 'efectivo').reduce((s, v) => s + v.total, 0);
   const diff = contado - esperado;
-  
   auditoria.unshift({ timestamp: new Date().toISOString(), usuario: turno.cajero, accion: 'ARQUEO', detalle: `Contado: $${contado}, Esperado: $${esperado}, Diferencia: $${diff}` });
   guardarTodo();
   renderAuditoria();
-  
   toast('💾 Arqueo guardado', 'ok');
 }
 
-// ============ AUDITORÍA (CORRECCIÓN 2) ============
 function renderAuditoria() {
   const cont = document.getElementById('audit-list');
-  if (auditoria.length === 0) {
-    cont.innerHTML = '<p class="empty">Sin registros</p>';
-    return;
-  }
-  
+  if (auditoria.length === 0) { cont.innerHTML = '<p class="empty">Sin registros</p>'; return; }
   let html = '';
   auditoria.slice(0, 100).forEach(a => {
-    const fecha = new Date(a.timestamp);
-    const hora = fecha.toLocaleString('es-AR');
-    html += `
-      <div class="audit-item">
-        <span class="audit-time">[${hora}]</span>
-        <span class="audit-user">${a.usuario}</span>
-        <span class="audit-action">${a.accion}</span>
-        <div style="color:#888;font-size:10px;margin-top:2px;">${a.detalle}</div>
-      </div>
-    `;
+    const hora = new Date(a.timestamp).toLocaleString('es-AR');
+    html += `<div class="audit-item"><span class="audit-time">[${hora}]</span> <span class="audit-user">${a.usuario}</span> <span class="audit-action">${a.accion}</span><div style="color:#888;font-size:10px;margin-top:2px;">${a.detalle}</div></div>`;
   });
   cont.innerHTML = html;
 }
 
 function exportarAuditoria() {
-  if (auditoria.length === 0) {
-    toast('❌ No hay registros', 'err');
-    return;
-  }
-  
-  let texto = 'AUDITORÍA SGUV\n';
-  texto += 'Generado: ' + new Date().toLocaleString('es-AR') + '\n';
-  texto += '='.repeat(50) + '\n\n';
-  
+  if (auditoria.length === 0) { toast('❌ No hay registros', 'err'); return; }
+  let texto = 'AUDITORÍA SGUV\nGenerado: ' + new Date().toLocaleString('es-AR') + '\n' + '='.repeat(50) + '\n\n';
   auditoria.forEach(a => {
-    texto += `[${new Date(a.timestamp).toLocaleString('es-AR')}] ${a.usuario} - ${a.accion}\n`;
-    texto += `  ${a.detalle}\n\n`;
+    texto += `[${new Date(a.timestamp).toLocaleString('es-AR')}] ${a.usuario} - ${a.accion}\n  ${a.detalle}\n\n`;
   });
-  
   const blob = new Blob([texto], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1071,11 +1091,624 @@ function exportarAuditoria() {
   a.download = 'auditoria_' + new Date().toISOString().slice(0, 10) + '.txt';
   a.click();
   URL.revokeObjectURL(url);
-  
   toast('📤 Auditoría exportada', 'ok');
 }
 
-// ============ VENCIMIENTOS (CORRECCIÓN 3) ============
+// ============================================================
+// FIN DE LA PARTE 1 - CONTINÚA EN LA PARTE 2
+// ============================================================
+</script>
+</body>
+</html>
+<script>
+// ============================================================
+// ESTADO GLOBAL - MÓDULO IMPRESORA
+// ============================================================
+let anchoPapel = 58;
+let logoBase64 = null;
+let elementoSeleccionado = null;
+let modoAgrupado = false;
+
+const DIAS_SEMANA = [
+  { id: 'lun', nombre: 'Lunes', activo: true, apertura1: '08:00', cierre1: '12:00', apertura2: '14:00', cierre2: '20:00', dobleTurno: true },
+  { id: 'mar', nombre: 'Martes', activo: true, apertura1: '08:00', cierre1: '12:00', apertura2: '14:00', cierre2: '20:00', dobleTurno: true },
+  { id: 'mie', nombre: 'Miércoles', activo: true, apertura1: '08:00', cierre1: '12:00', apertura2: '14:00', cierre2: '20:00', dobleTurno: true },
+  { id: 'jue', nombre: 'Jueves', activo: true, apertura1: '08:00', cierre1: '12:00', apertura2: '14:00', cierre2: '20:00', dobleTurno: true },
+  { id: 'vie', nombre: 'Viernes', activo: true, apertura1: '08:00', cierre1: '12:00', apertura2: '14:00', cierre2: '20:00', dobleTurno: true },
+  { id: 'sab', nombre: 'Sábado', activo: true, apertura1: '09:00', cierre1: '13:00', apertura2: '', cierre2: '', dobleTurno: false },
+  { id: 'dom', nombre: 'Domingo', activo: false, apertura1: '', cierre1: '', apertura2: '', cierre2: '', dobleTurno: false }
+];
+
+let horarios = JSON.parse(JSON.stringify(DIAS_SEMANA));
+
+// ============================================================
+// INICIALIZACIÓN DEL MÓDULO IMPRESORA
+// ============================================================
+function iniciarImpresora() {
+  cargarConfiguracionImpresora();
+  renderHorarios();
+  actualizarPreview();
+}
+
+function cambiarTabImpresora(tab, btn) {
+  document.querySelectorAll('#view-impresora .tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#view-impresora .section').forEach(s => s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('sub-' + tab).classList.add('active');
+}
+
+function cambiarAncho(ancho, btn) {
+  anchoPapel = ancho;
+  document.querySelectorAll('.ancho-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const el = document.getElementById('ancho-actual');
+  if (el) el.textContent = ancho;
+  toast('📏 Ancho: ' + ancho + 'mm', 'ok');
+  actualizarPreview();
+}
+
+function cargarLogo(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    logoBase64 = e.target.result;
+    document.getElementById('logo-preview').innerHTML = `<img src="${logoBase64}" style="max-width: 150px; border-radius: 8px;">`;
+    actualizarPreview();
+    toast('✅ Logo cargado', 'ok');
+  };
+  reader.readAsDataURL(file);
+}
+
+function actualizarTamano() {
+  const tamano = document.getElementById('texto-tamano').value;
+  document.getElementById('tamano-label').textContent = tamano + 'px';
+  actualizarPreview();
+}
+
+// ============================================================
+// HORARIOS
+// ============================================================
+function renderHorarios() {
+  const cont = document.getElementById('horarios-container');
+  if (!cont) return;
+  if (modoAgrupado) renderHorariosAgrupados(cont);
+  else renderHorariosTabla(cont);
+}
+
+function renderHorariosTabla(cont) {
+  let html = '<table class="horarios-table"><tr><th>✓</th><th>Día</th><th>Turno 1</th><th>2° Turno</th></tr>';
+  horarios.forEach((dia, i) => {
+    html += `<tr>
+      <td><input type="checkbox" ${dia.activo ? 'checked' : ''} onchange="toggleDia(${i}, this.checked)"></td>
+      <td class="dia-nombre ${!dia.activo ? 'dia-cerrado' : ''}">${dia.nombre}</td>
+      <td>${dia.activo ? `<input type="time" value="${dia.apertura1}" onchange="cambiarHorario(${i}, 'apertura1', this.value)"> - <input type="time" value="${dia.cierre1}" onchange="cambiarHorario(${i}, 'cierre1', this.value)">` : '<span class="dia-cerrado">Cerrado</span>'}</td>
+      <td>${dia.activo ? `<input type="checkbox" ${dia.dobleTurno ? 'checked' : ''} onchange="toggleDobleTurno(${i}, this.checked)" style="margin-right:4px;">${dia.dobleTurno ? `<input type="time" value="${dia.apertura2}" onchange="cambiarHorario(${i}, 'apertura2', this.value)"> - <input type="time" value="${dia.cierre2}" onchange="cambiarHorario(${i}, 'cierre2', this.value)">` : ''}` : ''}</td>
+    </tr>`;
+  });
+  html += '</table>';
+  cont.innerHTML = html;
+}
+
+function renderHorariosAgrupados(cont) {
+  const grupos = agruparDiasSimilares();
+  let html = '<div class="agrupar-info">📅 Días agrupados por horario similar</div>';
+  grupos.forEach(grupo => {
+    const diasTexto = grupo.dias.map(d => d.nombre).join(', ');
+    html += `<div class="agrupar-row"><div style="flex:2; font-size:12px;"><div style="font-weight:600;">${diasTexto}</div><div style="color:#666; font-size:11px;">${grupo.dias[0].activo ? formatearHorarioGrupo(grupo.dias[0]) : 'Cerrado'}</div></div></div>`;
+  });
+  cont.innerHTML = html;
+}
+
+function agruparDiasSimilares() {
+  const grupos = [];
+  const usados = new Set();
+  horarios.forEach((dia, i) => {
+    if (usados.has(i)) return;
+    const grupo = { dias: [dia], indices: [i] };
+    usados.add(i);
+    horarios.forEach((otro, j) => {
+      if (i === j || usados.has(j)) return;
+      if (sonHorariosIguales(dia, otro)) { grupo.dias.push(otro); grupo.indices.push(j); usados.add(j); }
+    });
+    grupos.push(grupo);
+  });
+  return grupos;
+}
+
+function sonHorariosIguales(a, b) {
+  return a.activo === b.activo && a.apertura1 === b.apertura1 && a.cierre1 === b.cierre1 && a.dobleTurno === b.dobleTurno && a.apertura2 === b.apertura2 && a.cierre2 === b.cierre2;
+}
+
+function formatearHorarioGrupo(dia) {
+  if (!dia.activo) return 'Cerrado';
+  let texto = `${dia.apertura1} - ${dia.cierre1}`;
+  if (dia.dobleTurno && dia.apertura2) texto += ` / ${dia.apertura2} - ${dia.cierre2}`;
+  return texto;
+}
+
+function toggleDia(idx, activo) {
+  horarios[idx].activo = activo;
+  if (!activo) {
+    horarios[idx].apertura1 = ''; horarios[idx].cierre1 = '';
+    horarios[idx].apertura2 = ''; horarios[idx].cierre2 = '';
+    horarios[idx].dobleTurno = false;
+  } else {
+    horarios[idx].apertura1 = '08:00'; horarios[idx].cierre1 = '12:00';
+  }
+  renderHorarios();
+  actualizarPreview();
+}
+
+function cambiarHorario(idx, campo, valor) {
+  horarios[idx][campo] = valor;
+  actualizarPreview();
+}
+
+function toggleDobleTurno(idx, activo) {
+  horarios[idx].dobleTurno = activo;
+  if (activo && !horarios[idx].apertura2) {
+    horarios[idx].apertura2 = '14:00'; horarios[idx].cierre2 = '20:00';
+  }
+  renderHorarios();
+  actualizarPreview();
+}
+
+function agruparDias() {
+  modoAgrupado = true;
+  renderHorarios();
+  toast('🔗 Días agrupados', 'ok');
+}
+
+function desagruparDias() {
+  modoAgrupado = false;
+  renderHorarios();
+  toast('🔓 Días desagrupados', 'ok');
+}
+
+function formatearHorariosTicket() {
+  const formato = document.getElementById('formato-horarios').value;
+  const grupos = agruparDiasSimilares();
+  let lineas = [];
+  grupos.forEach(grupo => {
+    const dia = grupo.dias[0];
+    const diasTexto = grupo.dias.map(d => formato === 'compacto' ? d.nombre.substring(0, 3) : d.nombre).join(formato === 'compacto' ? '-' : ', ');
+    if (!dia.activo) lineas.push(`${diasTexto}: Cerrado`);
+    else {
+      let horario = `${dia.apertura1}-${dia.cierre1}`;
+      if (dia.dobleTurno && dia.apertura2) horario += ` / ${dia.apertura2}-${dia.cierre2}`;
+      lineas.push(`${diasTexto}: ${horario}`);
+    }
+  });
+  return lineas;
+}
+
+// ============================================================
+// PREVIEW
+// ============================================================
+function actualizarPreview() {
+  actualizarPreviewSimple();
+  actualizarPreviewInteractivo();
+}
+
+function actualizarPreviewSimple() {
+  const preview = document.getElementById('ticket-preview-impresora');
+  if (!preview) return;
+  preview.innerHTML = generarContenidoTicket();
+  aplicarEstiloPreview(preview);
+}
+
+function actualizarPreviewInteractivo() {
+  const preview = document.getElementById('ticket-preview-interactivo');
+  if (!preview) return;
+  preview.innerHTML = '';
+  aplicarEstiloPreview(preview);
+  
+  const tamanoBase = parseInt(document.getElementById('texto-tamano').value);
+  
+  // ZONA SUPERIOR EDITABLE
+  const zonaSuperior = document.createElement('div');
+  zonaSuperior.className = 'zona-editable';
+  zonaSuperior.style.minHeight = '150px';
+  zonaSuperior.innerHTML = '<div class="zona-editable-label">ZONA EDITABLE (ARRASTRÁ LOS ELEMENTOS)</div>';
+  preview.appendChild(zonaSuperior);
+  
+  const elementosSuperiores = ['logo', 'nombre', 'ubicacion', 'telefono', 'horarios'];
+  elementosSuperiores.forEach((tipo, idx) => {
+    const elem = crearElementoArrastrable(tipo, tamanoBase);
+    if (elem) {
+      elem.style.top = (20 + idx * 30) + 'px';
+      elem.style.left = '10px';
+      elem.style.width = 'calc(100% - 20px)';
+      zonaSuperior.appendChild(elem);
+    }
+  });
+  
+  const sep1 = document.createElement('div');
+  sep1.className = 'ticket-separator';
+  preview.appendChild(sep1);
+  
+  // CONTENIDO DEL MEDIO (NO EDITABLE)
+  const contenido = document.createElement('div');
+  contenido.style.cssText = 'padding: 8px 4px; color: #555; font-size: 11px; background: #f9f9f9; border: 1px solid #ddd;';
+  contenido.innerHTML = `
+    <div style="text-align:center; font-weight:bold; margin-bottom:4px; color:#999;">[CONTENIDO NO EDITABLE]</div>
+    <div style="text-align:center; font-weight:bold; margin-bottom:4px;">VENTA</div>
+    <div>N° Ticket: #1234</div>
+    <div>Fecha: ${new Date().toLocaleString('es-AR')}</div>
+    <div class="ticket-separator"></div>
+    <div style="display:flex; justify-content:space-between;"><span>Producto</span><span>Total</span></div>
+    <div style="border-top:1px dotted #333; margin:2px 0;"></div>
+    <div style="display:flex; justify-content:space-between;"><span>Coca Cola 500ml</span><span>x2 $3.000</span></div>
+    <div style="display:flex; justify-content:space-between;"><span>Yerba Taragüi 1kg</span><span>x1 $3.500</span></div>
+    <div style="display:flex; justify-content:space-between;"><span>Alfajor</span><span>x3 $3.600</span></div>
+    <div class="ticket-separator"></div>
+    <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:13px;"><span>TOTAL:</span><span>$10.100</span></div>
+    <div class="ticket-separator"></div>
+    <div style="display:flex; justify-content:space-between;"><span>Método:</span><span>EFECTIVO</span></div>
+    <div style="display:flex; justify-content:space-between;"><span>Recibido:</span><span>$15.000</span></div>
+    <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>Vuelto:</span><span>$4.900</span></div>
+  `;
+  preview.appendChild(contenido);
+  
+  const sep2 = document.createElement('div');
+  sep2.className = 'ticket-separator';
+  preview.appendChild(sep2);
+  
+  // ZONA INFERIOR EDITABLE
+  const zonaInferior = document.createElement('div');
+  zonaInferior.className = 'zona-editable';
+  zonaInferior.style.minHeight = '100px';
+  zonaInferior.innerHTML = '<div class="zona-editable-label">ZONA EDITABLE (ARRASTRÁ LOS ELEMENTOS)</div>';
+  preview.appendChild(zonaInferior);
+  
+  const elementosInferiores = ['mensaje', 'fecha', 'numero'];
+  elementosInferiores.forEach((tipo, idx) => {
+    const elem = crearElementoArrastrable(tipo, tamanoBase);
+    if (elem) {
+      elem.style.top = (20 + idx * 25) + 'px';
+      elem.style.left = '10px';
+      elem.style.width = 'calc(100% - 20px)';
+      zonaInferior.appendChild(elem);
+    }
+  });
+}
+
+function crearElementoArrastrable(tipo, tamanoBase) {
+  const nombre = document.getElementById('negocio-nombre').value || 'MEJORAR 2';
+  const ubicacion = document.getElementById('negocio-ubicacion').value;
+  const telefono = document.getElementById('negocio-telefono').value;
+  const mostrarHorarios = document.getElementById('mostrar-horarios').checked;
+  const pieMensaje = document.getElementById('pie-mensaje').value || '¡Gracias por su compra!';
+  const mostrarFecha = document.getElementById('mostrar-fecha').checked;
+  const mostrarNumero = document.getElementById('mostrar-numero-ticket').checked;
+  const negrita = document.getElementById('texto-negrita').checked;
+  
+  let contenido = '';
+  
+  switch(tipo) {
+    case 'logo':
+      if (!logoBase64) return null;
+      contenido = `<img src="${logoBase64}" style="max-width:100%; height:auto; display:block; margin:0 auto;">`;
+      break;
+    case 'nombre':
+      contenido = `<div style="text-align:center; font-weight:${negrita?'bold':'normal'}; font-size:${tamanoBase+3}px;">${nombre}</div>`;
+      break;
+    case 'ubicacion':
+      if (!ubicacion) return null;
+      contenido = `<div style="text-align:center;">${ubicacion}</div>`;
+      break;
+    case 'telefono':
+      if (!telefono) return null;
+      contenido = `<div style="text-align:center;">Tel: ${telefono}</div>`;
+      break;
+    case 'horarios':
+      if (!mostrarHorarios) return null;
+      const lineas = formatearHorariosTicket();
+      contenido = `<div style="text-align:center; font-size:${tamanoBase-1}px;">${lineas.join('<br>')}</div>`;
+      break;
+    case 'mensaje':
+      contenido = `<div style="text-align:center; font-weight:${negrita?'bold':'normal'};">${pieMensaje}</div>`;
+      break;
+    case 'fecha':
+      if (!mostrarFecha) return null;
+      contenido = `<div style="text-align:center; font-size:${tamanoBase-1}px;">${new Date().toLocaleString('es-AR')}</div>`;
+      break;
+    case 'numero':
+      if (!mostrarNumero) return null;
+      contenido = `<div style="text-align:center; font-size:${tamanoBase-1}px;">N° Ticket: #1234</div>`;
+      break;
+  }
+  
+  const div = document.createElement('div');
+  div.className = 'preview-element';
+  div.dataset.tipo = tipo;
+  div.innerHTML = contenido + `
+    <div class="resize-handle tl" data-handle="tl"></div>
+    <div class="resize-handle tr" data-handle="tr"></div>
+    <div class="resize-handle bl" data-handle="bl"></div>
+    <div class="resize-handle br" data-handle="br"></div>
+  `;
+  
+  div.addEventListener('mousedown', iniciarDrag);
+  div.addEventListener('click', function(e) { e.stopPropagation(); seleccionarElemento(div); });
+  
+  return div;
+}
+
+function seleccionarElemento(elem) {
+  document.querySelectorAll('.preview-element').forEach(el => el.classList.remove('selected'));
+  elem.classList.add('selected');
+  elementoSeleccionado = elem;
+}
+
+function aplicarEstiloPreview(preview) {
+  const fuente = document.getElementById('texto-fuente').value;
+  const tamano = document.getElementById('texto-tamano').value;
+  const negrita = document.getElementById('texto-negrita').checked;
+  preview.style.fontFamily = fuente;
+  preview.style.fontSize = tamano + 'px';
+  preview.style.fontWeight = negrita ? 'bold' : 'normal';
+}
+
+function generarContenidoTicket() {
+  const nombre = document.getElementById('negocio-nombre').value || 'MEJORAR 2';
+  const ubicacion = document.getElementById('negocio-ubicacion').value;
+  const telefono = document.getElementById('negocio-telefono').value;
+  const mostrarHorarios = document.getElementById('mostrar-horarios').checked;
+  const pieMensaje = document.getElementById('pie-mensaje').value || '¡Gracias por su compra!';
+  const mostrarFecha = document.getElementById('mostrar-fecha').checked;
+  const mostrarNumero = document.getElementById('mostrar-numero-ticket').checked;
+  const negrita = document.getElementById('texto-negrita').checked;
+  const tamano = document.getElementById('texto-tamano').value;
+  
+  let html = '';
+  if (logoBase64) html += `<div style="text-align:center;"><img src="${logoBase64}" style="max-width:100%; height:auto;"></div>`;
+  html += `<div style="text-align:center; font-weight:${negrita?'bold':'normal'}; font-size:${parseInt(tamano)+3}px;">${nombre}</div>`;
+  if (ubicacion) html += `<div style="text-align:center;">${ubicacion}</div>`;
+  if (telefono) html += `<div style="text-align:center;">Tel: ${telefono}</div>`;
+  if (mostrarHorarios) {
+    const lineas = formatearHorariosTicket();
+    html += `<div style="text-align:center; font-size:${parseInt(tamano)-1}px;">${lineas.join('<br>')}</div>`;
+  }
+  html += '<div class="ticket-separator"></div>';
+  if (mostrarNumero) html += `<div>N° Ticket: #1234</div>`;
+  if (mostrarFecha) html += `<div>Fecha: ${new Date().toLocaleString('es-AR')}</div>`;
+  html += '<div class="ticket-separator"></div>';
+  html += `<div style="display:flex; justify-content:space-between;"><span>Producto</span><span>Total</span></div>`;
+  html += '<div style="border-top:1px dotted #333; margin:2px 0;"></div>';
+  html += `<div style="display:flex; justify-content:space-between;"><span>Coca Cola 500ml</span><span>x2 $3.000</span></div>`;
+  html += `<div style="display:flex; justify-content:space-between;"><span>Yerba Taragüi 1kg</span><span>x1 $3.500</span></div>`;
+  html += `<div style="display:flex; justify-content:space-between;"><span>Alfajor</span><span>x3 $3.600</span></div>`;
+  html += '<div class="ticket-separator"></div>';
+  html += `<div style="display:flex; justify-content:space-between; font-weight:${negrita?'bold':'normal'}; font-size:${parseInt(tamano)+2}px;"><span>TOTAL:</span><span>$10.100</span></div>`;
+  html += '<div class="ticket-separator"></div>';
+  html += `<div style="display:flex; justify-content:space-between;"><span>Método:</span><span>EFECTIVO</span></div>`;
+  html += `<div style="display:flex; justify-content:space-between;"><span>Recibido:</span><span>$15.000</span></div>`;
+  html += `<div style="display:flex; justify-content:space-between; font-weight:bold;"><span>Vuelto:</span><span>$4.900</span></div>`;
+  html += '<div class="ticket-separator"></div>';
+  html += `<div style="text-align:center; font-weight:${negrita?'bold':'normal'};">${pieMensaje}</div>`;
+  return html;
+}
+
+// ============================================================
+// DRAG & DROP
+// ============================================================
+let dragData = null;
+
+function iniciarDrag(e) {
+  if (e.target.classList.contains('resize-handle')) { iniciarResize(e); return; }
+  e.preventDefault();
+  e.stopPropagation();
+  const elem = e.currentTarget;
+  seleccionarElemento(elem);
+  dragData = {
+    elem: elem,
+    startX: e.clientX,
+    startY: e.clientY,
+    origLeft: elem.offsetLeft,
+    origTop: elem.offsetTop
+  };
+  elem.classList.add('dragging');
+  document.addEventListener('mousemove', moverDrag);
+  document.addEventListener('mouseup', terminarDrag);
+}
+
+function moverDrag(e) {
+  if (!dragData) return;
+  const dx = e.clientX - dragData.startX;
+  const dy = e.clientY - dragData.startY;
+  dragData.elem.style.left = (dragData.origLeft + dx) + 'px';
+  dragData.elem.style.top = (dragData.origTop + dy) + 'px';
+}
+
+function terminarDrag() {
+  if (!dragData) return;
+  dragData.elem.classList.remove('dragging');
+  dragData = null;
+  document.removeEventListener('mousemove', moverDrag);
+  document.removeEventListener('mouseup', terminarDrag);
+}
+
+// ============================================================
+// RESIZE
+// ============================================================
+let resizeData = null;
+
+function iniciarResize(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const handle = e.target;
+  const elem = handle.parentElement;
+  seleccionarElemento(elem);
+  resizeData = {
+    elem: elem,
+    handle: handle.dataset.handle,
+    startX: e.clientX,
+    startY: e.clientY,
+    origWidth: elem.offsetWidth,
+    origHeight: elem.offsetHeight,
+    origLeft: elem.offsetLeft,
+    origTop: elem.offsetTop
+  };
+  document.addEventListener('mousemove', moverResize);
+  document.addEventListener('mouseup', terminarResize);
+}
+
+function moverResize(e) {
+  if (!resizeData) return;
+  const dx = e.clientX - resizeData.startX;
+  const dy = e.clientY - resizeData.startY;
+  const handle = resizeData.handle;
+  if (handle === 'br' || handle === 'tr') resizeData.elem.style.width = Math.max(50, resizeData.origWidth + dx) + 'px';
+  if (handle === 'br' || handle === 'bl') resizeData.elem.style.height = Math.max(20, resizeData.origHeight + dy) + 'px';
+  if (handle === 'bl' || handle === 'tl') {
+    resizeData.elem.style.width = Math.max(50, resizeData.origWidth - dx) + 'px';
+    resizeData.elem.style.left = (resizeData.origLeft + dx) + 'px';
+  }
+  if (handle === 'tl' || handle === 'tr') {
+    resizeData.elem.style.height = Math.max(20, resizeData.origHeight - dy) + 'px';
+    resizeData.elem.style.top = (resizeData.origTop + dy) + 'px';
+  }
+}
+
+function terminarResize() {
+  resizeData = null;
+  document.removeEventListener('mousemove', moverResize);
+  document.removeEventListener('mouseup', terminarResize);
+}
+
+// ============================================================
+// GUARDAR / CARGAR CONFIGURACIÓN IMPRESORA
+// ============================================================
+function guardarConfiguracion() {
+  const config = {
+    anchoPapel: anchoPapel,
+    logo: logoBase64,
+    negocioNombre: document.getElementById('negocio-nombre').value,
+    negocioUbicacion: document.getElementById('negocio-ubicacion').value,
+    negocioTelefono: document.getElementById('negocio-telefono').value,
+    mostrarHorarios: document.getElementById('mostrar-horarios').checked,
+    horarios: horarios,
+    pieMensaje: document.getElementById('pie-mensaje').value,
+    mostrarFecha: document.getElementById('mostrar-fecha').checked,
+    mostrarNumero: document.getElementById('mostrar-numero-ticket').checked,
+    textoFuente: document.getElementById('texto-fuente').value,
+    textoTamano: document.getElementById('texto-tamano').value,
+    textoNegrita: document.getElementById('texto-negrita').checked,
+    formatoHorarios: document.getElementById('formato-horarios').value
+  };
+  localStorage.setItem('ticket_config_v2', JSON.stringify(config));
+  toast('✅ Configuración guardada', 'ok');
+}
+
+function cargarConfiguracionImpresora() {
+  const guardada = localStorage.getItem('ticket_config_v2');
+  if (!guardada) return;
+  try {
+    const config = JSON.parse(guardada);
+    anchoPapel = config.anchoPapel || 58;
+    logoBase64 = config.logo || null;
+    const elNombre = document.getElementById('negocio-nombre');
+    if (elNombre) elNombre.value = config.negocioNombre || '';
+    const elUbi = document.getElementById('negocio-ubicacion');
+    if (elUbi) elUbi.value = config.negocioUbicacion || '';
+    const elTel = document.getElementById('negocio-telefono');
+    if (elTel) elTel.value = config.negocioTelefono || '';
+    const elHor = document.getElementById('mostrar-horarios');
+    if (elHor) elHor.checked = config.mostrarHorarios !== false;
+    const elPie = document.getElementById('pie-mensaje');
+    if (elPie) elPie.value = config.pieMensaje || '';
+    const elFecha = document.getElementById('mostrar-fecha');
+    if (elFecha) elFecha.checked = config.mostrarFecha !== false;
+    const elNum = document.getElementById('mostrar-numero-ticket');
+    if (elNum) elNum.checked = config.mostrarNumero !== false;
+    const elFuente = document.getElementById('texto-fuente');
+    if (elFuente) elFuente.value = config.textoFuente || "'Courier New', monospace";
+    const elTam = document.getElementById('texto-tamano');
+    if (elTam) elTam.value = config.textoTamano || 11;
+    const elNeg = document.getElementById('texto-negrita');
+    if (elNeg) elNeg.checked = config.textoNegrita || false;
+    const elFmt = document.getElementById('formato-horarios');
+    if (elFmt) elFmt.value = config.formatoHorarios || 'compacto';
+    if (config.horarios) horarios = config.horarios;
+    if (logoBase64) {
+      document.getElementById('logo-preview').innerHTML = `<img src="${logoBase64}" style="max-width: 150px; border-radius: 8px;">`;
+    }
+    const elTamLabel = document.getElementById('tamano-label');
+    if (elTamLabel) elTamLabel.textContent = (config.textoTamano || 11) + 'px';
+    const elAncho = document.getElementById('ancho-actual');
+    if (elAncho) elAncho.textContent = anchoPapel;
+    document.querySelectorAll('.ancho-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if (btn.textContent.includes(anchoPapel + ' mm') || (anchoPapel === 210 && btn.textContent.includes('A4'))) {
+        btn.classList.add('active');
+      }
+    });
+  } catch(e) {
+    console.error('Error cargando configuración:', e);
+  }
+}
+
+// ============================================================
+// IMPRIMIR PRUEBA
+// ============================================================
+function imprimirPrueba() {
+  const nombre = document.getElementById('negocio-nombre').value || 'MEJORAR 2';
+  const ubicacion = document.getElementById('negocio-ubicacion').value;
+  const telefono = document.getElementById('negocio-telefono').value;
+  const mostrarHorarios = document.getElementById('mostrar-horarios').checked;
+  const pieMensaje = document.getElementById('pie-mensaje').value || '¡Gracias por su compra!';
+  const mostrarFecha = document.getElementById('mostrar-fecha').checked;
+  const mostrarNumero = document.getElementById('mostrar-numero-ticket').checked;
+  const fuente = document.getElementById('texto-fuente').value;
+  const tamano = document.getElementById('texto-tamano').value;
+  const negrita = document.getElementById('texto-negrita').checked;
+  const ancho = anchoPapel + 'mm';
+  const fecha = new Date().toLocaleString('es-AR');
+  
+  let contenido = '';
+  if (logoBase64) contenido += `<div class="center"><img src="${logoBase64}" style="max-width: 100%; height: auto;"></div>`;
+  contenido += `<div class="center ${negrita ? 'bold' : ''}" style="font-size: ${parseInt(tamano) + 3}px;">${nombre}</div>`;
+  if (ubicacion) contenido += `<div class="center">${ubicacion}</div>`;
+  if (telefono) contenido += `<div class="center">Tel: ${telefono}</div>`;
+  if (mostrarHorarios) {
+    const lineas = formatearHorariosTicket();
+    contenido += `<div class="center" style="font-size: ${parseInt(tamano) - 1}px;">${lineas.join('<br>')}</div>`;
+  }
+  contenido += '<div class="separator"></div>';
+  contenido += `<div class="bold center">TICKET DE PRUEBA</div>`;
+  if (mostrarNumero) contenido += `<div class="item"><span>N° Ticket:</span><span>#${String(Math.floor(Math.random()*9999)).padStart(4,'0')}</span></div>`;
+  if (mostrarFecha) contenido += `<div class="item"><span>Fecha:</span><span>${fecha}</span></div>`;
+  contenido += '<div class="separator"></div>';
+  contenido += `<div class="item bold"><span>Producto</span><span>Total</span></div>`;
+  contenido += '<div class="separator" style="border-top-style:dotted;margin:1mm 0;"></div>';
+  contenido += `<div class="item"><span class="item-nombre">Coca Cola 500ml</span><span>x2</span><span class="item-total">$3.000</span></div>`;
+  contenido += `<div class="item"><span class="item-nombre">Yerba Taragüi 1kg</span><span>x1</span><span class="item-total">$3.500</span></div>`;
+  contenido += `<div class="item"><span class="item-nombre">Alfajor</span><span>x3</span><span class="item-total">$3.600</span></div>`;
+  contenido += '<div class="separator"></div>';
+  contenido += `<div class="item"><span>Subtotal:</span><span>$10.100</span></div>`;
+  contenido += `<div class="item ${negrita ? 'bold' : ''}" style="font-size: ${parseInt(tamano) + 2}px;"><span>TOTAL:</span><span>$10.100</span></div>`;
+  contenido += '<div class="separator"></div>';
+  contenido += `<div class="item"><span>Método de pago:</span><span>EFECTIVO</span></div>`;
+  contenido += `<div class="item"><span>Recibido:</span><span>$15.000</span></div>`;
+  contenido += `<div class="item bold"><span>Vuelto:</span><span>$4.900</span></div>`;
+  contenido += '<div class="separator"></div>';
+  contenido += `<div class="center ${negrita ? 'bold' : ''}">${pieMensaje}</div>`;
+  contenido += `<div class="center" style="font-size:9px;margin-top:2mm;">Generado el ${fecha}</div>`;
+  
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket - ${nombre}</title><style>@page { size: ${ancho} auto; margin: 2mm; } * { box-sizing: border-box; } body { font-family: ${fuente}; font-size: ${tamano}px; width: ${ancho}; margin: 0; padding: 2mm; line-height: 1.3; color: #000; ${negrita ? 'font-weight: bold;' : ''} } .center { text-align: center; } .bold { font-weight: bold; } .separator { border-top: 1px dashed #000; margin: 3mm 0; } .item { display: flex; justify-content: space-between; margin: 1mm 0; } .item-nombre { flex: 1; } .item-total { font-weight: bold; }</style></head><body>${contenido}<script>window.onload = function() { setTimeout(function() { window.print(); }, 300); };<\/script></body></html>`;
+  
+  const ventana = window.open('', '_blank', 'width=400,height=600');
+  if (!ventana) { toast('❌ Permití ventanas emergentes', 'err'); return; }
+  ventana.document.write(html);
+  ventana.document.close();
+  toast('✅ Ticket abierto', 'ok');
+}
+
+// ============================================================
+// VENCIMIENTOS
+// ============================================================
 let filtroVencimientos = 'todos';
 
 function calcularNivel(fechaVenc) {
@@ -1083,7 +1716,6 @@ function calcularNivel(fechaVenc) {
   hoy.setHours(0, 0, 0, 0);
   const venc = new Date(fechaVenc + 'T00:00:00');
   const diffDias = Math.ceil((venc - hoy) / (1000 * 60 * 60 * 24));
-  
   if (diffDias < 0) return { nivel: 'critico', dias: diffDias };
   if (diffDias === 0) return { nivel: 'critico', dias: 0 };
   if (diffDias <= 3) return { nivel: 'urgente', dias: diffDias };
@@ -1100,21 +1732,16 @@ function filtrarVencimientos(nivel, btn) {
 
 function renderVencimientos() {
   const stats = { critico: 0, urgente: 0, proximo: 0, normal: 0 };
-  
   let html = '';
   productos.forEach(p => {
     if (!p.lotes || p.lotes.length === 0) return;
-    
     const nivelMasCritico = p.lotes.reduce((min, lote) => {
       const info = calcularNivel(lote.fechaVencimiento);
       const orden = { critico: 0, urgente: 1, proximo: 2, normal: 3 };
       return orden[info.nivel] < orden[min.nivel] ? info : min;
     }, { nivel: 'normal', dias: 999 });
-    
     stats[nivelMasCritico.nivel]++;
-    
     if (filtroVencimientos !== 'todos' && nivelMasCritico.nivel !== filtroVencimientos) return;
-    
     const cardClass = 'nivel-' + nivelMasCritico.nivel;
     html += `<div class="prod-card ${cardClass}">
       <div style="font-weight:700;font-size:15px;margin-bottom:8px;">${p.nombre}</div>
@@ -1126,9 +1753,7 @@ function renderVencimientos() {
       </div>
     </div>`;
   });
-  
   document.getElementById('lista-vencimientos').innerHTML = html || '<p class="empty">No hay productos</p>';
-  
   document.getElementById('stat-critico').textContent = stats.critico;
   document.getElementById('stat-urgente').textContent = stats.urgente;
   document.getElementById('stat-proximo').textContent = stats.proximo;
@@ -1136,50 +1761,26 @@ function renderVencimientos() {
 }
 
 function agregarLote() {
-  if (productos.length === 0) {
-    toast('❌ No hay productos', 'err');
-    return;
-  }
-  
+  if (productos.length === 0) { toast('❌ No hay productos', 'err'); return; }
   let opciones = productos.map((p, i) => (i + 1) + '. ' + p.nombre).join('\n');
   const seleccion = prompt('Elegí un producto (número):\n\n' + opciones);
   if (!seleccion) return;
-  
   const idx = parseInt(seleccion) - 1;
-  if (isNaN(idx) || idx < 0 || idx >= productos.length) {
-    toast('❌ Número inválido', 'err');
-    return;
-  }
-  
+  if (isNaN(idx) || idx < 0 || idx >= productos.length) { toast('❌ Número inválido', 'err'); return; }
   agregarLoteAProducto(productos[idx].id);
 }
 
 function agregarLoteAProducto(prodId) {
   const producto = productos.find(p => p.id === prodId);
   if (!producto) return;
-  
   const cantidad = parseInt(prompt('Cantidad del lote:', '10'));
-  if (isNaN(cantidad) || cantidad <= 0) {
-    toast('❌ Cantidad inválida', 'err');
-    return;
-  }
-  
+  if (isNaN(cantidad) || cantidad <= 0) { toast('❌ Cantidad inválida', 'err'); return; }
   const fechaStr = prompt('Fecha de vencimiento (YYYY-MM-DD):\n\nEjemplo: 2026-08-15', '2027-12-31');
   if (!fechaStr) return;
-  
   const fecha = new Date(fechaStr + 'T00:00:00');
-  if (isNaN(fecha.getTime())) {
-    toast('❌ Fecha inválida', 'err');
-    return;
-  }
-  
+  if (isNaN(fecha.getTime())) { toast('❌ Fecha inválida', 'err'); return; }
   if (!producto.lotes) producto.lotes = [];
-  producto.lotes.push({
-    id: Date.now() + Math.random(),
-    cantidad: cantidad,
-    fechaVencimiento: fechaStr
-  });
-  
+  producto.lotes.push({ id: Date.now() + Math.random(), cantidad: cantidad, fechaVencimiento: fechaStr });
   guardarTodo();
   renderVencimientos();
   toast('✅ Lote agregado', 'ok');
@@ -1187,45 +1788,25 @@ function agregarLoteAProducto(prodId) {
 
 function marcarMerma(prodId) {
   const producto = productos.find(p => p.id === prodId);
-  if (!producto || !producto.lotes || producto.lotes.length === 0) {
-    toast('❌ No hay lotes', 'err');
-    return;
-  }
-  
+  if (!producto || !producto.lotes || producto.lotes.length === 0) { toast('❌ No hay lotes', 'err'); return; }
   const motivo = prompt('Motivo de la merma:\n\n1. Vencido\n2. Dañado\n3. Defectuoso\n4. Otro\n\nIngresá el número:', '1');
   if (!motivo) return;
-  
   const motivos = { '1': 'Vencido', '2': 'Dañado', '3': 'Defectuoso', '4': 'Otro' };
   const motivoTexto = motivos[motivo] || 'Otro';
-  
   const cantidadMerma = parseInt(prompt('Cantidad a dar de baja:', producto.lotes[0].cantidad));
-  if (isNaN(cantidadMerma) || cantidadMerma <= 0) {
-    toast('❌ Cantidad inválida', 'err');
-    return;
-  }
-  
+  if (isNaN(cantidadMerma) || cantidadMerma <= 0) { toast('❌ Cantidad inválida', 'err'); return; }
   if (confirm('¿Confirmar merma de ' + cantidadMerma + ' unidades de "' + producto.nombre + '"?\n\nMotivo: ' + motivoTexto)) {
     producto.stock = Math.max(0, producto.stock - cantidadMerma);
-    
     let restante = cantidadMerma;
     producto.lotes.sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento));
-    
     for (let i = 0; i < producto.lotes.length && restante > 0; i++) {
       const lote = producto.lotes[i];
       const descontar = Math.min(lote.cantidad, restante);
       lote.cantidad -= descontar;
       restante -= descontar;
     }
-    
     producto.lotes = producto.lotes.filter(l => l.cantidad > 0);
-    
-    auditoria.unshift({
-      timestamp: new Date().toISOString(),
-      usuario: 'SISTEMA',
-      accion: 'MERMA',
-      detalle: producto.nombre + ' - ' + cantidadMerma + ' un. - Motivo: ' + motivoTexto
-    });
-    
+    auditoria.unshift({ timestamp: new Date().toISOString(), usuario: 'SISTEMA', accion: 'MERMA', detalle: producto.nombre + ' - ' + cantidadMerma + ' un. - Motivo: ' + motivoTexto });
     guardarTodo();
     renderVencimientos();
     toast('🗑️ Merma registrada', 'ok');
@@ -1234,49 +1815,33 @@ function marcarMerma(prodId) {
 
 function editarFecha(prodId) {
   const producto = productos.find(p => p.id === prodId);
-  if (!producto || !producto.lotes || producto.lotes.length === 0) {
-    toast('❌ No hay lotes', 'err');
-    return;
-  }
-  
+  if (!producto || !producto.lotes || producto.lotes.length === 0) { toast('❌ No hay lotes', 'err'); return; }
   let loteIdx = 0;
   if (producto.lotes.length > 1) {
     let opciones = producto.lotes.map((l, i) => (i + 1) + '. Vence: ' + l.fechaVencimiento + ' (' + l.cantidad + ' un.)').join('\n');
     const sel = prompt('¿Qué lote querés editar?\n\n' + opciones);
     if (!sel) return;
     loteIdx = parseInt(sel) - 1;
-    if (isNaN(loteIdx) || loteIdx < 0 || loteIdx >= producto.lotes.length) {
-      toast('❌ Número inválido', 'err');
-      return;
-    }
+    if (isNaN(loteIdx) || loteIdx < 0 || loteIdx >= producto.lotes.length) { toast('❌ Número inválido', 'err'); return; }
   }
-  
   const nuevaFecha = prompt('Nueva fecha de vencimiento (YYYY-MM-DD):', producto.lotes[loteIdx].fechaVencimiento);
   if (!nuevaFecha) return;
-  
   const fecha = new Date(nuevaFecha + 'T00:00:00');
-  if (isNaN(fecha.getTime())) {
-    toast('❌ Fecha inválida', 'err');
-    return;
-  }
-  
+  if (isNaN(fecha.getTime())) { toast('❌ Fecha inválida', 'err'); return; }
   producto.lotes[loteIdx].fechaVencimiento = nuevaFecha;
   guardarTodo();
   renderVencimientos();
   toast('✅ Fecha actualizada', 'ok');
 }
 
-// ============ PROVEEDORES (CORRECCIÓN 4) ============
+// ============================================================
+// PROVEEDORES
+// ============================================================
 function renderListaProveedores() {
   const busq = (document.getElementById('buscador-prov')?.value || '').toLowerCase();
   const cont = document.getElementById('lista-proveedores');
   const filtrados = proveedores.filter(p => p.nombre.toLowerCase().includes(busq) || (p.cuit && p.cuit.includes(busq)));
-  
-  if (filtrados.length === 0) {
-    cont.innerHTML = '<p class="empty">No se encontraron proveedores</p>';
-    return;
-  }
-  
+  if (filtrados.length === 0) { cont.innerHTML = '<p class="empty">No se encontraron proveedores</p>'; return; }
   let html = '';
   filtrados.forEach(p => {
     html += `<div class="prov-card">
@@ -1301,13 +1866,11 @@ function renderListaProveedores() {
 }
 
 function nuevoProveedor() {
-  const nombre = prompt('Nombre:');
-  if (!nombre) return;
+  const nombre = prompt('Nombre:'); if (!nombre) return;
   const cuit = prompt('CUIT:') || '';
   const telefono = prompt('Teléfono:') || '';
   const whatsapp = prompt('WhatsApp:') || '';
   const email = prompt('Email:') || '';
-  
   const nuevoId = proveedores.length > 0 ? Math.max(...proveedores.map(p => p.id)) + 1 : 1;
   proveedores.push({ id: nuevoId, nombre, cuit, telefono, whatsapp, email });
   guardarTodo();
@@ -1316,20 +1879,12 @@ function nuevoProveedor() {
 }
 
 function editarProveedor(id) {
-  const p = proveedores.find(x => x.id === id);
-  if (!p) return;
-  
-  const nombre = prompt('Nombre:', p.nombre);
-  if (nombre === null) return;
-  const cuit = prompt('CUIT:', p.cuit || '');
-  if (cuit === null) return;
-  const telefono = prompt('Teléfono:', p.telefono || '');
-  if (telefono === null) return;
-  const whatsapp = prompt('WhatsApp:', p.whatsapp || '');
-  if (whatsapp === null) return;
-  const email = prompt('Email:', p.email || '');
-  if (email === null) return;
-  
+  const p = proveedores.find(x => x.id === id); if (!p) return;
+  const nombre = prompt('Nombre:', p.nombre); if (nombre === null) return;
+  const cuit = prompt('CUIT:', p.cuit || ''); if (cuit === null) return;
+  const telefono = prompt('Teléfono:', p.telefono || ''); if (telefono === null) return;
+  const whatsapp = prompt('WhatsApp:', p.whatsapp || ''); if (whatsapp === null) return;
+  const email = prompt('Email:', p.email || ''); if (email === null) return;
   Object.assign(p, { nombre, cuit, telefono, whatsapp, email });
   guardarTodo();
   renderListaProveedores();
@@ -1337,8 +1892,7 @@ function editarProveedor(id) {
 }
 
 function eliminarProveedor(id) {
-  const p = proveedores.find(x => x.id === id);
-  if (!p) return;
+  const p = proveedores.find(x => x.id === id); if (!p) return;
   if (confirm('¿Eliminar al proveedor "' + p.nombre + '"?')) {
     proveedores = proveedores.filter(x => x.id !== id);
     guardarTodo();
@@ -1347,13 +1901,13 @@ function eliminarProveedor(id) {
   }
 }
 
-// ============ LICENCIA (CORRECCIÓN 5) ============
+// ============================================================
+// LICENCIA
+// ============================================================
 function activarLicencia() {
   const clave = document.getElementById('clave-licencia').value.trim().toUpperCase();
   const deviceId = localStorage.getItem('device_id_v1');
-  
   const CLAVE_VALIDA = 'M2-ACTIVAR-2026';
-  
   if (clave === CLAVE_VALIDA || clave.includes(deviceId)) {
     localStorage.setItem('licencia_v1', 'activa');
     document.getElementById('licencia-status').textContent = 'ACTIVA';
@@ -1365,14 +1919,16 @@ function activarLicencia() {
   }
 }
 
-// ============ MI CUENTA ============
+// ============================================================
+// MI CUENTA
+// ============================================================
 function exportarDatos() {
   const datos = {
     productos, ventas, proveedores, auditoria,
     pin: localStorage.getItem('pin_v1') || '1234',
-    deviceId: localStorage.getItem('device_id_v1')
+    deviceId: localStorage.getItem('device_id_v1'),
+    ticketConfig: localStorage.getItem('ticket_config_v2')
   };
-  
   const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1380,14 +1936,12 @@ function exportarDatos() {
   a.download = 'backup_' + new Date().toISOString().slice(0, 10) + '.json';
   a.click();
   URL.revokeObjectURL(url);
-  
   toast('✅ Backup exportado', 'ok');
 }
 
 function importarDatos(event) {
   const file = event.target.files[0];
   if (!file) return;
-  
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
@@ -1398,6 +1952,7 @@ function importarDatos(event) {
         proveedores = datos.proveedores || [];
         auditoria = datos.auditoria || [];
         if (datos.pin) localStorage.setItem('pin_v1', datos.pin);
+        if (datos.ticketConfig) localStorage.setItem('ticket_config_v2', datos.ticketConfig);
         guardarTodo();
         toast('✅ Datos restaurados', 'ok');
       }
@@ -1418,7 +1973,9 @@ function resetearTodo() {
   }
 }
 
-// ============ TOAST ============
+// ============================================================
+// UTILIDADES
+// ============================================================
 function toast(msg, tipo) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -1426,7 +1983,20 @@ function toast(msg, tipo) {
   setTimeout(() => t.className = 'toast ' + tipo, 2500);
 }
 
-// ============ INICIAR ============
+// ============================================================
+// FIN DE LA PARTE 2 - CONTINÚA EN LA PARTE 3
+// ============================================================
+</script>
+</body>
+</html>
+<script>
+// ============================================================
+// FIN DE LA PARTE 2 - CONTINÚA EN LA PARTE 3
+// ============================================================
+
+// ============================================================
+// INICIAR LA APLICACIÓN
+// ============================================================
 iniciar();
 </script>
 </body>
