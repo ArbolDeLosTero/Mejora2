@@ -55,11 +55,9 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
   border-radius: 10px; text-align: center; cursor: pointer; font-size: 13px; color: #666;
 }
 
-/* Bloques de configuración */
 .config-block { background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
 .config-block h3 { font-size: 14px; margin-bottom: 12px; color: #333; display: flex; align-items: center; gap: 8px; }
 
-/* Horarios */
 .horarios-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 12px; }
 .horarios-table th { background: #667eea; color: white; padding: 8px; text-align: left; }
 .horarios-table td { padding: 6px; border-bottom: 1px solid #e0e0e0; }
@@ -70,9 +68,7 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 
 .agrupar-info { background: #e3f2fd; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 12px; color: #0d47a1; }
 .agrupar-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; padding: 8px; background: white; border-radius: 8px; }
-.agrupar-row select { flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; }
 
-/* Preview del ticket */
 .preview-container { 
   background: #f8f9fa; border: 2px solid #e0e0e0; border-radius: 12px; 
   padding: 15px; margin-top: 20px; 
@@ -87,32 +83,52 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
   background: white; border: 2px solid #ddd; padding: 10px; 
   font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.4; 
   max-width: 320px; margin: 0 auto; position: relative;
-  min-height: 400px;
+  min-height: 500px;
 }
 
-/* Elementos arrastrables en el preview */
-.preview-element {
+.zona-editable {
   position: relative;
+  min-height: 100px;
+  border: 2px dashed transparent;
+  transition: border-color 0.2s;
+}
+.zona-editable:hover { border-color: #667eea; }
+.zona-editable-label {
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  background: #667eea;
+  color: white;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.preview-element {
+  position: absolute;
   cursor: move;
   padding: 4px;
   border: 2px dashed transparent;
   transition: border-color 0.2s;
   user-select: none;
+  min-width: 50px;
+  min-height: 20px;
 }
 .preview-element:hover { border-color: #667eea; }
 .preview-element.selected { border-color: #667eea; background: rgba(102, 126, 234, 0.05); }
-.preview-element.dragging { opacity: 0.7; }
+.preview-element.dragging { opacity: 0.7; z-index: 100; }
 
-/* Handles de resize */
 .resize-handle {
   position: absolute;
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   background: #667eea;
   border: 2px solid white;
   border-radius: 50%;
   display: none;
   z-index: 10;
+  cursor: nwse-resize;
 }
 .preview-element.selected .resize-handle { display: block; }
 .resize-handle.tl { top: -6px; left: -6px; cursor: nwse-resize; }
@@ -120,22 +136,12 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .resize-handle.bl { bottom: -6px; left: -6px; cursor: nesw-resize; }
 .resize-handle.br { bottom: -6px; right: -6px; cursor: nwse-resize; }
 
-/* Separadores */
 .ticket-separator { border-top: 1px dashed #333; margin: 6px 0; }
 
-/* Toast */
 .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 22px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 300; opacity: 0; transition: opacity 0.3s; max-width: 90%; text-align: center; }
 .toast.show { opacity: 1; }
 .toast.ok { background: #2a9d4a; }
 .toast.err { background: #d33; }
-
-/* Modal para editar elemento */
-.modal-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
-.modal-bg.active { display: flex; }
-.modal { background: white; border-radius: 20px; padding: 25px; max-width: 400px; width: 100%; max-height: 90vh; overflow-y: auto; }
-.modal h3 { font-size: 16px; margin-bottom: 15px; color: #333; }
-.modal-buttons { display: flex; gap: 10px; margin-top: 15px; }
-.modal-buttons .btn { margin-bottom: 0; }
 </style>
 </head>
 <body>
@@ -152,13 +158,12 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
       <button class="tab" onclick="cambiarTab('ticket', this)">🎨 Ticket</button>
     </div>
 
-    <!-- SECCIÓN 1: IMPRESORA -->
     <div id="sec-impresora" class="section active">
       <div class="section-title">🖨️ Configuración de Impresora</div>
       
       <div class="info">
         <b>✅ Modo Universal:</b><br>
-        Detecta automáticamente todas las impresoras conectadas a tu dispositivo (USB, Bluetooth, WiFi, OTG, etc.).
+        Detecta automáticamente todas las impresoras conectadas a tu dispositivo.
       </div>
 
       <div class="form-group">
@@ -182,15 +187,13 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
       </div>
     </div>
 
-    <!-- SECCIÓN 2: TICKET -->
     <div id="sec-ticket" class="section">
       <div class="section-title">🎨 Configuración del Ticket</div>
 
       <div class="warning">
-        <b>💡 Tip:</b> Arrastrá los elementos en el preview para reorganizarlos. Arrastrá las esquinas para cambiar el tamaño.
+        <b>💡 Tip:</b> Hacé clic en un elemento para seleccionarlo, luego arrastralo para moverlo o usá las esquinas para redimensionarlo.
       </div>
 
-      <!-- ENCABEZADO -->
       <div class="config-block">
         <h3>📝 Encabezado (parte superior)</h3>
         
@@ -224,7 +227,6 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
         </div>
       </div>
 
-      <!-- HORARIOS -->
       <div class="config-block">
         <h3>🕐 Horarios del Kiosco</h3>
         
@@ -233,9 +235,7 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
           <button class="btn btn-secondary" style="flex:1; margin:0;" onclick="desagruparDias()">🔓 Desagrupar</button>
         </div>
 
-        <div id="horarios-container">
-          <!-- Tabla de horarios se genera dinámicamente -->
-        </div>
+        <div id="horarios-container"></div>
 
         <div class="form-group" style="margin-top: 10px;">
           <label>Formato de visualización</label>
@@ -246,7 +246,6 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
         </div>
       </div>
 
-      <!-- PIE DE PÁGINA -->
       <div class="config-block">
         <h3>📝 Pie de página (parte inferior)</h3>
         
@@ -266,7 +265,6 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
         </div>
       </div>
 
-      <!-- FORMATO DE TEXTO -->
       <div class="config-block">
         <h3>🔤 Formato de texto</h3>
         
@@ -281,7 +279,7 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
         </div>
 
         <div class="form-group">
-          <label>Tamaño de letra: <span id="tamano-label">11px</span></label>
+          <label>Tamaño de letra por defecto: <span id="tamano-label">11px</span></label>
           <input type="range" id="texto-tamano" min="8" max="18" value="11" oninput="actualizarTamano()">
         </div>
 
@@ -294,11 +292,10 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
       <button class="btn btn-primary" onclick="guardarConfiguracion()">💾 Guardar configuración</button>
       <button class="btn btn-success" onclick="imprimirPrueba()">🧪 Probar impresión</button>
 
-      <!-- PREVIEW INTERACTIVO -->
       <div class="preview-container">
         <div class="preview-title">
           <span>👁️ Preview Interactivo</span>
-          <span class="preview-hint">Arrastrá para mover · Esquinas para redimensionar</span>
+          <span class="preview-hint">Clic para seleccionar · Arrastrá para mover · Esquinas para redimensionar</span>
         </div>
         <div class="ticket-preview" id="ticket-preview-interactivo"></div>
       </div>
@@ -311,12 +308,8 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 <div class="toast" id="toast"></div>
 
 <script>
-// ============================================================
-// ESTADO GLOBAL
-// ============================================================
 let anchoPapel = 58;
 let logoBase64 = null;
-let elementosOrden = ['logo', 'nombre', 'ubicacion', 'telefono', 'horarios'];
 let elementoSeleccionado = null;
 let modoAgrupado = false;
 
@@ -332,18 +325,14 @@ const DIAS_SEMANA = [
 
 let horarios = JSON.parse(JSON.stringify(DIAS_SEMANA));
 
-// ============================================================
-// INICIALIZACIÓN
-// ============================================================
+let posicionesElementos = {};
+
 function iniciar() {
   cargarConfiguracion();
   renderHorarios();
   actualizarPreview();
 }
 
-// ============================================================
-// CAMBIO DE TAB
-// ============================================================
 function cambiarTab(tab, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -351,9 +340,6 @@ function cambiarTab(tab, btn) {
   document.getElementById('sec-' + tab).classList.add('active');
 }
 
-// ============================================================
-// CAMBIO DE ANCHO
-// ============================================================
 function cambiarAncho(ancho, btn) {
   anchoPapel = ancho;
   document.querySelectorAll('.ancho-btn').forEach(b => b.classList.remove('active'));
@@ -363,9 +349,6 @@ function cambiarAncho(ancho, btn) {
   actualizarPreview();
 }
 
-// ============================================================
-// LOGO
-// ============================================================
 function cargarLogo(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -386,9 +369,6 @@ function actualizarTamano() {
   actualizarPreview();
 }
 
-// ============================================================
-// HORARIOS
-// ============================================================
 function renderHorarios() {
   const cont = document.getElementById('horarios-container');
   
@@ -436,12 +416,12 @@ function renderHorariosAgrupados(cont) {
   
   let html = '<div class="agrupar-info">📅 Días agrupados por horario similar</div>';
   
-  grupos.forEach((grupo, idx) => {
+  grupos.forEach((grupo) => {
     const diasTexto = grupo.dias.map(d => d.nombre).join(', ');
     html += `<div class="agrupar-row">
       <div style="flex:2; font-size:12px;">
         <div style="font-weight:600;">${diasTexto}</div>
-        <div style="color:#666; font-size:11px;">${grupo.activo ? formatearHorarioGrupo(grupo.dias[0]) : 'Cerrado'}</div>
+        <div style="color:#666; font-size:11px;">${grupo.dias[0].activo ? formatearHorarioGrupo(grupo.dias[0]) : 'Cerrado'}</div>
       </div>
     </div>`;
   });
@@ -535,9 +515,6 @@ function desagruparDias() {
   toast('🔓 Días desagrupados', 'ok');
 }
 
-// ============================================================
-// FORMATO DE HORARIOS PARA EL TICKET
-// ============================================================
 function formatearHorariosTicket() {
   const formato = document.getElementById('formato-horarios').value;
   const grupos = agruparDiasSimilares();
@@ -567,9 +544,6 @@ function formatearHorariosTicket() {
   return lineas;
 }
 
-// ============================================================
-// PREVIEW INTERACTIVO (con drag & drop)
-// ============================================================
 function actualizarPreview() {
   actualizarPreviewSimple();
   actualizarPreviewInteractivo();
@@ -589,10 +563,26 @@ function actualizarPreviewInteractivo() {
   preview.innerHTML = '';
   aplicarEstiloPreview(preview);
   
-  // Crear elementos arrastrables según el orden
-  elementosOrden.forEach(tipo => {
-    const elem = crearElementoArrastrable(tipo);
-    if (elem) preview.appendChild(elem);
+  const tamanoBase = parseInt(document.getElementById('texto-tamano').value);
+  
+  // ZONA SUPERIOR EDITABLE
+  const zonaSuperior = document.createElement('div');
+  zonaSuperior.className = 'zona-editable';
+  zonaSuperior.style.minHeight = '150px';
+  zonaSuperior.innerHTML = '<div class="zona-editable-label">ZONA EDITABLE (ARRASTRÁ LOS ELEMENTOS)</div>';
+  preview.appendChild(zonaSuperior);
+  
+  // Crear elementos arrastrables en la zona superior
+  const elementosSuperiores = ['logo', 'nombre', 'ubicacion', 'telefono', 'horarios'];
+  elementosSuperiores.forEach((tipo, idx) => {
+    const elem = crearElementoArrastrable(tipo, tamanoBase);
+    if (elem) {
+      elem.style.top = (20 + idx * 30) + 'px';
+      elem.style.left = '10px';
+      elem.style.right = '10px';
+      elem.style.width = 'calc(100% - 20px)';
+      zonaSuperior.appendChild(elem);
+    }
   });
   
   // Separador
@@ -600,10 +590,11 @@ function actualizarPreviewInteractivo() {
   sep1.className = 'ticket-separator';
   preview.appendChild(sep1);
   
-  // Contenido del medio (no editable)
+  // CONTENIDO DEL MEDIO (NO EDITABLE)
   const contenido = document.createElement('div');
-  contenido.style.cssText = 'padding: 8px 4px; color: #555; font-size: 11px;';
+  contenido.style.cssText = 'padding: 8px 4px; color: #555; font-size: 11px; background: #f9f9f9; border: 1px solid #ddd;';
   contenido.innerHTML = `
+    <div style="text-align:center; font-weight:bold; margin-bottom:4px; color:#999;">[CONTENIDO NO EDITABLE]</div>
     <div style="text-align:center; font-weight:bold; margin-bottom:4px;">VENTA</div>
     <div>N° Ticket: #1234</div>
     <div>Fecha: ${new Date().toLocaleString('es-AR')}</div>
@@ -627,15 +618,28 @@ function actualizarPreviewInteractivo() {
   sep2.className = 'ticket-separator';
   preview.appendChild(sep2);
   
-  // Pie de página (arrastrable)
-  const pieElementos = ['mensaje', 'fecha', 'numero'];
-  pieElementos.forEach(tipo => {
-    const elem = crearElementoArrastrable(tipo);
-    if (elem) preview.appendChild(elem);
+  // ZONA INFERIOR EDITABLE
+  const zonaInferior = document.createElement('div');
+  zonaInferior.className = 'zona-editable';
+  zonaInferior.style.minHeight = '100px';
+  zonaInferior.innerHTML = '<div class="zona-editable-label">ZONA EDITABLE (ARRASTRÁ LOS ELEMENTOS)</div>';
+  preview.appendChild(zonaInferior);
+  
+  // Crear elementos arrastrables en la zona inferior
+  const elementosInferiores = ['mensaje', 'fecha', 'numero'];
+  elementosInferiores.forEach((tipo, idx) => {
+    const elem = crearElementoArrastrable(tipo, tamanoBase);
+    if (elem) {
+      elem.style.top = (20 + idx * 25) + 'px';
+      elem.style.left = '10px';
+      elem.style.right = '10px';
+      elem.style.width = 'calc(100% - 20px)';
+      zonaInferior.appendChild(elem);
+    }
   });
 }
 
-function crearElementoArrastrable(tipo) {
+function crearElementoArrastrable(tipo, tamanoBase) {
   const nombre = document.getElementById('negocio-nombre').value || 'MEJORAR 2';
   const ubicacion = document.getElementById('negocio-ubicacion').value;
   const telefono = document.getElementById('negocio-telefono').value;
@@ -644,7 +648,6 @@ function crearElementoArrastrable(tipo) {
   const mostrarFecha = document.getElementById('mostrar-fecha').checked;
   const mostrarNumero = document.getElementById('mostrar-numero-ticket').checked;
   const negrita = document.getElementById('texto-negrita').checked;
-  const tamano = document.getElementById('texto-tamano').value;
   
   let contenido = '';
   let visible = true;
@@ -655,7 +658,7 @@ function crearElementoArrastrable(tipo) {
       contenido = `<img src="${logoBase64}" style="max-width:100%; height:auto; display:block; margin:0 auto;">`;
       break;
     case 'nombre':
-      contenido = `<div style="text-align:center; font-weight:${negrita?'bold':'normal'}; font-size:${parseInt(tamano)+3}px;">${nombre}</div>`;
+      contenido = `<div style="text-align:center; font-weight:${negrita?'bold':'normal'}; font-size:${tamanoBase+3}px;">${nombre}</div>`;
       break;
     case 'ubicacion':
       if (!ubicacion) return null;
@@ -668,18 +671,18 @@ function crearElementoArrastrable(tipo) {
     case 'horarios':
       if (!mostrarHorarios) return null;
       const lineas = formatearHorariosTicket();
-      contenido = `<div style="text-align:center; font-size:${parseInt(tamano)-1}px;">${lineas.join('<br>')}</div>`;
+      contenido = `<div style="text-align:center; font-size:${tamanoBase-1}px;">${lineas.join('<br>')}</div>`;
       break;
     case 'mensaje':
       contenido = `<div style="text-align:center; font-weight:${negrita?'bold':'normal'};">${pieMensaje}</div>`;
       break;
     case 'fecha':
       if (!mostrarFecha) return null;
-      contenido = `<div style="text-align:center; font-size:${parseInt(tamano)-1}px;">${new Date().toLocaleString('es-AR')}</div>`;
+      contenido = `<div style="text-align:center; font-size:${tamanoBase-1}px;">${new Date().toLocaleString('es-AR')}</div>`;
       break;
     case 'numero':
       if (!mostrarNumero) return null;
-      contenido = `<div style="text-align:center; font-size:${parseInt(tamano)-1}px;">N° Ticket: #1234</div>`;
+      contenido = `<div style="text-align:center; font-size:${tamanoBase-1}px;">N° Ticket: #1234</div>`;
       break;
   }
   
@@ -693,11 +696,19 @@ function crearElementoArrastrable(tipo) {
     <div class="resize-handle br" data-handle="br"></div>
   `;
   
-  // Eventos de drag & drop
   div.addEventListener('mousedown', iniciarDrag);
-  div.addEventListener('touchstart', iniciarDragTouch, { passive: false });
+  div.addEventListener('click', function(e) {
+    e.stopPropagation();
+    seleccionarElemento(div);
+  });
   
   return div;
+}
+
+function seleccionarElemento(elem) {
+  document.querySelectorAll('.preview-element').forEach(el => el.classList.remove('selected'));
+  elem.classList.add('selected');
+  elementoSeleccionado = elem;
 }
 
 function aplicarEstiloPreview(preview) {
@@ -760,9 +771,6 @@ function generarContenidoTicket() {
   return html;
 }
 
-// ============================================================
-// DRAG & DROP
-// ============================================================
 let dragData = null;
 
 function iniciarDrag(e) {
@@ -772,22 +780,19 @@ function iniciarDrag(e) {
   }
   
   e.preventDefault();
-  const elem = e.currentTarget;
+  e.stopPropagation();
   
-  // Deseleccionar otros
-  document.querySelectorAll('.preview-element').forEach(el => el.classList.remove('selected'));
-  elem.classList.add('selected');
-  elementoSeleccionado = elem;
+  const elem = e.currentTarget;
+  seleccionarElemento(elem);
   
   const rect = elem.getBoundingClientRect();
-  const parentRect = elem.parentElement.getBoundingClientRect();
   
   dragData = {
     elem: elem,
     startX: e.clientX,
     startY: e.clientY,
-    origTop: elem.offsetTop,
-    parent: elem.parentElement
+    origLeft: elem.offsetLeft,
+    origTop: elem.offsetTop
   };
   
   elem.classList.add('dragging');
@@ -796,92 +801,26 @@ function iniciarDrag(e) {
   document.addEventListener('mouseup', terminarDrag);
 }
 
-function iniciarDragTouch(e) {
-  if (e.target.classList.contains('resize-handle')) {
-    iniciarResizeTouch(e);
-    return;
-  }
-  
-  e.preventDefault();
-  const elem = e.currentTarget;
-  const touch = e.touches[0];
-  
-  document.querySelectorAll('.preview-element').forEach(el => el.classList.remove('selected'));
-  elem.classList.add('selected');
-  elementoSeleccionado = elem;
-  
-  dragData = {
-    elem: elem,
-    startX: touch.clientX,
-    startY: touch.clientY,
-    origTop: elem.offsetTop,
-    parent: elem.parentElement
-  };
-  
-  elem.classList.add('dragging');
-  
-  document.addEventListener('touchmove', moverDragTouch, { passive: false });
-  document.addEventListener('touchend', terminarDragTouch);
-}
-
 function moverDrag(e) {
   if (!dragData) return;
   
+  const dx = e.clientX - dragData.startX;
   const dy = e.clientY - dragData.startY;
-  const nuevoTop = dragData.origTop + dy;
-  dragData.elem.style.top = nuevoTop + 'px';
-  dragData.elem.style.position = 'relative';
-}
-
-function moverDragTouch(e) {
-  if (!dragData) return;
-  e.preventDefault();
-  const touch = e.touches[0];
-  const dy = touch.clientY - dragData.startY;
-  const nuevoTop = dragData.origTop + dy;
-  dragData.elem.style.top = nuevoTop + 'px';
-  dragData.elem.style.position = 'relative';
+  
+  dragData.elem.style.left = (dragData.origLeft + dx) + 'px';
+  dragData.elem.style.top = (dragData.origTop + dy) + 'px';
 }
 
 function terminarDrag(e) {
   if (!dragData) return;
   
   dragData.elem.classList.remove('dragging');
-  
-  // Reordenar elementos según posición
-  reordenarElementos();
-  
   dragData = null;
+  
   document.removeEventListener('mousemove', moverDrag);
   document.removeEventListener('mouseup', terminarDrag);
 }
 
-function terminarDragTouch(e) {
-  if (!dragData) return;
-  
-  dragData.elem.classList.remove('dragging');
-  reordenarElementos();
-  
-  dragData = null;
-  document.removeEventListener('touchmove', moverDragTouch);
-  document.removeEventListener('touchend', terminarDragTouch);
-}
-
-function reordenarElementos() {
-  const preview = document.getElementById('ticket-preview-interactivo');
-  const elementos = preview.querySelectorAll('.preview-element');
-  
-  const nuevosOrden = [];
-  elementos.forEach(el => {
-    nuevosOrden.push(el.dataset.tipo);
-  });
-  
-  elementosOrden = nuevosOrden;
-}
-
-// ============================================================
-// RESIZE
-// ============================================================
 let resizeData = null;
 
 function iniciarResize(e) {
@@ -891,12 +830,17 @@ function iniciarResize(e) {
   const handle = e.target;
   const elem = handle.parentElement;
   
+  seleccionarElemento(elem);
+  
   resizeData = {
     elem: elem,
     handle: handle.dataset.handle,
     startX: e.clientX,
     startY: e.clientY,
     origWidth: elem.offsetWidth,
+    origHeight: elem.offsetHeight,
+    origLeft: elem.offsetLeft,
+    origTop: elem.offsetTop,
     origFontSize: parseFloat(window.getComputedStyle(elem).fontSize)
   };
   
@@ -904,45 +848,28 @@ function iniciarResize(e) {
   document.addEventListener('mouseup', terminarResize);
 }
 
-function iniciarResizeTouch(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  
-  const handle = e.target;
-  const elem = handle.parentElement;
-  const touch = e.touches[0];
-  
-  resizeData = {
-    elem: elem,
-    handle: handle.dataset.handle,
-    startX: touch.clientX,
-    startY: touch.clientY,
-    origWidth: elem.offsetWidth,
-    origFontSize: parseFloat(window.getComputedStyle(elem).fontSize)
-  };
-  
-  document.addEventListener('touchmove', moverResizeTouch, { passive: false });
-  document.addEventListener('touchend', terminarResizeTouch);
-}
-
 function moverResize(e) {
   if (!resizeData) return;
   
   const dx = e.clientX - resizeData.startX;
-  const escala = 1 + (dx / 200);
-  const nuevoSize = Math.max(8, Math.min(24, resizeData.origFontSize * escala));
+  const dy = e.clientY - resizeData.startY;
   
-  resizeData.elem.style.fontSize = nuevoSize + 'px';
-}
-
-function moverResizeTouch(e) {
-  if (!resizeData) return;
-  e.preventDefault();
-  const touch = e.touches[0];
-  const dx = touch.clientX - resizeData.startX;
-  const escala = 1 + (dx / 200);
-  const nuevoSize = Math.max(8, Math.min(24, resizeData.origFontSize * escala));
-  resizeData.elem.style.fontSize = nuevoSize + 'px';
+  const handle = resizeData.handle;
+  
+  if (handle === 'br' || handle === 'tr') {
+    resizeData.elem.style.width = Math.max(50, resizeData.origWidth + dx) + 'px';
+  }
+  if (handle === 'br' || handle === 'bl') {
+    resizeData.elem.style.height = Math.max(20, resizeData.origHeight + dy) + 'px';
+  }
+  if (handle === 'bl' || handle === 'tl') {
+    resizeData.elem.style.width = Math.max(50, resizeData.origWidth - dx) + 'px';
+    resizeData.elem.style.left = (resizeData.origLeft + dx) + 'px';
+  }
+  if (handle === 'tl' || handle === 'tr') {
+    resizeData.elem.style.height = Math.max(20, resizeData.origHeight - dy) + 'px';
+    resizeData.elem.style.top = (resizeData.origTop + dy) + 'px';
+  }
 }
 
 function terminarResize() {
@@ -951,15 +878,6 @@ function terminarResize() {
   document.removeEventListener('mouseup', terminarResize);
 }
 
-function terminarResizeTouch() {
-  resizeData = null;
-  document.removeEventListener('touchmove', moverResizeTouch);
-  document.removeEventListener('touchend', terminarResizeTouch);
-}
-
-// ============================================================
-// GUARDAR / CARGAR CONFIGURACIÓN
-// ============================================================
 function guardarConfiguracion() {
   const config = {
     anchoPapel: anchoPapel,
@@ -975,8 +893,7 @@ function guardarConfiguracion() {
     textoFuente: document.getElementById('texto-fuente').value,
     textoTamano: document.getElementById('texto-tamano').value,
     textoNegrita: document.getElementById('texto-negrita').checked,
-    formatoHorarios: document.getElementById('formato-horarios').value,
-    elementosOrden: elementosOrden
+    formatoHorarios: document.getElementById('formato-horarios').value
   };
   
   localStorage.setItem('ticket_config_v2', JSON.stringify(config));
@@ -1006,7 +923,6 @@ function cargarConfiguracion() {
     document.getElementById('formato-horarios').value = config.formatoHorarios || 'compacto';
     
     if (config.horarios) horarios = config.horarios;
-    if (config.elementosOrden) elementosOrden = config.elementosOrden;
     
     if (logoBase64) {
       document.getElementById('logo-preview').innerHTML = `<img src="${logoBase64}" style="max-width: 150px; border-radius: 8px;">`;
@@ -1015,7 +931,6 @@ function cargarConfiguracion() {
     document.getElementById('tamano-label').textContent = (config.textoTamano || 11) + 'px';
     document.getElementById('ancho-actual').textContent = anchoPapel;
     
-    // Actualizar selector de ancho
     document.querySelectorAll('.ancho-btn').forEach(btn => {
       btn.classList.remove('active');
       if (btn.textContent.includes(anchoPapel + ' mm') || (anchoPapel === 210 && btn.textContent.includes('A4'))) {
@@ -1028,9 +943,6 @@ function cargarConfiguracion() {
   }
 }
 
-// ============================================================
-// IMPRIMIR
-// ============================================================
 function imprimirPrueba() {
   const nombre = document.getElementById('negocio-nombre').value || 'MEJORAR 2';
   const ubicacion = document.getElementById('negocio-ubicacion').value;
@@ -1139,9 +1051,6 @@ function imprimirPrueba() {
   toast('✅ Ticket abierto', 'ok');
 }
 
-// ============================================================
-// UTILIDADES
-// ============================================================
 function toast(msg, tipo) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -1149,9 +1058,6 @@ function toast(msg, tipo) {
   setTimeout(() => t.className = 'toast ' + tipo, 2500);
 }
 
-// ============================================================
-// INICIAR
-// ============================================================
 iniciar();
 </script>
 </body>
