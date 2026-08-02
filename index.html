@@ -399,8 +399,36 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
       <div id="lista-proveedores"></div>
     </div>
 
-    <!-- VIEW: LICENCIA -->
-    <div id="view-licencia" class="view">
+    <!-- VIEW: LICENCIA REQUERIDA (NUEVA PANTALLA DE BLOQUEO) -->
+    <div id="view-licencia-requerida" class="view">
+      <div class="panel" style="text-align:center; padding:30px 20px; border:2px solid #d33; background:#fff5f5;">
+        <div style="font-size:60px; margin-bottom:15px;">🔒</div>
+        <h2 style="color:#d33; margin-bottom:10px;">Licencia Requerida</h2>
+        <p style="color:#555; font-size:13px; line-height:1.6; margin-bottom:20px;">
+          Para usar el sistema, necesitás una licencia válida.<br>
+          Contactá al proveedor para obtener tu clave de activación.
+        </p>
+      </div>
+      
+      <div class="panel">
+        <h3>🆔 Tu Device ID</h3>
+        <p style="font-family:monospace; font-weight:700; background:#f0f0f5; padding:10px; border-radius:8px; word-break:break-all;" id="device-id-requerida">M2-XXXX</p>
+        <p style="font-size:11px; color:#888; margin-top:8px;">
+          Enviá este código al proveedor para recibir tu clave.
+        </p>
+        <button class="btn btn-secondary" onclick="copiarDeviceId()" style="margin-top:10px;">📋 Copiar Device ID</button>
+      </div>
+      
+      <div class="panel">
+        <h3>🔑 Ingresar Clave de Activación</h3>
+        <div class="form-group">
+          <label>Pegá tu clave de licencia aquí</label>
+          <textarea id="clave-licencia-input" placeholder="eyJhbGciOiJIUzI1NiIs..." style="min-height:100px; font-family:monospace; font-size:11px; word-break:break-all;"></textarea>
+        </div>
+        <button class="btn btn-success" onclick="activarLicenciaNueva()">✅ Activar Licencia</button>
+        <div id="licencia-mensaje" style="margin-top:10px; font-size:13px; min-height:20px;"></div>
+      </div>
+    </div>
       <div class="panel" style="background:#e8f5e9;border:2px solid #2a9d4a;">
         <h3 style="color:#2a9d4a;">✅ Licencia Activa</h3>
         <p style="font-size:13px;color:#555;">Modo completo habilitado</p>
@@ -613,13 +641,27 @@ const BILLETES = [20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5, 
 // ============================================================
 // INICIALIZACIÓN
 // ============================================================
-function iniciar() {
+async function iniciar() {
   cargarDatos();
   actualizarDeviceID();
   renderArqueoGrid();
-  console.log('✅ App unificada iniciada');
+  
+  // Verificar licencia al iniciar
+  const estadoLicencia = await verificarLicenciaAlIniciar();
+  
+  if (estadoLicencia.requiereActivacion) {
+    // No hay licencia válida: mostrar pantalla de bloqueo
+    mostrarVista('licencia-requerida');
+    // Actualizar Device ID en la pantalla de licencia requerida
+    const elDeviceId = document.getElementById('device-id-requerida');
+    if (elDeviceId) elDeviceId.textContent = obtenerDeviceId();
+    console.log('🔒 Licencia requerida. Mostrando pantalla de activación.');
+  } else {
+    // Licencia válida: ir al menú
+    mostrarVista('menu');
+    console.log('✅ Licencia válida. App desbloqueada.');
+  }
 }
-
 function cargarDatos() {
   productos = JSON.parse(localStorage.getItem('productos_v1') || 'null') || [...PRODUCTOS_INICIALES];
   ventas = JSON.parse(localStorage.getItem('ventas_v1') || '[]');
@@ -658,8 +700,50 @@ function actualizarDeviceID() {
 // NAVEGACIÓN
 // ============================================================
 function mostrarVista(vista) {
+  // Verificar licencia antes de mostrar cualquier vista (excepto las permitidas)
+  const vistasPermitidasSinLicencia = ['pin', 'licencia-requerida'];
+  const licenciaActiva = localStorage.getItem('licencia_v1') === 'activa';
+  
+  if (!licenciaActiva && !vistasPermitidasSinLicencia.includes(vista)) {
+    // Si no hay licencia, redirigir a pantalla de bloqueo
+    vista = 'licencia-requerida';
+    const elDeviceId = document.getElementById('device-id-requerida');
+    if (elDeviceId) elDeviceId.textContent = obtenerDeviceId();
+  }
+  
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + vista).classList.add('active');
+  vistaActual = vista;
+  
+  const backBtn = document.getElementById('back-btn');
+  if (vista === 'menu' || vista === 'pin' || vista === 'licencia-requerida') backBtn.classList.remove('visible');
+  else backBtn.classList.add('visible');
+  
+  const titulos = {
+    'menu': ['🌸 Mejorar 2', 'Sistema de Gestión Comercial'],
+    'caja': ['🏪 Mi Caja', 'Ventas'],
+    'stock': ['📊 Stock', 'Inventario'],
+    'control-caja': ['📡 Control de Caja', 'Arqueo'],
+    'vencimientos': ['📅 Vencimientos', 'Control de lotes'],
+    'proveedores': ['📦 Proveedores', 'Gestión'],
+    'licencia': ['🔑 Licencia', 'Estado'],
+    'impresora': ['🖨️ Impresora', 'Configuración'],
+    'impuestos': ['💰 Impuestos', 'Gestión impositiva'],
+    'cuenta': ['👤 Mi Cuenta', 'Configuración'],
+    'licencia-requerida': ['🔒 Licencia Requerida', 'Activación']
+  };
+  
+  const [titulo, sub] = titulos[vista] || ['', ''];
+  document.getElementById('header-title').textContent = titulo;
+  document.getElementById('header-subtitle').textContent = sub;
+  
+  if (vista === 'caja') { renderTicket(); buscarProductoCaja(); }
+  if (vista === 'stock') renderListaStock();
+  if (vista === 'control-caja') { renderControlCaja(); renderAuditoria(); }
+  if (vista === 'vencimientos') renderVencimientos();
+  if (vista === 'proveedores') renderListaProveedores();
+  if (vista === 'impresora') { iniciarImpresora(); }
+}
   vistaActual = vista;
   
   const backBtn = document.getElementById('back-btn');
@@ -1904,11 +1988,84 @@ function eliminarProveedor(id) {
 // ============================================================
 // LICENCIA
 // ============================================================
-function activarLicencia() {
-  const clave = document.getElementById('clave-licencia').value.trim().toUpperCase();
-  const deviceId = localStorage.getItem('device_id_v1');
-  const CLAVE_VALIDA = 'M2-ACTIVAR-2026';
-  if (clave === CLAVE_VALIDA || clave.includes(deviceId)) {
+async function activarLicencia() {
+  const clave = document.getElementById('clave-licencia').value.trim();
+  if (!clave) {
+    toast('❌ Ingresá una clave de licencia', 'err');
+    return;
+  }
+  
+  toast('🔄 Validando licencia...', 'ok');
+  
+  const resultado = await validarLicencia(clave);
+  
+  if (resultado.valida) {
+    localStorage.setItem('licencia_v1', 'activa');
+    document.getElementById('licencia-status').textContent = 'ACTIVA';
+    document.getElementById('licencia-status').className = 'menu-sub active';
+    document.getElementById('clave-licencia').value = '';
+    
+    const diasRestantes = resultado.datos.tipo === 'permanente' 
+      ? '♾️ Permanente' 
+      : Math.ceil((new Date(resultado.datos.fechaExpiracion) - new Date()) / (1000 * 60 * 60 * 24)) + ' días';
+    
+    toast('✅ Licencia activada - ' + diasRestantes, 'ok');
+    
+    // Ir al menú principal
+    setTimeout(() => mostrarVista('menu'), 1500);
+  } else {
+    toast('❌ ' + resultado.error, 'err');
+  }
+}
+
+// Nueva función para la pantalla de licencia requerida
+async function activarLicenciaNueva() {
+  const clave = document.getElementById('clave-licencia-input').value.trim();
+  const mensajeEl = document.getElementById('licencia-mensaje');
+  
+  if (!clave) {
+    mensajeEl.innerHTML = '<span style="color:#d33;">❌ Ingresá una clave de licencia</span>';
+    return;
+  }
+  
+  mensajeEl.innerHTML = '<span style="color:#667eea;">🔄 Validando licencia...</span>';
+  
+  const resultado = await validarLicencia(clave);
+  
+  if (resultado.valida) {
+    localStorage.setItem('licencia_v1', 'activa');
+    document.getElementById('licencia-status').textContent = 'ACTIVA';
+    document.getElementById('licencia-status').className = 'menu-sub active';
+    document.getElementById('clave-licencia-input').value = '';
+    
+    const diasRestantes = resultado.datos.tipo === 'permanente' 
+      ? '♾️ Permanente' 
+      : Math.ceil((new Date(resultado.datos.fechaExpiracion) - new Date()) / (1000 * 60 * 60 * 24)) + ' días';
+    
+    mensajeEl.innerHTML = '<span style="color:#2a9d4a;">✅ Licencia activada - ' + diasRestantes + '. Redirigiendo...</span>';
+    
+    setTimeout(() => mostrarVista('menu'), 2000);
+  } else {
+    mensajeEl.innerHTML = '<span style="color:#d33;">❌ ' + resultado.error + '</span>';
+  }
+}
+
+// Función para copiar Device ID
+function copiarDeviceId() {
+  const deviceId = obtenerDeviceId();
+  navigator.clipboard.writeText(deviceId).then(() => {
+    toast('📋 Device ID copiado', 'ok');
+  }).catch(() => {
+    // Fallback para navegadores antiguos
+    const input = document.createElement('input');
+    input.value = deviceId;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    document.body.removeChild(input);
+    toast('📋 Device ID copiado', 'ok');
+  });
+}
     localStorage.setItem('licencia_v1', 'activa');
     document.getElementById('licencia-status').textContent = 'ACTIVA';
     document.getElementById('licencia-status').className = 'menu-sub active';
@@ -1998,6 +2155,8 @@ function toast(msg, tipo) {
 // INICIAR LA APLICACIÓN
 // ============================================================
 iniciar();
-</script>
+<script type="module">
+import { validarLicencia, verificarLicenciaAlIniciar, obtenerDeviceId } from "./licencia.js";
+import { db, doc, setDoc } from "./firebase-config.js";
 </body>
 </html>
