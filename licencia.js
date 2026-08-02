@@ -7,7 +7,7 @@ import { db, doc, getDoc, setDoc } from "./firebase-config.js";
 // ==========================================
 // CONFIGURACIÓN
 // ==========================================
-const CLAVE_SECRETA = "El23sp3luzn4nt312p4s1ll07M32pr3gunt08m32pr3gunt08s12y02cr3043nl0s"; 
+const CLAVE_SECRETA = El23sp3luzn4nt312p4s1ll07M32pr3gunt08m32pr3gunt08s12y02cr3043nl0s; 
 
 // ==========================================
 // FUNCIONES AUXILIARES
