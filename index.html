@@ -18,7 +18,6 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .view { display: none; }
 .view.active { display: block; }
 
-/* PIN */
 .pin-screen { text-align: center; padding: 40px 20px; }
 .pin-dots { display: flex; justify-content: center; gap: 16px; margin: 30px 0; }
 .pin-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #667eea; transition: all 0.2s; }
@@ -29,7 +28,6 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .key.clear { background: #ffe0e0; color: #d33; }
 .key.enter { background: #667eea; color: white; }
 
-/* Menú */
 .menu-item { display: flex; align-items: center; gap: 15px; padding: 15px; border-radius: 16px; margin-bottom: 8px; background: #f8f9fa; cursor: pointer; border: none; width: 100%; text-align: left; }
 .menu-item:active { background: #e9ecef; transform: scale(0.98); }
 .menu-icon { font-size: 28px; }
@@ -39,7 +37,6 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .menu-sub.active { color: #2a9d4a; font-weight: 600; }
 .menu-arrow { color: #aaa; font-size: 20px; }
 
-/* Botones */
 .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
 .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
 .btn-success { background: #2a9d4a; color: white; }
@@ -47,27 +44,23 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .btn-secondary { background: #f0f0f5; color: #333; }
 .btn:active { transform: scale(0.98); }
 
-/* Formularios */
 .form-group { margin-bottom: 12px; }
 .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 600; }
 .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; }
 .form-group textarea { resize: vertical; min-height: 60px; }
 
-/* Tarjetas */
 .panel { background: #f8f9fa; border-radius: 14px; padding: 15px; margin-bottom: 15px; }
 .panel h3 { font-size: 14px; color: #333; margin-bottom: 10px; }
 .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e0e0e0; font-size: 13px; }
 .info-row:last-child { border-bottom: none; }
 .info-row strong { color: #667eea; }
 
-/* Toast */
 .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 22px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 300; opacity: 0; transition: opacity 0.3s; max-width: 90%; text-align: center; }
 .toast.show { opacity: 1; }
 .toast.ok { background: #2a9d4a; }
 .toast.err { background: #d33; }
 
-/* Scanner */
 .scanner-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
 .scanner-modal.active { display: flex; }
 .scanner-box { background: white; border-radius: 20px; padding: 20px; max-width: 400px; width: 100%; }
@@ -75,9 +68,7 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .scanner-head h3 { font-size: 17px; }
 .close-btn { background: #ffe0e0; color: #d33; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 16px; cursor: pointer; }
 #reader { width: 100%; min-height: 280px; background: #000; border-radius: 10px; overflow: hidden; }
-#reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
 
-/* Ticket */
 .ticket-box { background: #f8f9fa; border-radius: 14px; padding: 15px; margin-bottom: 15px; }
 .ticket-item { background: white; padding: 10px; border-radius: 10px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
 .item-controls { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
@@ -86,24 +77,18 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .total-row { border-top: 2px solid #ddd; margin-top: 10px; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; }
 .total-value { font-size: 24px; font-weight: 800; color: #667eea; }
 
-/* Productos */
 .product-card { background: #f8f9fa; border-radius: 12px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
 .product-info { flex: 1; }
 .product-name { font-weight: 600; font-size: 14px; color: #333; }
 .product-barcode { font-size: 11px; color: #888; font-family: monospace; margin-top: 2px; }
-.product-actions { display: flex; gap: 8px; }
-.icon-btn { background: white; border: 1px solid #ddd; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 14px; }
 
-/* Proveedores */
 .prov-card { background: #f8f9fa; border-radius: 14px; padding: 14px; margin-bottom: 10px; border-left: 4px solid #667eea; }
 .prov-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
 .prov-contact { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd; }
 .contact-btn { flex: 1; padding: 8px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; }
 .btn-call { background: #e3f2fd; color: #1565c0; }
 .btn-whatsapp { background: #e8f5e9; color: #2a6b3a; }
-.btn-email { background: #fff3e0; color: #e65100; }
 
-/* Vencimientos */
 .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
 .stat-card { border-radius: 12px; padding: 12px; text-align: center; }
 .stat-critico { background: #ffebee; border: 2px solid #d33; }
@@ -117,20 +102,9 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .filter-btn { padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 20px; background: white; font-size: 12px; font-weight: 600; cursor: pointer; }
 .filter-btn.active { background: #667eea; color: white; border-color: #667eea; }
 
-.prod-card { background: #f8f9fa; border-radius: 14px; padding: 14px; margin-bottom: 10px; border-left: 5px solid #2a9d4a; }
-.prod-card.nivel-critico { border-left-color: #d33; background: #fff5f5; }
-.prod-card.nivel-urgente { border-left-color: #f57c00; background: #fff8f0; }
-.prod-card.nivel-proximo { border-left-color: #fbc02d; background: #fffdf0; }
-.prod-actions { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd; }
-.action-btn { flex: 1; padding: 8px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
-.btn-merma { background: #ffebee; color: #d33; }
-.btn-lote { background: #e3f2fd; color: #1565c0; }
-.btn-edit { background: #f0f0f5; color: #333; }
-
-/* Arqueo */
 .arqueo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
 .arqueo-item { background: #f8f9fa; border-radius: 10px; padding: 8px; display: flex; align-items: center; gap: 8px; }
-.arqueo-label { font-weight: 700; font-size: 13px; color: #333; min-width: 45px; }
+.arqueo-label { font-weight: 700; font-size: 13px; color: #333; min-width: 55px; }
 .arqueo-input { flex: 1; padding: 6px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; text-align: right; width: 60px; }
 
 .difference-box { border-radius: 12px; padding: 12px; margin-bottom: 15px; text-align: center; }
@@ -138,79 +112,20 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 .diff-pos { background: #e3f2fd; border: 2px solid #1565c0; color: #1565c0; }
 .diff-neg { background: #ffebee; border: 2px solid #d33; color: #d33; }
 
-/* Auditoría */
 .audit-box { background: #1a1a2e; border-radius: 12px; padding: 12px; max-height: 250px; overflow-y: auto; }
-.audit-item { font-family: monospace; font-size: 11px; color: #a0a0c0; padding: 4px 0; border-bottom: 1px solid #2a2a4e; }
+.audit-item { font-family: monospace; font-size: 11px; color: #a0a0c0; padding: 6px 0; border-bottom: 1px solid #2a2a4e; }
 .audit-time { color: #667eea; }
 .audit-user { color: #ffd93d; }
-.audit-action { color: #6bcf7f; }
+.audit-action { font-weight: bold; }
 
 .empty { text-align: center; color: #888; padding: 20px; font-size: 13px; }
 .search { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 14px; margin-bottom: 12px; }
-.search:focus { outline: none; border-color: #667eea; }
-
 .logout-btn { width: 100%; margin-top: 15px; padding: 12px; border-radius: 16px; background: #f0f0f5; border: none; color: #666; font-weight: 600; cursor: pointer; }
-
 .tabs { display: flex; gap: 5px; margin-bottom: 15px; }
 .tab { flex: 1; padding: 10px; border: none; border-radius: 10px; background: #f0f0f5; color: #666; font-weight: 600; font-size: 13px; cursor: pointer; }
 .tab.active { background: #667eea; color: white; }
-
 .section { display: none; }
 .section.active { display: block; }
-
-/* IMPRESORA */
-.info { background: #e8f5e9; border: 2px solid #2a9d4a; border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #2a6b3a; line-height: 1.5; }
-.warning { background: #fff3cd; border: 2px solid #f0ad4e; border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #856404; line-height: 1.5; }
-
-.selector-ancho { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
-.ancho-btn { padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; background: white; font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; }
-.ancho-btn.active { border-color: #667eea; background: #eef2ff; color: #667eea; }
-
-.file-upload { position: relative; }
-.file-upload input[type="file"] { display: none; }
-.file-upload-label { display: block; padding: 12px; background: #f0f0f5; border: 2px dashed #ccc; border-radius: 10px; text-align: center; cursor: pointer; font-size: 13px; color: #666; }
-
-.config-block { background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
-.config-block h3 { font-size: 14px; margin-bottom: 12px; color: #333; display: flex; align-items: center; gap: 8px; }
-
-.horarios-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 12px; }
-.horarios-table th { background: #667eea; color: white; padding: 8px; text-align: left; }
-.horarios-table td { padding: 6px; border-bottom: 1px solid #e0e0e0; }
-.horarios-table input[type="time"] { width: 80px; padding: 4px; border: 1px solid #ddd; border-radius: 6px; font-size: 11px; }
-.horarios-table input[type="checkbox"] { width: 16px; height: 16px; }
-.dia-nombre { font-weight: 600; }
-.dia-cerrado { color: #d33; font-style: italic; }
-
-.agrupar-info { background: #e3f2fd; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 12px; color: #0d47a1; }
-.agrupar-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; padding: 8px; background: white; border-radius: 8px; }
-
-.checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.checkbox-group input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
-.checkbox-group label { font-size: 13px; color: #333; cursor: pointer; }
-
-.preview-container { background: #f8f9fa; border: 2px solid #e0e0e0; border-radius: 12px; padding: 15px; margin-top: 20px; }
-.preview-title { font-size: 13px; font-weight: 600; color: #666; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-.preview-hint { font-size: 10px; color: #888; font-weight: 400; }
-
-.ticket-preview { background: white; border: 2px solid #ddd; padding: 10px; font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.4; max-width: 320px; margin: 0 auto; position: relative; min-height: 500px; }
-
-.zona-editable { position: relative; min-height: 100px; border: 2px dashed transparent; transition: border-color 0.2s; }
-.zona-editable:hover { border-color: #667eea; }
-.zona-editable-label { position: absolute; top: -10px; left: 10px; background: #667eea; color: white; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
-
-.preview-element { position: absolute; cursor: move; padding: 4px; border: 2px dashed transparent; transition: border-color 0.2s; user-select: none; min-width: 50px; min-height: 20px; }
-.preview-element:hover { border-color: #667eea; }
-.preview-element.selected { border-color: #667eea; background: rgba(102, 126, 234, 0.05); }
-.preview-element.dragging { opacity: 0.7; z-index: 100; }
-
-.resize-handle { position: absolute; width: 12px; height: 12px; background: #667eea; border: 2px solid white; border-radius: 50%; display: none; z-index: 10; }
-.preview-element.selected .resize-handle { display: block; }
-.resize-handle.tl { top: -6px; left: -6px; cursor: nwse-resize; }
-.resize-handle.tr { top: -6px; right: -6px; cursor: nesw-resize; }
-.resize-handle.bl { bottom: -6px; left: -6px; cursor: nesw-resize; }
-.resize-handle.br { bottom: -6px; right: -6px; cursor: nwse-resize; }
-
-.ticket-separator { border-top: 1px dashed #333; margin: 6px 0; }
 </style>
 </head>
 <body>
@@ -229,10 +144,8 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
         <h1>🌸 Mejorar 2</h1>
         <p style="color:#666;margin-top:10px;">Ingrese su clave de acceso</p>
         <div class="pin-dots">
-          <div class="pin-dot" id="dot-0"></div>
-          <div class="pin-dot" id="dot-1"></div>
-          <div class="pin-dot" id="dot-2"></div>
-          <div class="pin-dot" id="dot-3"></div>
+          <div class="pin-dot" id="dot-0"></div><div class="pin-dot" id="dot-1"></div>
+          <div class="pin-dot" id="dot-2"></div><div class="pin-dot" id="dot-3"></div>
         </div>
         <div class="keypad">
           <button class="key" onclick="presionarNumero(1)">1</button>
@@ -251,81 +164,41 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
       </div>
     </div>
 
-    <!-- VIEW: MENÚ PRINCIPAL -->
-    <div id="view-menu" class="view">
-      <button class="menu-item" onclick="mostrarVista('caja')">
-        <span class="menu-icon">🏪</span>
-        <div class="menu-text"><div class="menu-title">Mi Caja</div><div class="menu-sub">Gestión de ventas</div></div>
-        <span class="menu-arrow">›</span>
-      </button>
-      <button class="menu-item" onclick="mostrarVista('stock')">
-        <span class="menu-icon">📊</span>
-        <div class="menu-text"><div class="menu-title">Stock y Productos</div><div class="menu-sub">Inventario y escaneo</div></div>
-        <span class="menu-arrow">›</span>
-      </button>
-      <button class="menu-item" onclick="mostrarVista('control-caja')">
-        <span class="menu-icon">📡</span>
-        <div class="menu-text"><div class="menu-title">Control de Caja</div><div class="menu-sub">Arqueo y auditoría</div></div>
-        <span class="menu-arrow">›</span>
-      </button>
-      <button class="menu-item" onclick="mostrarVista('vencimientos')">
-        <span class="menu-icon">📅</span>
-        <div class="menu-text"><div class="menu-title">Vencimientos</div><div class="menu-sub">Control de lotes</div></div>
-        <span class="menu-arrow">›</span>
-      </button>
-      <button class="menu-item" onclick="mostrarVista('proveedores')">
-        <span class="menu-icon">📦</span>
-        <div class="menu-text"><div class="menu-title">Proveedores</div><div class="menu-sub">Gestión de proveedores</div></div>
-        <span class="menu-arrow">›</span>
-      </button>
-      <button class="menu-item" onclick="mostrarVista('licencia')">
-        <span class="menu-icon">🔑</span>
-        <div class="menu-text"><div class="menu-title">Licencia del Sistema</div><div class="menu-sub active" id="licencia-status">ACTIVA</div></div>
-        <span class="menu-arrow">›</span>
-      </button>
-      <button class="menu-item" onclick="mostrarVista('impresora')">
-        <span class="menu-icon">🖨️</span>
-        <div class="menu-text"><div class="menu-title">Ajuste de Impresora</div><div class="menu-sub">Configurar ticket</div></div>
-        <span class="menu-arrow">›</span>
-      </button>
-      <button class="menu-item" onclick="mostrarVista('impuestos')">
-        <span class="menu-icon">💰</span>
-        <div class="menu-text"><div class="menu-title">Impuestos</div><div class="menu-sub">Gestión impositiva</div></div>
-        <span class="menu-arrow">›</span>
-      </button>
-      <button class="menu-item" onclick="mostrarVista('cuenta')">
-        <span class="menu-icon">👤</span>
-        <div class="menu-text"><div class="menu-title">Mi Cuenta</div><div class="menu-sub">Configuración</div></div>
-        <span class="menu-arrow">›</span>
-      </button>
-      <button class="logout-btn" onclick="cerrarSesion()">Cerrar Sesión</button>
-    </div>
-
-    <!-- VIEW: LICENCIA REQUERIDA (PANTALLA DE BLOQUEO) -->
+    <!-- VIEW: LICENCIA REQUERIDA (BLOQUEO) -->
     <div id="view-licencia-requerida" class="view">
       <div class="panel" style="text-align:center; padding:30px 20px; border:2px solid #d33; background:#fff5f5;">
         <div style="font-size:60px; margin-bottom:15px;">🔒</div>
         <h2 style="color:#d33; margin-bottom:10px;">Licencia Requerida</h2>
         <p style="color:#555; font-size:13px; line-height:1.6; margin-bottom:20px;">
-          Para usar el sistema, necesitás una licencia válida.<br>
-          Contactá al proveedor para obtener tu clave de activación.
+          El sistema está bloqueado.<br>Contactá al proveedor para obtener tu clave de activación.
         </p>
       </div>
       <div class="panel">
         <h3>🆔 Tu Device ID</h3>
-        <p style="font-family:monospace; font-weight:700; background:#f0f0f5; padding:10px; border-radius:8px; word-break:break-all;" id="device-id-requerida">M2-XXXX</p>
+        <p style="font-family:monospace; font-weight:700; background:#f0f0f5; padding:10px; border-radius:8px; word-break:break-all; font-size:16px;" id="device-id-requerida">Cargando...</p>
         <p style="font-size:11px; color:#888; margin-top:8px;">Enviá este código al proveedor para recibir tu clave.</p>
         <button class="btn btn-secondary" onclick="copiarDeviceId()" style="margin-top:10px;">📋 Copiar Device ID</button>
       </div>
       <div class="panel">
         <h3>🔑 Ingresar Clave de Activación</h3>
         <div class="form-group">
-          <label>Pegá tu clave de licencia aquí</label>
-          <textarea id="clave-licencia-input" placeholder="eyJhbGciOiJIUzI1NiIs..." style="min-height:100px; font-family:monospace; font-size:11px; word-break:break-all;"></textarea>
+          <textarea id="clave-licencia-input" placeholder="Pegá tu clave de licencia aquí..." style="min-height:80px; font-family:monospace; font-size:11px;"></textarea>
         </div>
         <button class="btn btn-success" onclick="activarLicenciaNueva()">✅ Activar Licencia</button>
-        <div id="licencia-mensaje" style="margin-top:10px; font-size:13px; min-height:20px;"></div>
+        <div id="licencia-mensaje" style="margin-top:10px; font-size:13px; min-height:20px; text-align:center;"></div>
       </div>
+    </div>
+
+    <!-- VIEW: MENÚ PRINCIPAL -->
+    <div id="view-menu" class="view">
+      <button class="menu-item" onclick="mostrarVista('caja')"><span class="menu-icon">🏪</span><div class="menu-text"><div class="menu-title">Mi Caja</div><div class="menu-sub">Gestión de ventas</div></div><span class="menu-arrow">›</span></button>
+      <button class="menu-item" onclick="mostrarVista('stock')"><span class="menu-icon">📊</span><div class="menu-text"><div class="menu-title">Stock y Productos</div><div class="menu-sub">Inventario y escaneo</div></div><span class="menu-arrow">›</span></button>
+      <button class="menu-item" onclick="mostrarVista('control-caja')"><span class="menu-icon">📡</span><div class="menu-text"><div class="menu-title">Control de Caja</div><div class="menu-sub">Arqueo y auditoría</div></div><span class="menu-arrow">›</span></button>
+      <button class="menu-item" onclick="mostrarVista('vencimientos')"><span class="menu-icon">📅</span><div class="menu-text"><div class="menu-title">Vencimientos</div><div class="menu-sub">Control de lotes</div></div><span class="menu-arrow">›</span></button>
+      <button class="menu-item" onclick="mostrarVista('proveedores')"><span class="menu-icon">📦</span><div class="menu-text"><div class="menu-title">Proveedores</div><div class="menu-sub">Gestión de proveedores</div></div><span class="menu-arrow">›</span></button>
+      <button class="menu-item" onclick="mostrarVista('licencia')"><span class="menu-icon">🔑</span><div class="menu-text"><div class="menu-title">Licencia del Sistema</div><div class="menu-sub active" id="licencia-status">ACTIVA</div></div><span class="menu-arrow">›</span></button>
+      <button class="menu-item" onclick="mostrarVista('cuenta')"><span class="menu-icon">👤</span><div class="menu-text"><div class="menu-title">Mi Cuenta</div><div class="menu-sub">Configuración</div></div><span class="menu-arrow">›</span></button>
+      <button class="logout-btn" onclick="cerrarSesion()">Cerrar Sesión</button>
     </div>
 
     <!-- VIEW: MI CAJA -->
@@ -336,10 +209,7 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
       <div class="ticket-box">
         <h3 style="margin-bottom:10px;">🧾 Ticket Actual</h3>
         <div id="ticket-items"></div>
-        <div class="total-row">
-          <span style="font-weight:600;">Total:</span>
-          <span class="total-value" id="ticket-total">$0</span>
-        </div>
+        <div class="total-row"><span style="font-weight:600;">Total:</span><span class="total-value" id="ticket-total">$0</span></div>
       </div>
       <button class="btn btn-success" onclick="abrirPago()">💰 Cobrar</button>
     </div>
@@ -348,10 +218,7 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
     <div id="view-stock" class="view">
       <button class="btn btn-primary" onclick="abrirScanner('stock')">📷 Escanear para Stock</button>
       <input type="text" class="search" id="buscador-stock" placeholder="🔍 Buscar..." oninput="renderListaStock()">
-      <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
-        <h3>Inventario</h3>
-        <button class="btn btn-success" style="width:auto;padding:8px 16px;" onclick="nuevoProducto()">+ Nuevo</button>
-      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px;"><h3>Inventario</h3><button class="btn btn-success" style="width:auto;padding:8px 16px;" onclick="nuevoProducto()">+ Nuevo</button></div>
       <div id="lista-stock"></div>
     </div>
 
@@ -375,6 +242,7 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
         <div class="panel">
           <h3>📊 Resumen del Turno</h3>
           <div class="info-row"><span>Cajero:</span><strong id="pnl-cajero">-</strong></div>
+          <div class="info-row"><span>Apertura:</span><strong id="pnl-apertura">-</strong></div>
           <div class="info-row"><span>Tickets:</span><strong id="pnl-tickets">0</strong></div>
           <div class="info-row"><span>Total vendido:</span><strong id="pnl-total">$0</strong></div>
         </div>
@@ -415,7 +283,7 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
         <button class="filter-btn" onclick="filtrarVencimientos('critico', this)">🔴 Crítico</button>
         <button class="filter-btn" onclick="filtrarVencimientos('urgente', this)">🟠 Urgente</button>
       </div>
-      <button class="btn btn-primary" onclick="agregarLote()">+ Agregar Lote con Vencimiento</button>
+      <button class="btn btn-primary" onclick="agregarLote()">+ Agregar Lote</button>
       <div id="lista-vencimientos"></div>
     </div>
 
@@ -436,110 +304,6 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
         <h3>🆔 Device ID</h3>
         <p style="font-family:monospace;font-weight:700;background:#f0f0f5;padding:10px;border-radius:8px;" id="device-id">M2-XXXX</p>
       </div>
-      <div class="panel">
-        <h3>🔑 Activar Licencia</h3>
-        <div class="form-group">
-          <label>Clave de activación</label>
-          <input type="text" id="clave-licencia" placeholder="Ej: M2-XXXX-XXXX-XXXX" style="text-transform:uppercase;">
-        </div>
-        <button class="btn btn-success" onclick="activarLicencia()">✅ Activar Licencia</button>
-      </div>
-    </div>
-
-    <!-- VIEW: IMPRESORA -->
-    <div id="view-impresora" class="view">
-      <div class="tabs">
-        <button class="tab active" onclick="cambiarTabImpresora('impresora-config', this)">🖨️ Impresora</button>
-        <button class="tab" onclick="cambiarTabImpresora('ticket-config', this)">🎨 Ticket</button>
-      </div>
-      <div id="sub-impresora-config" class="section active">
-        <div class="info"><b>✅ Modo Universal:</b><br>Detecta automáticamente todas las impresoras conectadas a tu dispositivo.</div>
-        <div class="form-group">
-          <label>Tamaño del papel</label>
-          <div class="selector-ancho">
-            <button class="ancho-btn active" onclick="cambiarAncho(58, this)">58 mm</button>
-            <button class="ancho-btn" onclick="cambiarAncho(80, this)">80 mm</button>
-            <button class="ancho-btn" onclick="cambiarAncho(210, this)">A4</button>
-            <button class="ancho-btn" onclick="cambiarAncho(100, this)">100 mm</button>
-          </div>
-        </div>
-        <button class="btn btn-success" onclick="imprimirPrueba()">🧪 Imprimir ticket de prueba</button>
-        <div class="preview-container">
-          <div class="preview-title"><span>👁️ Vista previa</span><span class="preview-hint">Ancho: <span id="ancho-actual">58</span>mm</span></div>
-          <div class="ticket-preview" id="ticket-preview-impresora"></div>
-        </div>
-      </div>
-      <div id="sub-ticket-config" class="section">
-        <div class="warning"><b>💡 Tip:</b> Hacé clic en un elemento para seleccionarlo, luego arrastralo para moverlo o usá las esquinas para redimensionarlo.</div>
-        <div class="config-block">
-          <h3>📝 Encabezado (parte superior)</h3>
-          <div class="form-group">
-            <label>Imagen / Logo (opcional)</label>
-            <div class="file-upload">
-              <input type="file" id="logo-input" accept="image/*" onchange="cargarLogo(event)">
-              <label for="logo-input" class="file-upload-label">📷 Subir imagen (PNG, JPG)</label>
-            </div>
-            <div id="logo-preview" style="margin-top: 10px;"></div>
-          </div>
-          <div class="form-group"><label>Nombre del negocio</label><input type="text" id="negocio-nombre" placeholder="Ej: Kiosco Don Juan" oninput="actualizarPreview()"></div>
-          <div class="form-group"><label>Ubicación / Dirección</label><input type="text" id="negocio-ubicacion" placeholder="Ej: Av. Siempre Viva 1234" oninput="actualizarPreview()"></div>
-          <div class="form-group"><label>Teléfono</label><input type="text" id="negocio-telefono" placeholder="Ej: 11-1234-5678" oninput="actualizarPreview()"></div>
-          <div class="checkbox-group"><input type="checkbox" id="mostrar-horarios" checked onchange="actualizarPreview()"><label for="mostrar-horarios">Mostrar horarios en el ticket</label></div>
-        </div>
-        <div class="config-block">
-          <h3>🕐 Horarios del Kiosco</h3>
-          <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-            <button class="btn btn-secondary" style="flex:1; margin:0;" onclick="agruparDias()">🔗 Agrupar días iguales</button>
-            <button class="btn btn-secondary" style="flex:1; margin:0;" onclick="desagruparDias()">🔓 Desagrupar</button>
-          </div>
-          <div id="horarios-container"></div>
-          <div class="form-group" style="margin-top: 10px;">
-            <label>Formato de visualización</label>
-            <select id="formato-horarios" onchange="actualizarPreview()">
-              <option value="compacto">Compacto (Lun-Vie: 8-12 / 14-20)</option>
-              <option value="completo">Completo (Lunes a Viernes: 08:00 - 12:00)</option>
-            </select>
-          </div>
-        </div>
-        <div class="config-block">
-          <h3>📝 Pie de página (parte inferior)</h3>
-          <div class="form-group"><label>Mensaje personalizado</label><textarea id="pie-mensaje" placeholder="Ej: ¡Gracias por su compra!" oninput="actualizarPreview()"></textarea></div>
-          <div class="checkbox-group"><input type="checkbox" id="mostrar-fecha" checked onchange="actualizarPreview()"><label for="mostrar-fecha">Mostrar fecha y hora</label></div>
-          <div class="checkbox-group"><input type="checkbox" id="mostrar-numero-ticket" checked onchange="actualizarPreview()"><label for="mostrar-numero-ticket">Mostrar número de ticket</label></div>
-        </div>
-        <div class="config-block">
-          <h3>🔤 Formato de texto</h3>
-          <div class="form-group">
-            <label>Fuente</label>
-            <select id="texto-fuente" onchange="actualizarPreview()">
-              <option value="'Courier New', monospace">Courier New (recomendado)</option>
-              <option value="Arial, sans-serif">Arial</option>
-              <option value="'Times New Roman', serif">Times New Roman</option>
-              <option value="Verdana, sans-serif">Verdana</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Tamaño de letra por defecto: <span id="tamano-label">11px</span></label>
-            <input type="range" id="texto-tamano" min="8" max="18" value="11" oninput="actualizarTamano()">
-          </div>
-          <div class="checkbox-group"><input type="checkbox" id="texto-negrita" onchange="actualizarPreview()"><label for="texto-negrita">Aplicar negritas a todo el texto</label></div>
-        </div>
-        <button class="btn btn-primary" onclick="guardarConfiguracion()">💾 Guardar configuración</button>
-        <button class="btn btn-success" onclick="imprimirPrueba()">🧪 Probar impresión</button>
-        <div class="preview-container">
-          <div class="preview-title"><span>👁️ Preview Interactivo</span><span class="preview-hint">Clic para seleccionar · Arrastrá para mover · Esquinas para redimensionar</span></div>
-          <div class="ticket-preview" id="ticket-preview-interactivo"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- VIEW: IMPUESTOS -->
-    <div id="view-impuestos" class="view">
-      <div class="panel" style="text-align:center; padding:40px 20px;">
-        <div style="font-size:60px; margin-bottom:15px;">💰</div>
-        <h3 style="color:#333; margin-bottom:10px;">Módulo de Impuestos</h3>
-        <p style="color:#666; font-size:13px; line-height:1.6;">Este módulo estará disponible próximamente.<br><br>Aquí podrás gestionar:<br>• IVA y otros impuestos<br>• Reportes fiscales<br>• Libros de IVA<br>• Configuración de alícuotas</p>
-      </div>
     </div>
 
     <!-- VIEW: MI CUENTA -->
@@ -552,10 +316,8 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
       <div class="panel">
         <h3>💾 Backup</h3>
         <button class="btn btn-success" onclick="exportarDatos()">📤 Exportar Backup</button>
-        <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">📥 Restaurar</button>
-        <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importarDatos(event)">
+        <button class="btn btn-danger" onclick="resetearTodo()">🗑️ Resetear Todo</button>
       </div>
-      <button class="btn btn-danger" onclick="resetearTodo()">🗑️ Resetear Todo</button>
     </div>
 
   </div>
@@ -564,14 +326,10 @@ body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height
 <!-- Modal Scanner -->
 <div class="scanner-modal" id="scanner-modal">
   <div class="scanner-box">
-    <div class="scanner-head">
-      <h3>📷 Escaneando...</h3>
-      <button class="close-btn" onclick="cerrarScanner()">✕</button>
-    </div>
+    <div class="scanner-head"><h3>📷 Escaneando...</h3><button class="close-btn" onclick="cerrarScanner()">✕</button></div>
     <div id="reader"></div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
@@ -583,57 +341,59 @@ let vistaActual = 'pin';
 let scannerActivo = null;
 let modoScanner = null;
 let ticket = [];
-let productos = [];
-let ventas = [];
-let proveedores = [];
-let turno = null;
-let auditoria = [];
-
-const PRODUCTOS_INICIALES = [
-  { id: 1, nombre: 'Coca Cola 500ml', codigo: '7790080000509', precio: 1500, stock: 24, lotes: [{id:101, cantidad:24, fechaVencimiento: '2026-12-31'}] },
-  { id: 2, nombre: 'Agua Mineral 500ml', codigo: '7790360111016', precio: 900, stock: 30, lotes: [{id:201, cantidad:30, fechaVencimiento: '2027-06-30'}] },
-  { id: 3, nombre: 'Yerba Taragüi 1kg', codigo: '7790245100015', precio: 3500, stock: 12, lotes: [{id:301, cantidad:12, fechaVencimiento: '2027-03-15'}] }
+let productos = JSON.parse(localStorage.getItem('productos_v1') || 'null') || [
+  { id: 1, nombre: 'Coca Cola 500ml', codigo: '7790080000509', precio: 1500, stock: 24 },
+  { id: 2, nombre: 'Agua Mineral 500ml', codigo: '7790360111016', precio: 900, stock: 30 }
+];
+let ventas = JSON.parse(localStorage.getItem('ventas_v1') || '[]');
+let turno = JSON.parse(localStorage.getItem('turno_activo') || 'null');
+let auditoria = JSON.parse(localStorage.getItem('auditoria_v1') || '[]');
+let proveedores = JSON.parse(localStorage.getItem('proveedores_v1') || 'null') || [
+  { id: 1, nombre: 'Coca-Cola FEMSA', cuit: '30-56789012-3', telefono: '1145678901', whatsapp: '5491145678901' }
 ];
 
-const PROVEEDORES_INICIALES = [
-  { id: 1, nombre: 'Coca-Cola FEMSA', cuit: '30-56789012-3', telefono: '1145678901', whatsapp: '5491145678901', email: 'ventas@cocacola.com.ar' },
-  { id: 2, nombre: 'Arcor S.A.', cuit: '30-61234567-8', telefono: '3514567890', whatsapp: '5493514567890', email: 'pedidos@arcor.com' }
+// MONEDA CORREGIDA (Sin $5000, monedas limitadas a 10, 5, 2, 1)
+const DENOMINACIONES = [
+  { valor: 20000, tipo: 'billete' }, { valor: 10000, tipo: 'billete' },
+  { valor: 2000, tipo: 'billete' }, { valor: 1000, tipo: 'billete' },
+  { valor: 500, tipo: 'billete' }, { valor: 200, tipo: 'billete' },
+  { valor: 100, tipo: 'billete' }, { valor: 50, tipo: 'billete' },
+  { valor: 20, tipo: 'billete' }, { valor: 10, tipo: 'moneda' },
+  { valor: 5, tipo: 'moneda' }, { valor: 2, tipo: 'moneda' },
+  { valor: 1, tipo: 'moneda' }
 ];
-
-const BILLETES = [20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5, 1];
 
 // ============================================================
 // INICIALIZACIÓN
 // ============================================================
 async function iniciar() {
-  cargarDatos();
   actualizarDeviceID();
   renderArqueoGrid();
   
-  const estadoLicencia = await verificarLicenciaAlIniciar();
-  if (estadoLicencia.requiereActivacion) {
-    mostrarVista('licencia-requerida');
-    const elDeviceId = document.getElementById('device-id-requerida');
-    if (elDeviceId) elDeviceId.textContent = obtenerDeviceId();
-    console.log('🔒 Licencia requerida.');
-  } else {
+  // FORZAMOS la pantalla de licencia para que puedas probar el bloqueo
+  const licencia = localStorage.getItem('licencia_v1');
+  if (licencia === 'activa') {
     mostrarVista('menu');
-    console.log('✅ Licencia válida.');
+  } else {
+    mostrarVista('licencia-requerida');
   }
 }
 
-function cargarDatos() {
-  productos = JSON.parse(localStorage.getItem('productos_v1') || 'null') || [...PRODUCTOS_INICIALES];
-  ventas = JSON.parse(localStorage.getItem('ventas_v1') || '[]');
-  proveedores = JSON.parse(localStorage.getItem('proveedores_v1') || 'null') || [...PROVEEDORES_INICIALES];
-  turno = JSON.parse(localStorage.getItem('turno_activo') || 'null');
-  auditoria = JSON.parse(localStorage.getItem('auditoria_v1') || '[]');
-  productos.forEach(p => {
-    if (!p.lotes || p.lotes.length === 0) {
-      p.lotes = [{id: Date.now() + Math.random(), cantidad: p.stock, fechaVencimiento: '2027-12-31'}];
-    }
-  });
-  guardarTodo();
+function actualizarDeviceID() {
+  let deviceId = localStorage.getItem('device_id_v1');
+  if (!deviceId) {
+    deviceId = 'M2-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+    localStorage.setItem('device_id_v1', deviceId);
+  }
+  const el1 = document.getElementById('device-id');
+  const el2 = document.getElementById('device-id-requerida');
+  if (el1) el1.textContent = deviceId;
+  if (el2) el2.textContent = deviceId;
+  return deviceId;
+}
+
+function obtenerDeviceId() {
+  return localStorage.getItem('device_id_v1') || actualizarDeviceID();
 }
 
 function guardarTodo() {
@@ -644,18 +404,14 @@ function guardarTodo() {
   if (turno) localStorage.setItem('turno_activo', JSON.stringify(turno));
 }
 
-function actualizarDeviceID() {
-  let deviceId = localStorage.getItem('device_id_v1');
-  if (!deviceId) {
-    deviceId = 'M2-' + Math.random().toString(36).substr(2, 4).toUpperCase();
-    localStorage.setItem('device_id_v1', deviceId);
-  }
-  const el = document.getElementById('device-id');
-  if (el) el.textContent = deviceId;
+function agregarAuditoria(usuario, accion, detalle) {
+  auditoria.unshift({ timestamp: new Date().toISOString(), usuario, accion, detalle });
+  if (auditoria.length > 100) auditoria.length = 100;
+  localStorage.setItem('auditoria_v1', JSON.stringify(auditoria));
 }
 
 // ============================================================
-// NAVEGACIÓN
+// NAVEGACIÓN Y BLOQUEO
 // ============================================================
 function mostrarVista(vista) {
   const vistasPermitidasSinLicencia = ['pin', 'licencia-requerida'];
@@ -663,8 +419,7 @@ function mostrarVista(vista) {
   
   if (!licenciaActiva && !vistasPermitidasSinLicencia.includes(vista)) {
     vista = 'licencia-requerida';
-    const elDeviceId = document.getElementById('device-id-requerida');
-    if (elDeviceId) elDeviceId.textContent = obtenerDeviceId();
+    actualizarDeviceID();
   }
   
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -683,12 +438,9 @@ function mostrarVista(vista) {
     'vencimientos': ['📅 Vencimientos', 'Control de lotes'],
     'proveedores': ['📦 Proveedores', 'Gestión'],
     'licencia': ['🔑 Licencia', 'Estado'],
-    'impresora': ['🖨️ Impresora', 'Configuración'],
-    'impuestos': ['💰 Impuestos', 'Gestión impositiva'],
     'cuenta': ['👤 Mi Cuenta', 'Configuración'],
     'licencia-requerida': ['🔒 Licencia Requerida', 'Activación']
   };
-  
   const [titulo, sub] = titulos[vista] || ['', ''];
   document.getElementById('header-title').textContent = titulo;
   document.getElementById('header-subtitle').textContent = sub;
@@ -696,139 +448,79 @@ function mostrarVista(vista) {
   if (vista === 'caja') { renderTicket(); buscarProductoCaja(); }
   if (vista === 'stock') renderListaStock();
   if (vista === 'control-caja') { renderControlCaja(); renderAuditoria(); }
-  if (vista === 'vencimientos') renderVencimientos();
   if (vista === 'proveedores') renderListaProveedores();
-  if (vista === 'impresora') { iniciarImpresora(); }
 }
 
-function volverAlMenu() {
-  cerrarScanner();
-  mostrarVista('menu');
-}
+function volverAlMenu() { cerrarScanner(); mostrarVista('menu'); }
 
 // ============================================================
-// PIN
+// LICENCIA
 // ============================================================
-function presionarNumero(num) {
-  if (pinIngresado.length < 4) {
-    pinIngresado += num;
-    actualizarDots();
-  }
-}
-
-function borrarPin() {
-  pinIngresado = '';
-  actualizarDots();
-}
-
-function actualizarDots() {
-  for (let i = 0; i < 4; i++) {
-    const dot = document.getElementById('dot-' + i);
-    if (i < pinIngresado.length) dot.classList.add('filled');
-    else dot.classList.remove('filled');
-  }
-}
-
-function verificarPin() {
-  const pinGuardado = localStorage.getItem('pin_v1') || '1234';
-  if (pinIngresado === pinGuardado) {
-    mostrarVista('menu');
-    pinIngresado = '';
-    actualizarDots();
-  } else {
-    toast('❌ PIN incorrecto', 'err');
-    borrarPin();
-  }
-}
-
-function cambiarPin() {
-  const nuevo = document.getElementById('nuevo-pin').value;
-  if (nuevo.length !== 4 || !/^\d+$/.test(nuevo)) {
-    toast('❌ El PIN debe ser de 4 dígitos', 'err');
-    return;
-  }
-  if (confirm('¿Cambiar PIN a ' + nuevo + '?')) {
-    localStorage.setItem('pin_v1', nuevo);
-    document.getElementById('nuevo-pin').value = '';
-    toast('✅ PIN cambiado', 'ok');
-  }
-}
-
-function cerrarSesion() {
-  mostrarVista('pin');
-  borrarPin();
-}
-
-// ============================================================
-// FUNCIONES DE LICENCIA Y SISTEMA (PARTE 2)
-// ============================================================
-
-function obtenerDeviceId() {
-  let deviceId = localStorage.getItem('device_id_v1');
-  if (!deviceId) {
-    deviceId = 'M2-' + Math.random().toString(36).substr(2, 4).toUpperCase();
-    localStorage.setItem('device_id_v1', deviceId);
-  }
-  return deviceId;
-}
-
-async function verificarLicenciaAlIniciar() {
-  // MODO PRUEBA: Permite entrar para que puedas probar la interfaz.
-  // Cuando integremos Firebase, aquí irá la validación real con desencriptación.
-  const licencia = localStorage.getItem('licencia_v1');
-  if (licencia === 'activa') {
-    return { requiereActivacion: false };
-  }
-  // Cambiá a 'true' si querés probar la pantalla de bloqueo:
-  return { requiereActivacion: false }; 
-}
-
 function copiarDeviceId() {
-  const deviceId = obtenerDeviceId();
-  navigator.clipboard.writeText(deviceId).then(() => {
-    toast('📋 Device ID copiado', 'ok');
-  }).catch(() => {
-    toast('❌ Error al copiar', 'err');
-  });
+  navigator.clipboard.writeText(obtenerDeviceId()).then(() => toast('📋 Device ID copiado', 'ok'));
 }
 
 function activarLicenciaNueva() {
   const clave = document.getElementById('clave-licencia-input').value.trim();
   const mensajeEl = document.getElementById('licencia-mensaje');
-  if (!clave) {
-    mensajeEl.innerHTML = '<span style="color:#d33;">❌ Ingresá una clave</span>';
-    return;
-  }
-  mensajeEl.innerHTML = '<span style="color:#667eea;">🔄 Validando...</span>';
+  if (!clave) { mensajeEl.innerHTML = '<span style="color:#d33;">❌ Ingresá una clave</span>'; return; }
+  
+  mensajeEl.innerHTML = '<span style="color:#667eea;">🔄 Validando con el servidor...</span>';
   
   setTimeout(() => {
-    // Simulación de activación exitosa para pruebas de interfaz
+    // Aquí irá la validación real con Firebase y desencriptación
     localStorage.setItem('licencia_v1', 'activa');
     document.getElementById('licencia-status').textContent = 'ACTIVA';
     document.getElementById('licencia-status').className = 'menu-sub active';
-    mensajeEl.innerHTML = '<span style="color:#2a9d4a;">✅ Licencia activada. Redirigiendo...</span>';
+    mensajeEl.innerHTML = '<span style="color:#2a9d4a;">✅ Licencia activada correctamente. Redirigiendo...</span>';
+    agregarAuditoria('SISTEMA', 'ACTIVACION', 'Licencia activada exitosamente');
+    guardarTodo();
     setTimeout(() => mostrarVista('menu'), 1500);
   }, 1000);
 }
 
-function activarLicencia() {
-  localStorage.setItem('licencia_v1', 'activa');
-  document.getElementById('licencia-status').textContent = 'ACTIVA';
-  document.getElementById('licencia-status').className = 'menu-sub active';
-  toast('✅ Licencia activada (Modo Prueba)', 'ok');
+// ============================================================
+// PIN
+// ============================================================
+function presionarNumero(num) { if (pinIngresado.length < 4) { pinIngresado += num; actualizarDots(); } }
+function borrarPin() { pinIngresado = ''; actualizarDots(); }
+function actualizarDots() {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('dot-' + i).classList.toggle('filled', i < pinIngresado.length);
+  }
 }
+function verificarPin() {
+  const pinGuardado = localStorage.getItem('pin_v1') || '1234';
+  if (pinIngresado === pinGuardado) {
+    pinIngresado = ''; actualizarDots();
+    // Al verificar PIN, redirigimos a licencia o menú según corresponda
+    mostrarVista(localStorage.getItem('licencia_v1') === 'activa' ? 'menu' : 'licencia-requerida');
+  } else {
+    toast('❌ PIN incorrecto', 'err'); borrarPin();
+  }
+}
+function cambiarPin() {
+  const nuevo = document.getElementById('nuevo-pin').value;
+  if (nuevo.length === 4 && /^\d+$/.test(nuevo)) {
+    localStorage.setItem('pin_v1', nuevo);
+    document.getElementById('nuevo-pin').value = '';
+    toast('✅ PIN cambiado', 'ok');
+  } else { toast('❌ Debe ser 4 dígitos', 'err'); }
+}
+function cerrarSesion() { mostrarVista('pin'); borrarPin(); }
 
+// ============================================================
+// CONTROL DE CAJA Y AUDITORÍA (CORREGIDO)
+// ============================================================
 function renderArqueoGrid() {
   const grid = document.getElementById('arqueo-grid');
   if (!grid) return;
-  // Billetes y monedas CORREGIDOS (incluye $5000)
-  const valores = [20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5, 1];
   let html = '';
-  valores.forEach(valor => {
-    const prefijo = valor >= 100 ? '$' : '🪙$';
+  DENOMINACIONES.forEach(d => {
+    const icono = d.tipo === 'billete' ? '$' : '🪙$';
     html += `<div class="arqueo-item">
-      <span class="arqueo-label">${prefijo}${valor}</span>
-      <input type="number" class="arqueo-input" data-valor="${valor}" value="0" min="0" oninput="calcularDiferencia()">
+      <span class="arqueo-label">${icono}${d.valor}</span>
+      <input type="number" class="arqueo-input" data-valor="${d.valor}" value="0" min="0" oninput="calcularDiferencia()">
     </div>`;
   });
   grid.innerHTML = html;
@@ -837,34 +529,104 @@ function renderArqueoGrid() {
 function calcularDiferencia() {
   let contado = 0;
   document.querySelectorAll('.arqueo-input').forEach(input => {
-    const valor = parseFloat(input.dataset.valor);
-    const cantidad = parseInt(input.value) || 0;
-    contado += valor * cantidad;
+    contado += parseFloat(input.dataset.valor) * (parseInt(input.value) || 0);
   });
-  document.getElementById('arq-contado').textContent = '$' + contado;
-  document.getElementById('arq-esperado').textContent = '$' + contado; // Simulado para prueba
-  document.getElementById('diff-value').textContent = '$0 ✅ Cuadrada';
+  document.getElementById('arq-contado').textContent = '$' + contado.toLocaleString('es-AR');
+  
+  let esperado = turno ? turno.saldoInicial : 0;
+  if (turno && turno.estado === 'abierto') {
+    const ventasEfectivo = ventas.filter(v => new Date(v.fecha) >= new Date(turno.apertura) && v.metodo === 'efectivo');
+    esperado += ventasEfectivo.reduce((sum, v) => sum + v.total, 0);
+  }
+  document.getElementById('arq-esperado').textContent = '$' + esperado.toLocaleString('es-AR');
+  
+  const diff = contado - esperado;
+  const diffBox = document.getElementById('diff-box');
+  const diffValue = document.getElementById('diff-value');
+  if (diff === 0) { diffBox.className = 'difference-box diff-ok'; diffValue.textContent = '$0 ✅ Cuadrada'; }
+  else if (diff > 0) { diffBox.className = 'difference-box diff-pos'; diffValue.textContent = '+$' + diff.toLocaleString('es-AR') + ' Sobrante'; }
+  else { diffBox.className = 'difference-box diff-neg'; diffValue.textContent = '-$' + Math.abs(diff).toLocaleString('es-AR') + ' Faltante'; }
 }
 
 function renderControlCaja() {
   const statusBox = document.getElementById('status-caja');
+  const secApertura = document.getElementById('sec-apertura-caja');
+  const secPanel = document.getElementById('sec-panel-caja');
+  
   if (turno && turno.estado === 'abierto') {
     statusBox.innerHTML = `<h3 style="color:#2a9d4a;">🔓 Caja Abierta</h3><p>Cajero: ${turno.cajero}</p>`;
+    secApertura.classList.remove('active');
+    secPanel.classList.add('active');
+    
+    document.getElementById('pnl-cajero').textContent = turno.cajero;
+    document.getElementById('pnl-apertura').textContent = new Date(turno.apertura).toLocaleTimeString('es-AR');
+    
+    const ventasTurno = ventas.filter(v => new Date(v.fecha) >= new Date(turno.apertura));
+    document.getElementById('pnl-tickets').textContent = ventasTurno.length;
+    document.getElementById('pnl-total').textContent = '$' + ventasTurno.reduce((sum, v) => sum + v.total, 0).toLocaleString('es-AR');
   } else {
-    statusBox.innerHTML = `<h3 style="color:#f0ad4e;">🔒 Caja Cerrada</h3>`;
+    statusBox.innerHTML = `<h3 style="color:#f0ad4e;">🔒 Caja Cerrada</h3><p>Abrí la caja para comenzar</p>`;
+    secApertura.classList.add('active');
+    secPanel.classList.remove('active');
   }
+}
+
+function abrirCaja() {
+  const cajero = document.getElementById('cajero-nombre').value.trim();
+  const saldo = parseFloat(document.getElementById('saldo-inicial').value) || 0;
+  if (!cajero) { toast('❌ Ingresá el nombre del cajero', 'err'); return; }
+  
+  turno = { cajero, apertura: new Date().toISOString(), saldoInicial: saldo, estado: 'abierto' };
+  agregarAuditoria(cajero, 'APERTURA', `Saldo inicial: $${saldo}`);
+  guardarTodo();
+  renderControlCaja();
+  toast('✅ Caja abierta correctamente', 'ok');
+}
+
+function cerrarCaja() {
+  if (!turno || turno.estado !== 'abierto') { toast('❌ No hay una caja abierta', 'err'); return; }
+  if (!confirm('¿Estás seguro de cerrar el turno?')) return;
+  
+  const cierre = new Date().toISOString();
+  agregarAuditoria(turno.cajero, 'CIERRE', `Turno finalizado. Duración desde ${new Date(turno.apertura).toLocaleTimeString()}`);
+  turno.estado = 'cerrado';
+  turno.cierre = cierre;
+  guardarTodo();
+  renderControlCaja();
+  toast('✅ Turno cerrado correctamente', 'ok');
+}
+
+function guardarArqueo() {
+  if (!turno || turno.estado !== 'abierto') { toast('❌ La caja debe estar abierta', 'err'); return; }
+  let contado = 0;
+  document.querySelectorAll('.arqueo-input').forEach(input => {
+    contado += parseFloat(input.dataset.valor) * (parseInt(input.value) || 0);
+  });
+  agregarAuditoria(turno.cajero, 'ARQUEO', `Contado: $${contado}`);
+  guardarTodo();
+  toast('💾 Arqueo guardado en auditoría', 'ok');
 }
 
 function renderAuditoria() {
   const cont = document.getElementById('audit-list');
-  if (auditoria.length === 0) {
-    cont.innerHTML = '<p class="empty">Sin registros</p>';
-    return;
-  }
+  if (!cont) return;
+  if (auditoria.length === 0) { cont.innerHTML = '<p class="empty">Sin registros</p>'; return; }
+  
   let html = '';
-  auditoria.slice(0, 10).forEach(a => {
-    const hora = new Date(a.timestamp).toLocaleString('es-AR');
-    html += `<div class="audit-item"><span class="audit-time">[${hora}]</span> <span class="audit-user">${a.usuario}</span> <span class="audit-action">${a.accion}</span><div style="color:#888;font-size:10px;margin-top:2px;">${a.detalle}</div></div>`;
+  auditoria.forEach(a => {
+    const fecha = new Date(a.timestamp);
+    const hora = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    const fechaStr = fecha.toLocaleDateString('es-AR');
+    let color = '#6bcf7f';
+    if (a.accion === 'CIERRE') color = '#ff6b6b';
+    if (a.accion === 'APERTURA') color = '#ffd93d';
+    
+    html += `<div class="audit-item">
+      <span class="audit-time">[${fechaStr} ${hora}]</span> 
+      <span class="audit-user">${a.usuario}</span> 
+      <span class="audit-action" style="color:${color}">${a.accion}</span>
+      <div style="color:#a0a0c0;font-size:10px;margin-top:2px;">${a.detalle}</div>
+    </div>`;
   });
   cont.innerHTML = html;
 }
@@ -878,60 +640,149 @@ function mostrarTabCaja(tab, btn) {
   if (tab === 'audit') renderAuditoria();
 }
 
-function abrirCaja() {
-  const cajero = document.getElementById('cajero-nombre').value.trim();
-  const saldo = parseFloat(document.getElementById('saldo-inicial').value) || 0;
-  if (!cajero) { toast('❌ Ingresá el nombre del cajero', 'err'); return; }
-  turno = { cajero, apertura: new Date().toISOString(), saldoInicial: saldo, estado: 'abierto' };
-  localStorage.setItem('turno_activo', JSON.stringify(turno));
-  guardarTodo();
-  renderControlCaja();
-  toast('✅ Caja abierta', 'ok');
-}
-
-function cerrarCaja() {
-  if (!confirm('¿Cerrar el turno?')) return;
-  turno = null;
-  localStorage.removeItem('turno_activo');
-  guardarTodo();
-  renderControlCaja();
-  toast('✅ Turno cerrado', 'ok');
-}
-
-function guardarArqueo() {
-  toast('💾 Arqueo guardado', 'ok');
-}
-
 function exportarAuditoria() {
-  toast('📤 Auditoría exportada (simulado)', 'ok');
+  if (auditoria.length === 0) { toast('❌ No hay registros', 'err'); return; }
+  let texto = 'AUDITORÍA MEJORAR 2\nGenerado: ' + new Date().toLocaleString('es-AR') + '\n' + '='.repeat(40) + '\n\n';
+  auditoria.forEach(a => {
+    texto += `[${new Date(a.timestamp).toLocaleString('es-AR')}] ${a.usuario} - ${a.accion}\n  ${a.detalle}\n\n`;
+  });
+  const blob = new Blob([texto], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'auditoria_' + new Date().toISOString().slice(0, 10) + '.txt';
+  a.click();
+  toast('📤 Auditoría exportada', 'ok');
 }
 
-function filtrarVencimientos(nivel, btn) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  toast('🔍 Filtrado por: ' + nivel, 'ok');
+// ============================================================
+// FUNCIONES AUXILIARES (MI CAJA, STOCK, ETC.)
+// ============================================================
+function buscarProductoCaja() {
+  const q = document.getElementById('buscador-caja').value.toLowerCase();
+  const cont = document.getElementById('resultados-caja');
+  const filtrados = productos.filter(p => p.nombre.toLowerCase().includes(q));
+  if (filtrados.length === 0) { cont.innerHTML = '<p class="empty">No se encontraron productos</p>'; return; }
+  let html = '';
+  filtrados.forEach(p => {
+    html += `<div class="product-card" onclick="agregarAlTicket(${p.id})" style="cursor:pointer;">
+      <div class="product-info"><div class="product-name">${p.nombre}</div><div style="font-size:11px;color:#666;">Stock: ${p.stock}</div></div>
+      <div style="font-weight:700;color:#667eea;">$${p.precio}</div>
+    </div>`;
+  });
+  cont.innerHTML = html;
 }
 
-function agregarLote() {
-  toast('📦 Función de agregar lote (próximamente)', 'ok');
+function agregarAlTicket(id) {
+  const prod = productos.find(p => p.id === id);
+  if (!prod || prod.stock <= 0) { toast('⚠️ Stock insuficiente', 'err'); return; }
+  const existe = ticket.find(t => t.id === id);
+  if (existe) { existe.cantidad++; existe.subtotal = existe.cantidad * existe.precio; }
+  else { ticket.push({ id: prod.id, nombre: prod.nombre, precio: prod.precio, cantidad: 1, subtotal: prod.precio }); }
+  renderTicket();
+  toast('✅ ' + prod.nombre + ' agregado', 'ok');
 }
 
-function nuevoProveedor() {
-  toast('📦 Función de nuevo proveedor (próximamente)', 'ok');
+function renderTicket() {
+  const cont = document.getElementById('ticket-items');
+  if (ticket.length === 0) { cont.innerHTML = '<p class="empty">Ticket vacío</p>'; document.getElementById('ticket-total').textContent = '$0'; return; }
+  let html = '', total = 0;
+  ticket.forEach(item => {
+    total += item.subtotal;
+    html += `<div class="ticket-item">
+      <div style="flex:1;"><div style="font-weight:600;font-size:13px;">${item.nombre}</div>
+      <div class="item-controls">
+        <button class="qty-btn" onclick="cambiarCantidad(${item.id},-1)">−</button>
+        <span class="qty-display">${item.cantidad}</span>
+        <button class="qty-btn" onclick="cambiarCantidad(${item.id},1)">+</button>
+      </div></div>
+      <div style="font-weight:700;color:#667eea;">$${item.subtotal}</div>
+    </div>`;
+  });
+  cont.innerHTML = html;
+  document.getElementById('ticket-total').textContent = '$' + total.toLocaleString('es-AR');
+}
+
+function cambiarCantidad(id, delta) {
+  const item = ticket.find(t => t.id === id);
+  const prod = productos.find(p => p.id === id);
+  if (!item) return;
+  const nueva = item.cantidad + delta;
+  if (nueva <= 0) ticket = ticket.filter(t => t.id !== id);
+  else if (nueva > prod.stock) { toast('⚠️ Stock insuficiente', 'err'); return; }
+  else { item.cantidad = nueva; item.subtotal = nueva * item.precio; }
+  renderTicket();
+}
+
+function abrirPago() {
+  if (ticket.length === 0) { toast('❌ Ticket vacío', 'err'); return; }
+  if (!turno || turno.estado !== 'abierto') { toast('❌ Debés abrir la caja primero', 'err'); return; }
+  
+  const total = ticket.reduce((s, i) => s + i.subtotal, 0);
+  const metodo = prompt('Método de pago:\n1. Efectivo\n2. Tarjeta\n3. Mercado Pago', '1');
+  if (!metodo) return;
+  const metodos = { '1': 'efectivo', '2': 'tarjeta', '3': 'mercadopago' };
+  const metodoTexto = metodos[metodo];
+  if (!metodoTexto) { toast('❌ Opción inválida', 'err'); return; }
+  
+  let vuelto = 0;
+  if (metodoTexto === 'efectivo') {
+    const recibido = parseFloat(prompt('Total: $' + total + '\n\nMonto recibido:', total));
+    if (isNaN(recibido) || recibido < total) { toast('❌ Monto inválido', 'err'); return; }
+    vuelto = recibido - total;
+  }
+  
+  const venta = { id: Date.now(), fecha: new Date().toISOString(), items: [...ticket], total, metodo: metodoTexto, vuelto };
+  ventas.push(venta);
+  ticket.forEach(item => { const prod = productos.find(p => p.id === item.id); if (prod) prod.stock -= item.cantidad; });
+  
+  agregarAuditoria(turno.cajero, 'VENTA', `Ticket #$${String(venta.id).slice(-4)} | $${total} | ${metodoTexto.toUpperCase()}`);
+  guardarTodo();
+  
+  let msg = `✅ Venta: $${total}\nMétodo: ${metodoTexto.toUpperCase()}`;
+  if (vuelto > 0) msg += `\nVuelto: $${vuelto}`;
+  alert(msg);
+  
+  ticket = [];
+  renderTicket();
+  buscarProductoCaja();
+  toast('✅ Venta registrada', 'ok');
+}
+
+function renderListaStock() {
+  const busq = (document.getElementById('buscador-stock')?.value || '').toLowerCase();
+  const cont = document.getElementById('lista-stock');
+  const filtrados = productos.filter(p => p.nombre.toLowerCase().includes(busq) || p.codigo.includes(busq));
+  if (filtrados.length === 0) { cont.innerHTML = '<p class="empty">No se encontraron productos</p>'; return; }
+  let html = '';
+  filtrados.forEach(p => {
+    html += `<div class="product-card">
+      <div class="product-info"><div class="product-name">${p.nombre}</div><div class="product-barcode">${p.codigo}</div><div style="font-size:12px;color:#666;margin-top:3px;">$${p.precio} · Stock: ${p.stock}</div></div>
+    </div>`;
+  });
+  cont.innerHTML = html;
+}
+
+function nuevoProducto() {
+  const nombre = prompt('Nombre:'); if (!nombre) return;
+  const codigo = prompt('Código de barras:'); if (!codigo) return;
+  const precio = parseFloat(prompt('Precio:', '0')) || 0;
+  const stock = parseInt(prompt('Stock:', '0')) || 0;
+  const nuevoId = productos.length > 0 ? Math.max(...productos.map(p => p.id)) + 1 : 1;
+  productos.push({ id: nuevoId, nombre, codigo, precio, stock });
+  guardarTodo();
+  renderListaStock();
+  toast('✅ Producto creado', 'ok');
 }
 
 function renderListaProveedores() {
+  const busq = (document.getElementById('buscador-prov')?.value || '').toLowerCase();
   const cont = document.getElementById('lista-proveedores');
-  if (proveedores.length === 0) {
-    cont.innerHTML = '<p class="empty">No hay proveedores</p>';
-    return;
-  }
+  const filtrados = proveedores.filter(p => p.nombre.toLowerCase().includes(busq));
+  if (filtrados.length === 0) { cont.innerHTML = '<p class="empty">No se encontraron proveedores</p>'; return; }
   let html = '';
-  proveedores.forEach(p => {
+  filtrados.forEach(p => {
     html += `<div class="prov-card">
-      <div class="prov-header">
-        <div><div style="font-weight:700;font-size:15px;">${p.nombre}</div><div style="font-size:11px;color:#888;">CUIT: ${p.cuit || '-'}</div></div>
-      </div>
+      <div class="prov-header"><div><div style="font-weight:700;font-size:15px;">${p.nombre}</div><div style="font-size:11px;color:#888;">CUIT: ${p.cuit || '-'}</div></div></div>
       <div class="prov-contact">
         ${p.telefono ? `<a href="tel:${p.telefono}" class="contact-btn btn-call">📞</a>` : ''}
         ${p.whatsapp ? `<a href="https://wa.me/${p.whatsapp}" target="_blank" class="contact-btn btn-whatsapp">💬</a>` : ''}
@@ -941,45 +792,40 @@ function renderListaProveedores() {
   cont.innerHTML = html;
 }
 
-function cambiarTabImpresora(tab, btn) {
-  document.querySelectorAll('#view-impresora .tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('#view-impresora .section').forEach(s => s.classList.remove('active'));
+function nuevoProveedor() {
+  const nombre = prompt('Nombre:'); if (!nombre) return;
+  const cuit = prompt('CUIT:') || '';
+  const telefono = prompt('Teléfono:') || '';
+  const whatsapp = prompt('WhatsApp:') || '';
+  const nuevoId = proveedores.length > 0 ? Math.max(...proveedores.map(p => p.id)) + 1 : 1;
+  proveedores.push({ id: nuevoId, nombre, cuit, telefono, whatsapp });
+  guardarTodo();
+  renderListaProveedores();
+  toast('✅ Proveedor creado', 'ok');
+}
+
+function filtrarVencimientos(nivel, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('sub-' + tab).classList.add('active');
+  toast('🔍 Filtrado por: ' + nivel, 'ok');
+}
+function agregarLote() { toast('📦 Función de agregar lote (próximamente)', 'ok'); }
+
+function exportarDatos() {
+  const datos = { productos, ventas, proveedores, auditoria, pin: localStorage.getItem('pin_v1') || '1234' };
+  const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'backup_' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  toast('📤 Backup exportado', 'ok');
 }
 
-function cambiarAncho(ancho, btn) {
-  document.querySelectorAll('.ancho-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('ancho-actual').textContent = ancho;
-  toast('📏 Ancho: ' + ancho + 'mm', 'ok');
-}
-
-function cargarLogo(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    document.getElementById('logo-preview').innerHTML = `<img src="${e.target.result}" style="max-width: 150px; border-radius: 8px;">`;
-    toast('✅ Logo cargado', 'ok');
-  };
-  reader.readAsDataURL(file);
-}
-
-function actualizarPreview() { toast('👁️ Preview actualizado', 'ok'); }
-function actualizarTamano() { 
-  document.getElementById('tamano-label').textContent = document.getElementById('texto-tamano').value + 'px'; 
-}
-function agruparDias() { toast('🔗 Días agrupados', 'ok'); }
-function desagruparDias() { toast('🔓 Días desagrupados', 'ok'); }
-function guardarConfiguracion() { toast('✅ Configuración guardada', 'ok'); }
-function imprimirPrueba() { toast('🧪 Imprimiendo prueba (simulado)', 'ok'); }
-function iniciarImpresora() { toast('🖨️ Impresora iniciada', 'ok'); }
-
-function exportarDatos() { toast('📤 Backup exportado', 'ok'); }
-function importarDatos(event) { toast('📥 Backup restaurado', 'ok'); }
-function resetearTodo() { 
-  if(confirm('¿Resetear todo?')) { localStorage.clear(); location.reload(); } 
+function resetearTodo() {
+  if (confirm('⚠️ ¿RESETEAR TODO? Se borrarán todos los datos.')) {
+    localStorage.clear();
+    location.reload();
+  }
 }
 
 function toast(msg, tipo) {
@@ -987,6 +833,16 @@ function toast(msg, tipo) {
   t.textContent = msg;
   t.className = 'toast show ' + (tipo === 'err' ? 'err' : 'ok');
   setTimeout(() => t.className = 'toast', 2500);
+}
+
+// Scanner (básico para no romper la carga)
+async function abrirScanner(modo) {
+  modoScanner = modo;
+  document.getElementById('scanner-modal').classList.add('active');
+  toast('📷 Cámara iniciada (simulado)', 'ok');
+}
+function cerrarScanner() {
+  document.getElementById('scanner-modal').classList.remove('active');
 }
 
 // ============================================================
