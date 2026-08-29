@@ -1,148 +1,207 @@
-// PANEL-01: PIN DE INGRESO
-// REQUISITO: Asegúrate de tener CryptoJS cargado en el <head>:
-// <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-
-const pinState = {
-    ingresado: '',
-    intentos: parseInt(localStorage.getItem('intentos_pin')) || 0,
-    bloqueoHasta: parseInt(localStorage.getItem('bloqueo_hasta')) || 0
-};
-
-// Stub para navegación (se reemplazará por el router principal en el futuro)
-function mostrarVista(vista) {
-    console.log(`[Router] Navegando a: ${vista}`);
-    document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
-    const target = document.getElementById(`vista-${vista}`);
-    if (target) target.classList.add('activa');
-}
-
-function initPinPanel() {
-    // 1. Inicializar PIN por defecto (1234) si no existe
-    if (!localStorage.getItem('pin_v1')) {
-        const hashDefault = CryptoJS.SHA256('1234').toString();
-        localStorage.setItem('pin_v1', hashDefault);
-    }
-
-    // 2. Verificar bloqueo inicial
-    verificarBloqueo();
-
-    // 3. Event Listeners para teclado táctil
-    document.querySelectorAll('.pin-keypad .key').forEach(btn => {
-        btn.addEventListener('click', () => manejarTecla(btn.dataset.key));
-    });
-
-    // 4. Event Listener para teclado físico
-    document.addEventListener('keydown', manejarTecladoFisico);
-}
-
-function verificarBloqueo() {
-    const ahora = Date.now();
-    if (ahora < pinState.bloqueoHasta) {
-        const segundosRestantes = Math.ceil((pinState.bloqueoHasta - ahora) / 1000);
-        mostrarError(`Sistema bloqueado. Intente en ${segundosRestantes}s.`);
-        deshabilitarTeclado(true);
-        setTimeout(verificarBloqueo, 1000);
-    } else {
-        if (pinState.bloqueoHasta > 0) {
-            localStorage.removeItem('bloqueo_hasta');
-            localStorage.setItem('intentos_pin', '0');
-            pinState.intentos = 0;
-            pinState.bloqueoHasta = 0;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mejora 2</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        /* PANEL-01: PIN DE INGRESO */
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
-        deshabilitarTeclado(false);
-        mostrarError('');
-    }
-}
+        .vista { display: none; width: 100%; max-width: 500px; padding: 20px; box-sizing: border-box; }
+        .vista.activa { display: block; }
+        .pin-container { text-align: center; color: #fff; }
+        .pin-container h1 { font-size: 28px; margin-bottom: 10px; }
+        .pin-subtitle { font-size: 14px; opacity: 0.9; margin-bottom: 30px; }
+        .pin-dots { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
+        .pin-dot {
+            width: 20px; height: 20px; border-radius: 50%;
+            border: 2px solid #fff; transition: background 0.2s;
+        }
+        .pin-dot.filled { background: #fff; }
+        .pin-error { color: #ffdddd; font-size: 14px; min-height: 20px; margin-bottom: 20px; font-weight: bold; }
+        .pin-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; max-width: 300px; margin: 0 auto; }
+        .key {
+            padding: 18px; font-size: 24px; border: none; border-radius: 12px;
+            background: rgba(255,255,255,0.2); color: #fff; cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .key:active { transform: scale(0.95); background: rgba(255,255,255,0.4); }
+        .key:disabled { opacity: 0.5; cursor: not-allowed; }
+        .key-action { font-size: 20px; }
+        .key-backspace { background: rgba(255, 100, 100, 0.3); }
+        .key-confirm { background: rgba(100, 100, 255, 0.4); }
+    </style>
+</head>
+<body>
+    <!-- PANEL-01: PIN DE INGRESO -->
+    <div id="vista-pin" class="vista activa">
+        <div class="pin-container">
+            <h1>🌸 Mejorar 2</h1>
+            <p class="pin-subtitle">Ingrese su PIN de 4 dígitos</p>
+            <div class="pin-dots">
+                <div class="pin-dot" data-index="0"></div>
+                <div class="pin-dot" data-index="1"></div>
+                <div class="pin-dot" data-index="2"></div>
+                <div class="pin-dot" data-index="3"></div>
+            </div>
+            <p id="pin-error" class="pin-error"></p>
+            <div class="pin-keypad">
+                <button class="key" data-key="1">1</button>
+                <button class="key" data-key="2">2</button>
+                <button class="key" data-key="3">3</button>
+                <button class="key" data-key="4">4</button>
+                <button class="key" data-key="5">5</button>
+                <button class="key" data-key="6">6</button>
+                <button class="key" data-key="7">7</button>
+                <button class="key" data-key="8">8</button>
+                <button class="key" data-key="9">9</button>
+                <button class="key key-action key-backspace" data-key="backspace">⌫</button>
+                <button class="key" data-key="0">0</button>
+                <button class="key key-action key-confirm" data-key="confirm">✓</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // PANEL-01: PIN DE INGRESO
+        const pinState = {
+            ingresado: '',
+            intentos: parseInt(localStorage.getItem('intentos_pin')) || 0,
+            bloqueoHasta: parseInt(localStorage.getItem('bloqueo_hasta')) || 0
+        };
 
-function manejarTecla(key) {
-    if (Date.now() < pinState.bloqueoHasta) return;
+        function mostrarVista(vista) {
+            console.log(`[Router] Navegando a: ${vista}`);
+            document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
+            const target = document.getElementById(`vista-${vista}`);
+            if (target) target.classList.add('activa');
+        }
 
-    if (key >= '0' && key <= '9') {
-        if (pinState.ingresado.length < 4) {
-            pinState.ingresado += key;
-            actualizarDots();
-            if (pinState.ingresado.length === 4) {
-                setTimeout(validarPin, 200); // Delay visual corto
+        function initPinPanel() {
+            if (!localStorage.getItem('pin_v1')) {
+                const hashDefault = CryptoJS.SHA256('1234').toString();
+                localStorage.setItem('pin_v1', hashDefault);
+            }
+            verificarBloqueo();
+            document.querySelectorAll('.pin-keypad .key').forEach(btn => {
+                btn.addEventListener('click', () => manejarTecla(btn.dataset.key));
+            });
+            document.addEventListener('keydown', manejarTecladoFisico);
+        }
+
+        function verificarBloqueo() {
+            const ahora = Date.now();
+            if (ahora < pinState.bloqueoHasta) {
+                const segundosRestantes = Math.ceil((pinState.bloqueoHasta - ahora) / 1000);
+                mostrarError(`Sistema bloqueado. Intente en ${segundosRestantes}s.`);
+                deshabilitarTeclado(true);
+                setTimeout(verificarBloqueo, 1000);
+            } else {
+                if (pinState.bloqueoHasta > 0) {
+                    localStorage.removeItem('bloqueo_hasta');
+                    localStorage.setItem('intentos_pin', '0');
+                    pinState.intentos = 0;
+                    pinState.bloqueoHasta = 0;
+                }
+                deshabilitarTeclado(false);
+                mostrarError('');
             }
         }
-    } else if (key === 'backspace') {
-        pinState.ingresado = pinState.ingresado.slice(0, -1);
-        actualizarDots();
-        mostrarError('');
-    } else if (key === 'confirm') {
-        if (pinState.ingresado.length === 4) {
-            validarPin();
+
+        function manejarTecla(key) {
+            if (Date.now() < pinState.bloqueoHasta) return;
+            if (key >= '0' && key <= '9') {
+                if (pinState.ingresado.length < 4) {
+                    pinState.ingresado += key;
+                    actualizarDots();
+                    if (pinState.ingresado.length === 4) {
+                        setTimeout(validarPin, 200);
+                    }
+                }
+            } else if (key === 'backspace') {
+                pinState.ingresado = pinState.ingresado.slice(0, -1);
+                actualizarDots();
+                mostrarError('');
+            } else if (key === 'confirm') {
+                if (pinState.ingresado.length === 4) {
+                    validarPin();
+                }
+            }
         }
-    }
-}
 
-function manejarTecladoFisico(e) {
-    if (!document.getElementById('vista-pin').classList.contains('activa')) return;
-    if (e.key >= '0' && e.key <= '9') manejarTecla(e.key);
-    else if (e.key === 'Backspace') manejarTecla('backspace');
-    else if (e.key === 'Enter') manejarTecla('confirm');
-}
+        function manejarTecladoFisico(e) {
+            if (!document.getElementById('vista-pin').classList.contains('activa')) return;
+            if (e.key >= '0' && e.key <= '9') manejarTecla(e.key);
+            else if (e.key === 'Backspace') manejarTecla('backspace');
+            else if (e.key === 'Enter') manejarTecla('confirm');
+        }
 
-function actualizarDots() {
-    document.querySelectorAll('.pin-dot').forEach((dot, index) => {
-        dot.classList.toggle('filled', index < pinState.ingresado.length);
-    });
-}
+        function actualizarDots() {
+            document.querySelectorAll('.pin-dot').forEach((dot, index) => {
+                dot.classList.toggle('filled', index < pinState.ingresado.length);
+            });
+        }
 
-function validarPin() {
-    const hashIngresado = CryptoJS.SHA256(pinState.ingresado).toString();
-    const hashGuardado = localStorage.getItem('pin_v1');
+        function validarPin() {
+            const hashIngresado = CryptoJS.SHA256(pinState.ingresado).toString();
+            const hashGuardado = localStorage.getItem('pin_v1');
+            if (hashIngresado === hashGuardado) {
+                pinState.intentos = 0;
+                localStorage.setItem('intentos_pin', '0');
+                localStorage.setItem('ultimo_login', Date.now().toString());
+                pinState.ingresado = '';
+                actualizarDots();
+                mostrarError('');
+                mostrarVista('licencia-requerida');
+            } else {
+                pinState.intentos++;
+                localStorage.setItem('intentos_pin', pinState.intentos.toString());
+                pinState.ingresado = '';
+                actualizarDots();
+                if (pinState.intentos >= 5) {
+                    pinState.bloqueoHasta = Date.now() + (5 * 60 * 1000);
+                    localStorage.setItem('bloqueo_hasta', pinState.bloqueoHasta.toString());
+                    verificarBloqueo();
+                } else {
+                    mostrarError(`PIN incorrecto. Intentos: ${pinState.intentos}/5`);
+                }
+            }
+        }
 
-    if (hashIngresado === hashGuardado) {
-        // Éxito
-        pinState.intentos = 0;
-        localStorage.setItem('intentos_pin', '0');
-        localStorage.setItem('ultimo_login', Date.now().toString());
-        pinState.ingresado = '';
-        actualizarDots();
-        mostrarError('');
-        mostrarVista('licencia-requerida');
-    } else {
-        // Fallo
-        pinState.intentos++;
-        localStorage.setItem('intentos_pin', pinState.intentos.toString());
-        pinState.ingresado = '';
-        actualizarDots();
+        function mostrarError(msg) {
+            const el = document.getElementById('pin-error');
+            if (el) el.textContent = msg;
+        }
 
-        if (pinState.intentos >= 5) {
-            pinState.bloqueoHasta = Date.now() + (5 * 60 * 1000); // 5 minutos
-            localStorage.setItem('bloqueo_hasta', pinState.bloqueoHasta.toString());
-            verificarBloqueo();
+        function deshabilitarTeclado(bloqueado) {
+            document.querySelectorAll('.pin-keypad .key').forEach(btn => {
+                btn.disabled = bloqueado;
+            });
+        }
+
+        window.cerrarSesion = function() {
+            localStorage.removeItem('ultimo_login');
+            pinState.ingresado = '';
+            pinState.intentos = 0;
+            localStorage.setItem('intentos_pin', '0');
+            actualizarDots();
+            mostrarVista('pin');
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initPinPanel);
         } else {
-            mostrarError(`PIN incorrecto. Intentos: ${pinState.intentos}/5`);
+            initPinPanel();
         }
-    }
-}
-
-function mostrarError(msg) {
-    const el = document.getElementById('pin-error');
-    if (el) el.textContent = msg;
-}
-
-function deshabilitarTeclado(bloqueado) {
-    document.querySelectorAll('.pin-keypad .key').forEach(btn => {
-        btn.disabled = bloqueado;
-    });
-}
-
-// Expuesta globalmente para otros paneles (ej. PANEL-10 Mi Cuenta)
-window.cerrarSesion = function() {
-    localStorage.removeItem('ultimo_login');
-    pinState.ingresado = '';
-    pinState.intentos = 0;
-    localStorage.setItem('intentos_pin', '0');
-    actualizarDots();
-    mostrarVista('pin'); 
-};
-
-// Inicialización segura
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPinPanel);
-} else {
-    initPinPanel();
-}
+    </script>
+</body>
+</html>
