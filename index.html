@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mejora 2</title>
     
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -76,9 +75,14 @@
             color: #333;
         }
         
+        .input-wrapper {
+            position: relative;
+        }
+        
         .form-group input[type="text"],
         .form-group input[type="email"],
         .form-group input[type="password"] {
+            width: 100%;
             padding: 12px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
@@ -91,12 +95,21 @@
             border-color: #667eea;
         }
         
-        .form-group input.invalid {
-            border-color: #d33;
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            color: #999;
+            padding: 5px;
         }
         
-        .form-group input.valid {
-            border-color: #2a9d4a;
+        .toggle-password:hover {
+            color: #667eea;
         }
         
         .form-row {
@@ -139,7 +152,7 @@
             color: #fff;
         }
         
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
@@ -147,7 +160,6 @@
         .btn-primary:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
         }
         
         .btn-secondary {
@@ -227,6 +239,7 @@
             align-items: center;
             gap: 5px;
             color: #888;
+            transition: color 0.2s;
         }
         
         .requirement.valid {
@@ -352,9 +365,7 @@
     </style>
 </head>
 <body>
-    <!-- PANEL-01: AUTENTICACIÓN -->
     <div id="vista-auth" class="vista activa">
-        <!-- Vista Login -->
         <div id="auth-login" class="auth-view">
             <div class="auth-container">
                 <h1>🌸 Mejora 2</h1>
@@ -366,7 +377,10 @@
                     </div>
                     <div class="form-group">
                         <label for="login-password">Contraseña</label>
-                        <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
+                        <div class="input-wrapper">
+                            <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
+                            <button type="button" class="toggle-password" data-target="login-password">👁️</button>
+                        </div>
                     </div>
                     <div class="form-group checkbox-group">
                         <label>
@@ -384,7 +398,6 @@
             </div>
         </div>
 
-        <!-- Vista Registro -->
         <div id="auth-register" class="auth-view" style="display:none;">
             <div class="auth-container">
                 <h1>🌸 Crear Cuenta</h1>
@@ -410,7 +423,10 @@
                     </div>
                     <div class="form-group">
                         <label for="register-password">Contraseña *</label>
-                        <input type="password" id="register-password" required placeholder="Mínimo 8 caracteres" minlength="8" autocomplete="new-password">
+                        <div class="input-wrapper">
+                            <input type="password" id="register-password" required placeholder="Mínimo 8 caracteres" minlength="8" autocomplete="new-password">
+                            <button type="button" class="toggle-password" data-target="register-password">👁️</button>
+                        </div>
                         <div class="password-requirements" id="password-requirements">
                             <div class="requirement" id="req-length">Mínimo 8 caracteres</div>
                             <div class="requirement" id="req-uppercase">Una mayúscula (A-Z)</div>
@@ -421,7 +437,10 @@
                     </div>
                     <div class="form-group">
                         <label for="register-password-confirm">Confirmar Contraseña *</label>
-                        <input type="password" id="register-password-confirm" required placeholder="Repetí la contraseña" minlength="8" autocomplete="new-password">
+                        <div class="input-wrapper">
+                            <input type="password" id="register-password-confirm" required placeholder="Repetí la contraseña" minlength="8" autocomplete="new-password">
+                            <button type="button" class="toggle-password" data-target="register-password-confirm">👁️</button>
+                        </div>
                     </div>
                     <div class="form-group checkbox-group">
                         <label>
@@ -439,7 +458,6 @@
             </div>
         </div>
 
-        <!-- Vista Verificación Email -->
         <div id="auth-verify" class="auth-view" style="display:none;">
             <div class="auth-container">
                 <h1>📧 Verificá tu Email</h1>
@@ -457,7 +475,6 @@
             </div>
         </div>
 
-        <!-- Vista Recuperar Contraseña -->
         <div id="auth-forgot" class="auth-view" style="display:none;">
             <div class="auth-container">
                 <h1>🔑 Recuperar Contraseña</h1>
@@ -478,7 +495,6 @@
         </div>
     </div>
 
-    <!-- Modal Términos y Condiciones -->
     <div id="modal-terms" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -493,7 +509,6 @@
         </div>
     </div>
 
-    <!-- Modal Política de Privacidad -->
     <div id="modal-privacy" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -509,7 +524,6 @@
     </div>
 
     <script>
-        // Configuración de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBKqZH1mF983q04o8_XtuE7waF3tlBeXnI",
             authDomain: "mejora2-9eec7.firebaseapp.com",
@@ -570,6 +584,20 @@
                     authState.userData = null;
                     mostrarVistaAuth('login');
                 }
+            });
+
+            document.querySelectorAll('.toggle-password').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.dataset.target;
+                    const input = document.getElementById(targetId);
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        btn.textContent = '🙈';
+                    } else {
+                        input.type = 'password';
+                        btn.textContent = '👁️';
+                    }
+                });
             });
 
             document.getElementById('register-password').addEventListener('input', (e) => {
@@ -903,3 +931,4 @@
     </script>
 </body>
 </html>
+
