@@ -251,16 +251,16 @@
         }
         
         .requirement::before {
-            content: '○';
+            content: '?';
             font-size: 10px;
         }
         
         .requirement.valid::before {
-            content: '✓';
+            content: '?';
         }
         
         .requirement.invalid::before {
-            content: '✗';
+            content: '?';
         }
         
         .modal {
@@ -362,36 +362,178 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+/* PANEL-02: LICENCIAS */
+.licencia-container {
+    background: #fff;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    max-width: 500px;
+    margin: 0 auto;
+}
+.licencia-container h1 {
+    font-size: 28px;
+    color: #333;
+    margin-bottom: 10px;
+    text-align: center;
+}
+.licencia-subtitle {
+    font-size: 14px;
+    color: #666;
+    text-align: center;
+    margin-bottom: 25px;
+}
+.licencia-section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+.licencia-section:last-child { border-bottom: none; }
+.licencia-section h3 {
+    font-size: 16px;
+    color: #667eea;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+.device-id-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+}
+.device-id-text {
+    flex: 1;
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 2px;
+}
+.btn-icon {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px;
+    transition: transform 0.2s;
+}
+.btn-icon:hover { transform: scale(1.2); }
+.licencia-info {
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+    margin-bottom: 15px;
+}
+.btn-whatsapp {
+    background: #25D366;
+    color: #fff;
+    width: 100%;
+    margin-bottom: 10px;
+}
+.btn-whatsapp:hover {
+    background: #20BA5A;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(37, 211, 102, 0.4);
+}
+.input-licencia {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+.input-licencia:focus {
+    outline: none;
+    border-color: #667eea;
+}
+.licencia-detalles {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+}
+.detalle-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+.detalle-item:last-child { border-bottom: none; }
+.detalle-label { font-size: 13px; color: #666; font-weight: 500; }
+.detalle-valor { font-size: 13px; color: #333; font-weight: 600; }
+.licencia-error {
+    color: #d33;
+    font-size: 13px;
+    text-align: center;
+    margin-top: 10px;
+    min-height: 20px;
+}
+.licencia-success {
+    color: #2a9d4a;
+    font-size: 13px;
+    text-align: center;
+    margin-top: 10px;
+    min-height: 20px;
+}
+/* PANEL-02: LICENCIAS */
+.licencia-container { background: #fff; border-radius: 20px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; }
+.licencia-container h1 { font-size: 28px; color: #333; margin-bottom: 10px; text-align: center; }
+.licencia-subtitle { font-size: 14px; color: #666; text-align: center; margin-bottom: 25px; }
+.licencia-section { margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #e0e0e0; }
+.licencia-section:last-child { border-bottom: none; }
+.licencia-section h3 { font-size: 16px; color: #667eea; margin-bottom: 15px; font-weight: 600; }
+.device-id-box { display: flex; align-items: center; gap: 10px; background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 10px; }
+.device-id-text { flex: 1; font-size: 20px; font-weight: 600; color: #333; font-family: 'Courier New', monospace; letter-spacing: 2px; }
+.btn-icon { background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; transition: transform 0.2s; }
+.btn-icon:hover { transform: scale(1.2); }
+.licencia-info { font-size: 12px; color: #666; text-align: center; margin-bottom: 15px; }
+.btn-whatsapp { background: #25D366; color: #fff; width: 100%; margin-bottom: 10px; }
+.btn-whatsapp:hover { background: #20BA5A; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(37, 211, 102, 0.4); }
+.input-licencia { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; font-family: 'Courier New', monospace; resize: vertical; transition: border-color 0.2s; }
+.input-licencia:focus { outline: none; border-color: #667eea; }
+.licencia-detalles { background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+.detalle-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e0e0e0; }
+.detalle-item:last-child { border-bottom: none; }
+.detalle-label { font-size: 13px; color: #666; font-weight: 500; }
+.detalle-valor { font-size: 13px; color: #333; font-weight: 600; }
+.licencia-error { color: #d33; font-size: 13px; text-align: center; margin-top: 10px; min-height: 20px; }
+.licencia-success { color: #2a9d4a; font-size: 13px; text-align: center; margin-top: 10px; min-height: 20px; }
     </style>
 </head>
 <body>
     <div id="vista-auth" class="vista activa">
         <div id="auth-login" class="auth-view">
             <div class="auth-container">
-                <h1>🌸 Mejora 2</h1>
-                <p class="auth-subtitle">Ingresá a tu cuenta</p>
+                <h1>?? Mejora 2</h1>
+                <p class="auth-subtitle">Ingres� a tu cuenta</p>
                 <form id="form-login" class="auth-form">
                     <div class="form-group">
-                        <label for="login-email">Correo electrónico</label>
+                        <label for="login-email">Correo electr�nico</label>
                         <input type="email" id="login-email" required placeholder="tu@email.com" autocomplete="email">
                     </div>
                     <div class="form-group">
-                        <label for="login-password">Contraseña</label>
+                        <label for="login-password">Contrase�a</label>
                         <div class="input-wrapper">
-                            <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
-                            <button type="button" class="toggle-password" data-target="login-password">👁️</button>
+                            <input type="password" id="login-password" required placeholder="��������" autocomplete="current-password">
+                            <button type="button" class="toggle-password" data-target="login-password">???</button>
                         </div>
                     </div>
                     <div class="form-group checkbox-group">
                         <label>
                             <input type="checkbox" id="login-terms" required>
-                            <span>Acepto los <a href="#" id="link-show-terms-login">Términos y Condiciones</a> y la <a href="#" id="link-show-privacy-login">Política de Privacidad</a></span>
+                            <span>Acepto los <a href="#" id="link-show-terms-login">T�rminos y Condiciones</a> y la <a href="#" id="link-show-privacy-login">Pol�tica de Privacidad</a></span>
                         </label>
                     </div>
                     <button type="submit" class="btn btn-primary" id="btn-login">Ingresar</button>
                     <div class="auth-links">
-                        <a href="#" id="link-forgot-password">¿Olvidaste tu contraseña?</a>
-                        <a href="#" id="link-to-register">¿No tenés cuenta? Registrate</a>
+                        <a href="#" id="link-forgot-password">�Olvidaste tu contrase�a?</a>
+                        <a href="#" id="link-to-register">�No ten�s cuenta? Registrate</a>
                     </div>
                 </form>
                 <p id="auth-login-error" class="auth-error"></p>
@@ -400,8 +542,8 @@
 
         <div id="auth-register" class="auth-view" style="display:none;">
             <div class="auth-container">
-                <h1>🌸 Crear Cuenta</h1>
-                <p class="auth-subtitle">Completá tus datos para registrarte</p>
+                <h1>?? Crear Cuenta</h1>
+                <p class="auth-subtitle">Complet� tus datos para registrarte</p>
                 <form id="form-register" class="auth-form">
                     <div class="form-row">
                         <div class="form-group">
@@ -410,7 +552,7 @@
                         </div>
                         <div class="form-group">
                             <label for="register-apellido">Apellido *</label>
-                            <input type="text" id="register-apellido" required placeholder="Pérez">
+                            <input type="text" id="register-apellido" required placeholder="P�rez">
                         </div>
                     </div>
                     <div class="form-group">
@@ -418,39 +560,39 @@
                         <input type="text" id="register-negocio" required placeholder="Mi Kiosco">
                     </div>
                     <div class="form-group">
-                        <label for="register-email">Correo electrónico *</label>
+                        <label for="register-email">Correo electr�nico *</label>
                         <input type="email" id="register-email" required placeholder="tu@email.com" autocomplete="email">
                     </div>
                     <div class="form-group">
-                        <label for="register-password">Contraseña *</label>
+                        <label for="register-password">Contrase�a *</label>
                         <div class="input-wrapper">
-                            <input type="password" id="register-password" required placeholder="Mínimo 8 caracteres" minlength="8" autocomplete="new-password">
-                            <button type="button" class="toggle-password" data-target="register-password">👁️</button>
+                            <input type="password" id="register-password" required placeholder="M�nimo 8 caracteres" minlength="8" autocomplete="new-password">
+                            <button type="button" class="toggle-password" data-target="register-password">???</button>
                         </div>
                         <div class="password-requirements" id="password-requirements">
-                            <div class="requirement" id="req-length">Mínimo 8 caracteres</div>
-                            <div class="requirement" id="req-uppercase">Una mayúscula (A-Z)</div>
-                            <div class="requirement" id="req-lowercase">Una minúscula (a-z)</div>
-                            <div class="requirement" id="req-number">Un número (0-9)</div>
-                            <div class="requirement" id="req-symbol">Un símbolo (!@#$%^&*)</div>
+                            <div class="requirement" id="req-length">M�nimo 8 caracteres</div>
+                            <div class="requirement" id="req-uppercase">Una may�scula (A-Z)</div>
+                            <div class="requirement" id="req-lowercase">Una min�scula (a-z)</div>
+                            <div class="requirement" id="req-number">Un n�mero (0-9)</div>
+                            <div class="requirement" id="req-symbol">Un s�mbolo (!@#$%^&*)</div>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="register-password-confirm">Confirmar Contraseña *</label>
+                        <label for="register-password-confirm">Confirmar Contrase�a *</label>
                         <div class="input-wrapper">
-                            <input type="password" id="register-password-confirm" required placeholder="Repetí la contraseña" minlength="8" autocomplete="new-password">
-                            <button type="button" class="toggle-password" data-target="register-password-confirm">👁️</button>
+                            <input type="password" id="register-password-confirm" required placeholder="Repet� la contrase�a" minlength="8" autocomplete="new-password">
+                            <button type="button" class="toggle-password" data-target="register-password-confirm">???</button>
                         </div>
                     </div>
                     <div class="form-group checkbox-group">
                         <label>
                             <input type="checkbox" id="register-terms" required>
-                            <span>Acepto los <a href="#" id="link-show-terms">Términos y Condiciones</a> y la <a href="#" id="link-show-privacy">Política de Privacidad</a></span>
+                            <span>Acepto los <a href="#" id="link-show-terms">T�rminos y Condiciones</a> y la <a href="#" id="link-show-privacy">Pol�tica de Privacidad</a></span>
                         </label>
                     </div>
                     <button type="submit" class="btn btn-primary" id="btn-register">Crear Cuenta</button>
                     <div class="auth-links">
-                        <a href="#" id="link-to-login">¿Ya tenés cuenta? Ingresá</a>
+                        <a href="#" id="link-to-login">�Ya ten�s cuenta? Ingres�</a>
                     </div>
                 </form>
                 <p id="auth-register-error" class="auth-error"></p>
@@ -460,11 +602,11 @@
 
         <div id="auth-verify" class="auth-view" style="display:none;">
             <div class="auth-container">
-                <h1>📧 Verificá tu Email</h1>
-                <p class="auth-subtitle">Te enviamos un enlace de verificación a tu correo</p>
+                <h1>?? Verific� tu Email</h1>
+                <p class="auth-subtitle">Te enviamos un enlace de verificaci�n a tu correo</p>
                 <div class="verify-message">
-                    <p>Revisá tu bandeja de entrada y hacé clic en el enlace para activar tu cuenta.</p>
-                    <p class="verify-note">Si no lo encontrás, revisá la carpeta de spam.</p>
+                    <p>Revis� tu bandeja de entrada y hac� clic en el enlace para activar tu cuenta.</p>
+                    <p class="verify-note">Si no lo encontr�s, revis� la carpeta de spam.</p>
                 </div>
                 <button id="btn-resend-verification" class="btn btn-secondary">Reenviar Email</button>
                 <div class="auth-links">
@@ -477,11 +619,11 @@
 
         <div id="auth-forgot" class="auth-view" style="display:none;">
             <div class="auth-container">
-                <h1>🔑 Recuperar Contraseña</h1>
-                <p class="auth-subtitle">Ingresá tu email y te enviaremos un enlace para restablecer tu contraseña</p>
+                <h1>?? Recuperar Contrase�a</h1>
+                <p class="auth-subtitle">Ingres� tu email y te enviaremos un enlace para restablecer tu contrase�a</p>
                 <form id="form-forgot" class="auth-form">
                     <div class="form-group">
-                        <label for="forgot-email">Correo electrónico</label>
+                        <label for="forgot-email">Correo electr�nico</label>
                         <input type="email" id="forgot-email" required placeholder="tu@email.com" autocomplete="email">
                     </div>
                     <button type="submit" class="btn btn-primary" id="btn-forgot">Enviar Enlace</button>
@@ -494,16 +636,95 @@
             </div>
         </div>
     </div>
+<!-- PANEL-02: LICENCIAS -->
+<div id="vista-licencia" class="vista">
+    <div class="licencia-container">
+        <h1>?? Activar Licencia</h1>
+        <p class="licencia-subtitle">Vincul� tu dispositivo para usar Mejora 2</p>
+        
+        <div class="licencia-section">
+            <h3>?? Device ID de este dispositivo</h3>
+            <div class="device-id-box">
+                <span id="device-id-display" class="device-id-text">Generando...</span>
+                <button id="btn-copiar-device-id" class="btn-icon" title="Copiar Device ID">??</button>
+            </div>
+            <p class="licencia-info">Envi� este c�digo por WhatsApp para recibir tu clave de licencia</p>
+            <button id="btn-whatsapp" class="btn btn-whatsapp">?? Enviar por WhatsApp</button>
+        </div>
 
+        <div class="licencia-section">
+            <h3>?? Clave de Licencia</h3>
+            <div class="form-group">
+                <textarea id="txt-clave-licencia" class="input-licencia" placeholder="Peg� aqu� tu clave de licencia..." rows="4"></textarea>
+            </div>
+            <button id="btn-activar-licencia" class="btn btn-primary">Activar Licencia</button>
+        </div>
+
+        <div id="licencia-info-panel" class="licencia-section" style="display:none;">
+            <h3>? Licencia Activa</h3>
+            <div class="licencia-detalles">
+                <div class="detalle-item"><span class="detalle-label">Cliente:</span><span id="lic-cliente" class="detalle-valor">-</span></div>
+                <div class="detalle-item"><span class="detalle-label">Tipo:</span><span id="lic-tipo" class="detalle-valor">-</span></div>
+                <div class="detalle-item"><span class="detalle-label">Expiraci�n:</span><span id="lic-expiracion" class="detalle-valor">-</span></div>
+                <div class="detalle-item"><span class="detalle-label">D�as offline:</span><span id="lic-offline" class="detalle-valor">-</span></div>
+                <div class="detalle-item"><span class="detalle-label">�ltima validaci�n:</span><span id="lic-ultima-validacion" class="detalle-valor">-</span></div>
+            </div>
+            <button id="btn-validar-ahora" class="btn btn-secondary">?? Validar Ahora</button>
+        </div>
+
+        <p id="licencia-error" class="licencia-error"></p>
+        <p id="licencia-success" class="licencia-success"></p>
+    </div>
+</div>
     <div id="modal-terms" class="modal">
+<!-- PANEL-02: LICENCIAS -->
+<div id="vista-licencia" class="vista">
+    <div class="licencia-container">
+        <h1>?? Activar Licencia</h1>
+        <p class="licencia-subtitle">Vincul� tu dispositivo para usar Mejora 2</p>
+        
+        <div class="licencia-section">
+            <h3> Device ID de este dispositivo</h3>
+            <div class="device-id-box">
+                <span id="device-id-display" class="device-id-text">Generando...</span>
+                <button id="btn-copiar-device-id" class="btn-icon" title="Copiar Device ID">??</button>
+            </div>
+            <p class="licencia-info">Envi� este c�digo por WhatsApp para recibir tu clave de licencia</p>
+            <button id="btn-whatsapp" class="btn btn-whatsapp">?? Enviar por WhatsApp</button>
+        </div>
+
+        <div class="licencia-section">
+            <h3>?? Clave de Licencia</h3>
+            <div class="form-group">
+                <textarea id="txt-clave-licencia" class="input-licencia" placeholder="Peg� aqu� tu clave de licencia..." rows="4"></textarea>
+            </div>
+            <button id="btn-activar-licencia" class="btn btn-primary">Activar Licencia</button>
+        </div>
+
+        <div id="licencia-info-panel" class="licencia-section" style="display:none;">
+            <h3>? Licencia Activa</h3>
+            <div class="licencia-detalles">
+                <div class="detalle-item"><span class="detalle-label">Cliente:</span><span id="lic-cliente" class="detalle-valor">-</span></div>
+                <div class="detalle-item"><span class="detalle-label">Tipo:</span><span id="lic-tipo" class="detalle-valor">-</span></div>
+                <div class="detalle-item"><span class="detalle-label">Expiraci�n:</span><span id="lic-expiracion" class="detalle-valor">-</span></div>
+                <div class="detalle-item"><span class="detalle-label">D�as offline:</span><span id="lic-offline" class="detalle-valor">-</span></div>
+                <div class="detalle-item"><span class="detalle-label">�ltima validaci�n:</span><span id="lic-ultima-validacion" class="detalle-valor">-</span></div>
+            </div>
+            <button id="btn-validar-ahora" class="btn btn-secondary">?? Validar Ahora</button>
+        </div>
+
+        <p id="licencia-error" class="licencia-error"></p>
+        <p id="licencia-success" class="licencia-success"></p>
+    </div>
+</div>
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Términos y Condiciones de Uso</h2>
+                <h2>T�rminos y Condiciones de Uso</h2>
                 <button class="modal-close" id="close-terms">&times;</button>
             </div>
             <div class="modal-body" id="terms-content">
                 <div class="loading">
-                    <span class="spinner"></span>Cargando términos y condiciones...
+                    <span class="spinner"></span>Cargando t�rminos y condiciones...
                 </div>
             </div>
         </div>
@@ -512,12 +733,12 @@
     <div id="modal-privacy" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Política de Privacidad</h2>
+                <h2>Pol�tica de Privacidad</h2>
                 <button class="modal-close" id="close-privacy">&times;</button>
             </div>
             <div class="modal-body" id="privacy-content">
                 <div class="loading">
-                    <span class="spinner"></span>Cargando política de privacidad...
+                    <span class="spinner"></span>Cargando pol�tica de privacidad...
                 </div>
             </div>
         </div>
@@ -592,10 +813,10 @@
                     const input = document.getElementById(targetId);
                     if (input.type === 'password') {
                         input.type = 'text';
-                        btn.textContent = '🙈';
+                        btn.textContent = '??';
                     } else {
                         input.type = 'password';
-                        btn.textContent = '👁️';
+                        btn.textContent = '???';
                     }
                 });
             });
@@ -667,7 +888,7 @@
             errorEl.textContent = '';
             
             if (!termsAccepted) {
-                errorEl.textContent = 'Debés aceptar los Términos y Condiciones.';
+                errorEl.textContent = 'Deb�s aceptar los T�rminos y Condiciones.';
                 return;
             }
             
@@ -688,13 +909,13 @@
             } catch (error) {
                 console.error('Error en login:', error);
                 if (error.code === 'auth/configuration-not-found') {
-                    errorEl.textContent = 'Error de configuración. Contactá al administrador.';
+                    errorEl.textContent = 'Error de configuraci�n. Contact� al administrador.';
                 } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-                    errorEl.textContent = 'Credenciales inválidas. Verificá tu email y contraseña.';
+                    errorEl.textContent = 'Credenciales inv�lidas. Verific� tu email y contrase�a.';
                 } else if (error.code === 'auth/too-many-requests') {
-                    errorEl.textContent = 'Demasiados intentos. Intentá más tarde.';
+                    errorEl.textContent = 'Demasiados intentos. Intent� m�s tarde.';
                 } else {
-                    errorEl.textContent = 'Error al iniciar sesión. Intentá nuevamente.';
+                    errorEl.textContent = 'Error al iniciar sesi�n. Intent� nuevamente.';
                 }
             } finally {
                 setLoading('btn-login', false);
@@ -723,17 +944,17 @@
             }
             
             if (!validarContrasena(password)) {
-                errorEl.textContent = 'La contraseña no cumple con los requisitos.';
+                errorEl.textContent = 'La contrase�a no cumple con los requisitos.';
                 return;
             }
             
             if (password !== passwordConfirm) {
-                errorEl.textContent = 'Las contraseñas no coinciden.';
+                errorEl.textContent = 'Las contrase�as no coinciden.';
                 return;
             }
             
             if (!termsAccepted) {
-                errorEl.textContent = 'Debés aceptar los Términos y Condiciones.';
+                errorEl.textContent = 'Deb�s aceptar los T�rminos y Condiciones.';
                 return;
             }
             
@@ -757,7 +978,7 @@
                 
                 await user.sendEmailVerification();
                 
-                successEl.textContent = 'Cuenta creada. Revisá tu email para verificar tu cuenta.';
+                successEl.textContent = 'Cuenta creada. Revis� tu email para verificar tu cuenta.';
                 document.getElementById('form-register').reset();
                 
                 setTimeout(() => {
@@ -766,13 +987,13 @@
             } catch (error) {
                 console.error('Error en registro:', error);
                 if (error.code === 'auth/email-already-in-use') {
-                    errorEl.textContent = 'Este email ya está registrado.';
+                    errorEl.textContent = 'Este email ya est� registrado.';
                 } else if (error.code === 'auth/weak-password') {
-                    errorEl.textContent = 'La contraseña es demasiado débil.';
+                    errorEl.textContent = 'La contrase�a es demasiado d�bil.';
                 } else if (error.code === 'auth/configuration-not-found') {
-                    errorEl.textContent = 'Error de configuración. Contactá al administrador.';
+                    errorEl.textContent = 'Error de configuraci�n. Contact� al administrador.';
                 } else {
-                    errorEl.textContent = 'Error al crear la cuenta. Intentá nuevamente.';
+                    errorEl.textContent = 'Error al crear la cuenta. Intent� nuevamente.';
                 }
             } finally {
                 setLoading('btn-register', false);
@@ -792,16 +1013,16 @@
             
             try {
                 await auth.sendPasswordResetEmail(email);
-                successEl.textContent = 'Te enviamos un enlace para restablecer tu contraseña.';
+                successEl.textContent = 'Te enviamos un enlace para restablecer tu contrase�a.';
                 document.getElementById('form-forgot').reset();
             } catch (error) {
-                console.error('Error en recuperación:', error);
+                console.error('Error en recuperaci�n:', error);
                 if (error.code === 'auth/user-not-found') {
                     errorEl.textContent = 'No existe una cuenta con este email.';
                 } else if (error.code === 'auth/configuration-not-found') {
-                    errorEl.textContent = 'Error de configuración. Contactá al administrador.';
+                    errorEl.textContent = 'Error de configuraci�n. Contact� al administrador.';
                 } else {
-                    errorEl.textContent = 'Error al enviar el enlace. Verificá el email.';
+                    errorEl.textContent = 'Error al enviar el enlace. Verific� el email.';
                 }
             } finally {
                 setLoading('btn-forgot', false);
@@ -816,119 +1037,393 @@
             successEl.textContent = '';
             
             if (!authState.currentUser) {
-                errorEl.textContent = 'No hay sesión activa.';
+                errorEl.textContent = 'No hay sesi�n activa.';
                 return;
             }
             
             try {
                 await authState.currentUser.sendEmailVerification();
-                successEl.textContent = 'Email de verificación reenviado.';
+                successEl.textContent = 'Email de verificaci�n reenviado.';
             } catch (error) {
                 console.error('Error al reenviar:', error);
-                errorEl.textContent = 'Error al reenviar. Intentá nuevamente en unos minutos.';
+                errorEl.textContent = 'Error al reenviar. Intent� nuevamente en unos minutos.';
             }
         }
 
-        async function verificarEstadoUsuario(user) {
-            try {
-                const userDoc = await db.collection('usuarios').doc(user.uid).get();
-                
-                if (!userDoc.exists) {
-                    await auth.signOut();
-                    mostrarVistaAuth('login');
-                    return;
-                }
-                
-                const userData = userDoc.data();
-                authState.userData = userData;
-                
-                localStorage.setItem('usuario_actual_v1', JSON.stringify({
-                    uid: user.uid,
-                    email: userData.email,
-                    nombre: userData.nombre,
-                    apellido: userData.apellido,
-                    negocio: userData.negocio
-                }));
-                localStorage.setItem('sesion_activa_v1', 'true');
-                localStorage.setItem('ultimo_login_v1', Date.now().toString());
-                
-                if (userData.licencia_activa) {
-                    console.log('Usuario con licencia activa → Menú principal');
-                    alert('Login exitoso. Próximamente: Menú principal');
-                } else {
-                    console.log('Usuario sin licencia → PANEL-02');
-                    alert('Login exitoso. Próximamente: Activación de licencia');
-                }
-            } catch (error) {
-                console.error('Error al verificar usuario:', error);
-                await auth.signOut();
-                mostrarVistaAuth('login');
-            }
-        }
-
-        function mostrarVistaAuth(vista) {
-            document.querySelectorAll('.auth-view').forEach(v => v.style.display = 'none');
-            const target = document.getElementById(`auth-${vista}`);
-            if (target) target.style.display = 'block';
+// Funci�n global de navegaci�n entre paneles
+function mostrarVista(nombreVista) {
+    console.log(`[Router] Navegando a: ${nombreVista}`);
+    
+    document.querySelectorAll('.vista').forEach(v => {
+        v.classList.remove('activa');
+        v.style.display = 'none';
+    });
+    
+    const mapaVistas = {
+        'auth': 'vista-auth',
+        'licencia': 'vista-licencia',
+        'licencia-requerida': 'vista-licencia',
+        'menu-principal': 'vista-menu'
+    };
+    
+    const vistaId = mapaVistas[nombreVista];
+    
+    if (vistaId) {
+        const target = document.getElementById(vistaId);
+        if (target) {
+            target.classList.add('activa');
+            target.style.display = 'block';
             
-            document.querySelectorAll('.auth-error, .auth-success').forEach(el => {
-                el.textContent = '';
-            });
-        }
-
-        async function mostrarModal(tipo) {
-            const modal = document.getElementById(`modal-${tipo}`);
-            const content = document.getElementById(`${tipo}-content`);
-            
-            modal.classList.add('active');
-            content.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando...</div>';
-            
-            try {
-                const doc = await db.collection('configuracion').doc('documentos_legales').get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    content.innerHTML = tipo === 'terms' ? data.terminos_html : data.privacidad_html;
-                } else {
-                    content.innerHTML = '<p>Documento no disponible. Contactá al administrador.</p>';
+            if (nombreVista === 'licencia' || nombreVista === 'licencia-requerida') {
+                if (typeof initLicenciaPanel === 'function') {
+                    initLicenciaPanel();
                 }
-            } catch (error) {
-                console.error('Error al cargar documento:', error);
-                content.innerHTML = `
-                    <h3>${tipo === 'terms' ? 'Términos y Condiciones' : 'Política de Privacidad'}</h3>
-                    <p>Documento en preparación. Contactá a:</p>
-                    <ul>
-                        <li>Tomas Suares Rocha: tomasuaresrocha79@gmail.com</li>
-                        <li>Walter Fernando Suares: walkydeadok@gmail.com</li>
-                    </ul>
-                `;
             }
-        }
-
-        function cerrarModal(tipo) {
-            const modal = document.getElementById(`modal-${tipo}`);
-            modal.classList.remove('active');
-        }
-
-        window.cerrarSesion = async function() {
-            try {
-                await auth.signOut();
-                localStorage.removeItem('usuario_actual_v1');
-                localStorage.removeItem('sesion_activa_v1');
-                localStorage.removeItem('ultimo_login_v1');
-                authState.currentUser = null;
-                authState.userData = null;
-                mostrarVistaAuth('login');
-            } catch (error) {
-                console.error('Error al cerrar sesión:', error);
-            }
-        };
-
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initAuthPanel);
         } else {
-            initAuthPanel();
+            console.error(`[Router] Vista no encontrada: ${vistaId}`);
         }
-    </script>
+    } else {
+        console.error(`[Router] Nombre de vista no mapeado: ${nombreVista}`);
+    }
+}
+
+async function verificarEstadoUsuario(user) {
+    try {
+        const userDoc = await db.collection('usuarios').doc(user.uid).get();
+        
+        if (!userDoc.exists) {
+            await auth.signOut();
+            mostrarVista('auth');
+            return;
+        }
+        
+        const userData = userDoc.data();
+        authState.userData = userData;
+        
+        localStorage.setItem('usuario_actual_v1', JSON.stringify({
+            uid: user.uid,
+            email: userData.email,
+            nombre: userData.nombre,
+            apellido: userData.apellido,
+            negocio: userData.negocio
+        }));
+        localStorage.setItem('sesion_activa_v1', 'true');
+        localStorage.setItem('ultimo_login_v1', Date.now().toString());
+        
+        if (userData.licencia_activa === true) {
+            console.log('Usuario con licencia activa ? Men� principal');
+            alert('Login exitoso. Pr�ximamente: Men� principal');
+        } else {
+            console.log('Usuario sin licencia ? PANEL-02');
+            mostrarVista('licencia-requerida');
+        }
+    } catch (error) {
+        console.error('Error al verificar usuario:', error);
+        await auth.signOut();
+        mostrarVista('auth');
+    }
+}
+
+// PANEL-02: LICENCIAS
+const licenciaState = { deviceId: null, licenciaActiva: false, licenciaDatos: null };
+
+function generarUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+function generarDeviceId() {
+    const uuid = generarUUID();
+    const codigo = uuid.substring(0, 4).toUpperCase();
+    return `M2-${codigo}`;
+}
+
+async function obtenerDeviceId() {
+    const usuarioActual = JSON.parse(localStorage.getItem('usuario_actual_v1'));
+    
+    if (!usuarioActual || !usuarioActual.uid) {
+        throw new Error('Usuario no autenticado');
+    }
+
+    const userDoc = await db.collection('usuarios').doc(usuarioActual.uid).get();
+    
+    if (userDoc.exists && userDoc.data().device_id) {
+        licenciaState.deviceId = userDoc.data().device_id;
+        localStorage.setItem('device_id_v1', licenciaState.deviceId);
+        return licenciaState.deviceId;
+    }
+
+    const nuevoDeviceId = generarDeviceId();
+    licenciaState.deviceId = nuevoDeviceId;
+    
+    await db.collection('usuarios').doc(usuarioActual.uid).update({
+        device_id: nuevoDeviceId
+    });
+    
+    localStorage.setItem('device_id_v1', nuevoDeviceId);
+    
+    return nuevoDeviceId;
+}
+
+function desencriptarJWT(jwt) {
+    try {
+        const partes = jwt.split('.');
+        if (partes.length !== 3) {
+            throw new Error('Formato de JWT inv�lido');
+        }
+
+        const payloadBase64 = partes[1];
+        const payloadJson = atob(payloadBase64);
+        const payload = JSON.parse(payloadJson);
+
+        if (!payload.device_id || !payload.fecha_expiracion || !payload.dias_offline) {
+            throw new Error('Payload de licencia inv�lido');
+        }
+
+        return { valido: true, payload: payload, signature: partes[2] };
+    } catch (error) {
+        console.error('Error al desencriptar JWT:', error);
+        return { valido: false, error: error.message };
+    }
+}
+
+async function verificarLicenciaEnFirestore(jwtHash, deviceId) {
+    try {
+        const licenciaDoc = await db.collection('licencias').doc(jwtHash).get();
+        
+        if (!licenciaDoc.exists) {
+            return { valida: false, motivo: 'Licencia no encontrada' };
+        }
+
+        const licenciaData = licenciaDoc.data();
+        
+        if (!licenciaData.activa) {
+            return { valida: false, motivo: 'Licencia deshabilitada' };
+        }
+
+        if (licenciaData.device_id !== deviceId) {
+            return { valida: false, motivo: 'Device ID no coincide' };
+        }
+
+        return { valida: true, datos: licenciaData };
+    } catch (error) {
+        console.error('Error al verificar licencia:', error);
+        return { valida: false, motivo: 'Error de conexi�n' };
+    }
+}
+
+function calcularHashJWT(jwt) {
+    return CryptoJS.SHA256(jwt).toString();
+}
+
+async function activarLicencia() {
+    const txtClave = document.getElementById('txt-clave-licencia');
+    const btnActivar = document.getElementById('btn-activar-licencia');
+    const errorEl = document.getElementById('licencia-error');
+    const successEl = document.getElementById('licencia-success');
+    
+    const jwt = txtClave.value.trim();
+    
+    errorEl.textContent = '';
+    successEl.textContent = '';
+    
+    if (!jwt) {
+        errorEl.textContent = 'Ingres� una clave de licencia';
+        return;
+    }
+    
+    if (!licenciaState.deviceId) {
+        errorEl.textContent = 'Device ID no disponible';
+        return;
+    }
+    
+    btnActivar.disabled = true;
+    btnActivar.innerHTML = '<span class="spinner"></span>Activando...';
+    
+    try {
+        const resultadoDesencriptacion = desencriptarJWT(jwt);
+        
+        if (!resultadoDesencriptacion.valido) {
+            throw new Error('Clave de licencia inv�lida');
+        }
+        
+        const payload = resultadoDesencriptacion.payload;
+        
+        if (payload.device_id !== licenciaState.deviceId) {
+            throw new Error('Esta licencia no corresponde a este dispositivo');
+        }
+        
+        const fechaExpiracion = new Date(payload.fecha_expiracion);
+        if (fechaExpiracion < new Date()) {
+            throw new Error('La licencia ha expirado');
+        }
+        
+        const jwtHash = calcularHashJWT(jwt);
+        const verificacionFirestore = await verificarLicenciaEnFirestore(jwtHash, licenciaState.deviceId);
+        
+        if (!verificacionFirestore.valida) {
+            throw new Error(verificacionFirestore.motivo);
+        }
+        
+        const licenciaDatos = {
+            cliente: payload.cliente,
+            tipo: payload.tipo,
+            fecha_expiracion: payload.fecha_expiracion,
+            dias_offline: payload.dias_offline,
+            device_id: payload.device_id,
+            jwt_hash: jwtHash
+        };
+        
+        localStorage.setItem('licencia_v1', 'activa');
+        localStorage.setItem('licencia_datos_v1', JSON.stringify(licenciaDatos));
+        localStorage.setItem('licencia_ultima_validacion', Date.now().toString());
+        
+        const usuarioActual = JSON.parse(localStorage.getItem('usuario_actual_v1'));
+        await db.collection('usuarios').doc(usuarioActual.uid).update({
+            licencia_activa: true,
+            fecha_activacion: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        licenciaState.licenciaActiva = true;
+        licenciaState.licenciaDatos = licenciaDatos;
+        
+        successEl.textContent = '�Licencia activada correctamente!';
+        txtClave.value = '';
+        
+        mostrarInformacionLicencia(licenciaDatos);
+        
+    } catch (error) {
+        console.error('Error al activar licencia:', error);
+        errorEl.textContent = 'Error de validaci�n de licencia';
+    } finally {
+        btnActivar.disabled = false;
+        btnActivar.textContent = 'Activar Licencia';
+    }
+}
+
+function mostrarInformacionLicencia(datos) {
+    document.getElementById('licencia-info-panel').style.display = 'block';
+    document.getElementById('lic-cliente').textContent = datos.cliente || '-';
+    document.getElementById('lic-tipo').textContent = datos.tipo || '-';
+    
+    const fechaExpiracion = new Date(datos.fecha_expiracion);
+    document.getElementById('lic-expiracion').textContent = fechaExpiracion.toLocaleDateString('es-AR');
+    
+    document.getElementById('lic-offline').textContent = `${datos.dias_offline} d�as`;
+    
+    const ultimaValidacion = new Date(parseInt(localStorage.getItem('licencia_ultima_validacion')));
+    document.getElementById('lic-ultima-validacion').textContent = ultimaValidacion.toLocaleString('es-AR');
+}
+
+async function validarLicenciaAhora() {
+    const btnValidar = document.getElementById('btn-validar-ahora');
+    const errorEl = document.getElementById('licencia-error');
+    
+    errorEl.textContent = '';
+    
+    btnValidar.disabled = true;
+    btnValidar.innerHTML = '<span class="spinner"></span>Validando...';
+    
+    try {
+        const licenciaDatos = JSON.parse(localStorage.getItem('licencia_datos_v1'));
+        
+        if (!licenciaDatos) {
+            throw new Error('No hay licencia activa');
+        }
+        
+        const verificacion = await verificarLicenciaEnFirestore(licenciaDatos.jwt_hash, licenciaState.deviceId);
+        
+        if (!verificacion.valida) {
+            throw new Error(verificacion.motivo);
+        }
+        
+        localStorage.setItem('licencia_ultima_validacion', Date.now().toString());
+        
+        const ultimaValidacion = new Date();
+        document.getElementById('lic-ultima-validacion').textContent = ultimaValidacion.toLocaleString('es-AR');
+        
+        alert('Licencia validada correctamente');
+        
+    } catch (error) {
+        console.error('Error al validar licencia:', error);
+        errorEl.textContent = 'Error de validaci�n de licencia';
+    } finally {
+        btnValidar.disabled = false;
+        btnValidar.textContent = '?? Validar Ahora';
+    }
+}
+
+async function initLicenciaPanel() {
+    try {
+        const deviceId = await obtenerDeviceId();
+        document.getElementById('device-id-display').textContent = deviceId;
+        
+        const licenciaEstado = localStorage.getItem('licencia_v1');
+        
+        if (licenciaEstado === 'activa') {
+            const licenciaDatos = JSON.parse(localStorage.getItem('licencia_datos_v1'));
+            licenciaState.licenciaActiva = true;
+            licenciaState.licenciaDatos = licenciaDatos;
+            mostrarInformacionLicencia(licenciaDatos);
+        }
+        
+        if (!document.getElementById('btn-copiar-device-id').dataset.initialized) {
+            document.getElementById('btn-copiar-device-id').addEventListener('click', () => {
+                navigator.clipboard.writeText(deviceId).then(() => {
+                    alert('Device ID copiado al portapapeles');
+                }).catch(err => {
+                    console.error('Error al copiar:', err);
+                });
+            });
+            document.getElementById('btn-copiar-device-id').dataset.initialized = 'true';
+        }
+        
+        if (!document.getElementById('btn-whatsapp').dataset.initialized) {
+            document.getElementById('btn-whatsapp').addEventListener('click', () => {
+                const mensaje = `Mi Device ID para Mejora 2 es: ${deviceId}`;
+                const url = `https://wa.me/5491125816992?text=${encodeURIComponent(mensaje)}`;
+                window.open(url, '_blank');
+            });
+            document.getElementById('btn-whatsapp').dataset.initialized = 'true';
+        }
+        
+        if (!document.getElementById('btn-activar-licencia').dataset.initialized) {
+            document.getElementById('btn-activar-licencia').addEventListener('click', activarLicencia);
+            document.getElementById('btn-activar-licencia').dataset.initialized = 'true';
+        }
+        
+        if (!document.getElementById('btn-validar-ahora').dataset.initialized) {
+            document.getElementById('btn-validar-ahora').addEventListener('click', validarLicenciaAhora);
+            document.getElementById('btn-validar-ahora').dataset.initialized = 'true';
+        }
+        
+    } catch (error) {
+        console.error('Error al inicializar panel de licencias:', error);
+        document.getElementById('licencia-error').textContent = 'Error al cargar el panel';
+    }
+}
+
+window.cerrarSesion = async function() {
+    try {
+        await auth.signOut();
+        localStorage.removeItem('usuario_actual_v1');
+        localStorage.removeItem('sesion_activa_v1');
+        localStorage.removeItem('ultimo_login_v1');
+        authState.currentUser = null;
+        authState.userData = null;
+        mostrarVista('auth');
+    } catch (error) {
+        console.error('Error al cerrar sesi�n:', error);
+    }
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAuthPanel);
+} else {
+    initAuthPanel();
+}
 </body>
 </html>
-
