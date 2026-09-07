@@ -1,699 +1,1625 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mejora 2</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mejora 2</title>
+  
+  <!-- Librerías externas -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  
+  <style>
+    /* ═══════════════════════════════════════════════════════════ */
+    /* ESTILOS BASE DEL PROYECTO */
+    /* ═══════════════════════════════════════════════════════════ */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 15px;
+    }
     
-    <!-- CryptoJS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
     
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .vista {
-            display: none;
-            width: 100%;
-            max-width: 500px;
-        }
-        
-        .vista.activa {
-            display: block;
-        }
-        
-        .licencia-container {
-            background: #fff;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        }
-        
-        .licencia-container h1 {
-            font-size: 28px;
-            color: #333;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-        
-        .licencia-subtitle {
-            font-size: 14px;
-            color: #666;
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        
-        .licencia-section {
-            margin-bottom: 25px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        .licencia-section:last-child {
-            border-bottom: none;
-        }
-        
-        .licencia-section h3 {
-            font-size: 16px;
-            color: #667eea;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-        
-        .device-id-box {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 10px;
-        }
-        
-        .device-id-text {
-            flex: 1;
-            font-size: 20px;
-            font-weight: 600;
-            color: #333;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 2px;
-        }
-        
-        .btn-icon {
-            background: none;
-            border: none;
-            font-size: 20px;
-            cursor: pointer;
-            padding: 5px;
-            transition: transform 0.2s;
-        }
-        
-        .btn-icon:hover {
-            transform: scale(1.2);
-        }
-        
-        .licencia-info {
-            font-size: 12px;
-            color: #666;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-        
-        .btn {
-            padding: 14px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            width: 100%;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
-        }
-        
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        
-        .btn-whatsapp {
-            background: #25D366;
-            color: #fff;
-            margin-bottom: 10px;
-        }
-        
-        .btn-whatsapp:hover {
-            background: #20BA5A;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(37, 211, 102, 0.4);
-        }
-        
-        .btn-secondary {
-            background: #f0f0f0;
-            color: #333;
-        }
-        
-        .btn-secondary:hover {
-            background: #e0e0e0;
-        }
-        
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        .input-licencia {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: 'Courier New', monospace;
-            resize: vertical;
-            transition: border-color 0.2s;
-        }
-        
-        .input-licencia:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .licencia-detalles {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 15px;
-        }
-        
-        .detalle-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        .detalle-item:last-child {
-            border-bottom: none;
-        }
-        
-        .detalle-label {
-            font-size: 13px;
-            color: #666;
-            font-weight: 500;
-        }
-        
-        .detalle-valor {
-            font-size: 13px;
-            color: #333;
-            font-weight: 600;
-        }
-        
-        .licencia-error {
-            color: #d33;
-            font-size: 13px;
-            text-align: center;
-            margin-top: 10px;
-            min-height: 20px;
-        }
-        
-        .licencia-success {
-            color: #2a9d4a;
-            font-size: 13px;
-            text-align: center;
-            margin-top: 10px;
-            min-height: 20px;
-        }
-        
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top: 3px solid #fff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    .content {
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      min-height: 80vh;
+    }
+    
+    .vista {
+      display: none;
+    }
+    
+    .vista.activa {
+      display: block;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════ */
+    /* PANEL-03: MI CAJA - ESTILOS */
+    /* ═══════════════════════════════════════════════════════════ */
+    
+    #vista-mi-caja {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .caja-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .caja-header h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #1e293b;
+    }
+    
+    .caja-info {
+      display: flex;
+      gap: 12px;
+      font-size: 13px;
+      color: #475569;
+    }
+    
+    .caja-info span {
+      background: #f1f5f9;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    
+    .caja-busqueda {
+      display: flex;
+      gap: 12px;
+      position: relative;
+    }
+    
+    .caja-busqueda-input {
+      flex: 1;
+      position: relative;
+    }
+    
+    #cajaBuscarProducto {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 15px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box;
+    }
+    
+    #cajaBuscarProducto:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .caja-resultados-busqueda {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      margin-top: 6px;
+      max-height: 280px;
+      overflow-y: auto;
+      z-index: 50;
+      display: none;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .caja-resultado-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f1f5f9;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    
+    .caja-resultado-item:hover {
+      background: #f8fafc;
+    }
+    
+    .caja-resultado-item:last-child {
+      border-bottom: none;
+    }
+    
+    .caja-resultado-nombre {
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+    
+    .caja-resultado-info {
+      font-size: 12px;
+      color: #64748b;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .caja-resultado-stock {
+      font-weight: 600;
+    }
+    
+    .caja-resultado-stock.bajo { color: #f59e0b; }
+    .caja-resultado-stock.agotado { color: #ef4444; }
+    .caja-resultado-stock.ok { color: #10b981; }
+    
+    .caja-btn-escanear {
+      padding: 0 20px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 20px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .caja-btn-escanear:hover {
+      background: #2563eb;
+      transform: scale(1.05);
+    }
+    
+    .caja-layout-principal {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 16px;
+    }
+    
+    .caja-productos-disponibles {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e2e8f0;
+    }
+    
+    .caja-productos-disponibles h3 {
+      margin: 0 0 12px 0;
+      font-size: 15px;
+      color: #334155;
+      font-weight: 600;
+    }
+    
+    .caja-lista-productos {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .caja-sin-productos, .caja-ticket-vacio {
+      text-align: center;
+      color: #94a3b8;
+      padding: 32px 16px;
+      font-style: italic;
+      font-size: 14px;
+    }
+    
+    .caja-ticket {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      height: fit-content;
+    }
+    
+    .caja-ticket-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .caja-ticket-header h3 {
+      margin: 0;
+      font-size: 15px;
+      color: #334155;
+      font-weight: 600;
+    }
+    
+    .caja-btn-limpiar {
+      background: #fee2e2;
+      color: #ef4444;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    
+    .caja-btn-limpiar:hover {
+      background: #fecaca;
+    }
+    
+    .caja-lista-ticket {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-bottom: 16px;
+      flex: 1;
+    }
+    
+    .caja-ticket-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 10px;
+      background: #f8fafc;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    
+    .caja-ticket-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .caja-ticket-item-nombre {
+      font-weight: 600;
+      color: #0f172a;
+      font-size: 14px;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .caja-ticket-item-precio {
+      font-size: 12px;
+      color: #64748b;
+    }
+    
+    .caja-ticket-item-controles {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    
+    .caja-ticket-item-cantidad {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 2px;
+    }
+    
+    .caja-btn-cantidad {
+      width: 26px;
+      height: 26px;
+      border: none;
+      background: #f1f5f9;
+      color: #334155;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    
+    .caja-btn-cantidad:hover {
+      background: #e2e8f0;
+    }
+    
+    .caja-cantidad-valor {
+      min-width: 24px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .caja-ticket-item-subtotal {
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 14px;
+    }
+    
+    .caja-btn-eliminar-item {
+      background: transparent;
+      color: #ef4444;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 4px;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+    
+    .caja-btn-eliminar-item:hover {
+      background: #fee2e2;
+    }
+    
+    .caja-ticket-total {
+      border-top: 2px solid #e2e8f0;
+      padding-top: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .caja-total-linea {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: #64748b;
+    }
+    
+    .caja-total-final {
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-top: 8px;
+    }
+    
+    .caja-btn-cobrar {
+      width: 100%;
+      padding: 16px;
+      background: #10b981;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    
+    .caja-btn-cobrar:hover:not(:disabled) {
+      background: #059669;
+      transform: translateY(-1px);
+    }
+    
+    .caja-btn-cobrar:disabled {
+      background: #cbd5e1;
+      color: #64748b;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .caja-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    
+    .caja-modal.active {
+      display: flex;
+    }
+    
+    .caja-modal-content {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .caja-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .caja-modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+      color: #0f172a;
+      font-weight: 700;
+    }
+    
+    .caja-btn-cerrar-modal {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #94a3b8;
+      line-height: 1;
+      padding: 4px;
+    }
+    
+    .caja-btn-cerrar-modal:hover {
+      color: #0f172a;
+    }
+    
+    .caja-modal-escanear {
+      max-width: 600px;
+    }
+    
+    .caja-scanner-container {
+      width: 100%;
+      min-height: 300px;
+      background: #0f172a;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+    }
+    
+    .caja-scanner-actions {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .caja-cobro-info {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .caja-cobro-total {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .caja-cobro-total > span:first-child {
+      font-size: 14px;
+      color: #166534;
+      font-weight: 500;
+    }
+    
+    .caja-cobro-total-monto {
+      font-size: 32px;
+      font-weight: 800;
+      color: #15803d;
+    }
+    
+    .caja-cobro-metodos h4 {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      color: #475569;
+      font-weight: 600;
+    }
+    
+    .caja-metodos-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .caja-btn-metodo {
+      padding: 14px;
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #334155;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    
+    .caja-btn-metodo:hover {
+      border-color: #3b82f6;
+      background: #eff6ff;
+    }
+    
+    .caja-btn-metodo.selected {
+      border-color: #3b82f6;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 700;
+    }
+    
+    .caja-cobro-efectivo {
+      background: #f8fafc;
+      padding: 16px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #e2e8f0;
+    }
+    
+    .caja-efectivo-input {
+      margin-bottom: 12px;
+    }
+    
+    .caja-efectivo-input label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: #475569;
+      font-weight: 500;
+    }
+    
+    .caja-efectivo-input input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      box-sizing: border-box;
+    }
+    
+    .caja-efectivo-input input:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+    
+    .caja-vuelto-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 16px;
+      font-weight: 600;
+      color: #334155;
+      padding-top: 8px;
+      border-top: 1px dashed #cbd5e1;
+    }
+    
+    .caja-vuelto-monto {
+      color: #15803d;
+      font-size: 20px;
+    }
+    
+    .caja-cobro-actions {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .caja-cobro-actions button {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .caja-btn-primario {
+      background: #3b82f6;
+      color: white;
+    }
+    
+    .caja-btn-primario:hover:not(:disabled) {
+      background: #2563eb;
+    }
+    
+    .caja-btn-primario:disabled {
+      background: #cbd5e1;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+    
+    .caja-btn-secundario {
+      background: #f1f5f9;
+      color: #475569;
+    }
+    
+    .caja-btn-secundario:hover {
+      background: #e2e8f0;
+    }
+    
+    .caja-modal-producto {
+      max-width: 450px;
+    }
+    
+    .caja-producto-no-encontrado-msg {
+      color: #475569;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    
+    .caja-form-producto {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    
+    .caja-form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 4px;
+    }
+    
+    .caja-form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    
+    .caja-form-group input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .caja-producto-actions {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .caja-modal-impresion {
+      max-width: 400px;
+    }
+    
+    .caja-ticket-preview {
+      background: #ffffff;
+      border: 1px dashed #94a3b8;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      max-height: 400px;
+      overflow-y: auto;
+      color: #0f172a;
+      white-space: pre-wrap;
+    }
+    
+    .caja-impresion-actions {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .caja-impresion-actions button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    .caja-toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .caja-toast {
+      padding: 14px 20px;
+      border-radius: 10px;
+      color: white;
+      font-weight: 500;
+      font-size: 14px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      animation: cajaSlideIn 0.3s ease forwards;
+      min-width: 280px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .caja-toast-exito { background: #10b981; }
+    .caja-toast-error { background: #ef4444; }
+    .caja-toast-advertencia { background: #f59e0b; }
+    
+    @keyframes cajaSlideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes cajaSlideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+    
+    @media (max-width: 768px) {
+      .caja-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      
+      .caja-info {
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      .caja-layout-principal {
+        grid-template-columns: 1fr;
+      }
+      
+      .caja-metodos-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .caja-ticket-item {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .caja-ticket-item-controles {
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+        align-items: center;
+      }
+    }
+  </style>
 </head>
 <body>
-    <!-- PANEL-02: LICENCIAS -->
-    <div id="vista-licencia" class="vista activa">
-        <div class="licencia-container">
-            <h1>🔑 Activar Licencia</h1>
-            <p class="licencia-subtitle">Vinculá tu dispositivo para usar Mejora 2</p>
-            
-            <!-- Sección Device ID -->
-            <div class="licencia-section">
-                <h3> Device ID de este dispositivo</h3>
-                <div class="device-id-box">
-                    <span id="device-id-display" class="device-id-text">Generando...</span>
-                    <button id="btn-copiar-device-id" class="btn-icon" title="Copiar Device ID">📋</button>
-                </div>
-                <p class="licencia-info">Enviá este código por WhatsApp para recibir tu clave de licencia</p>
-                <button id="btn-whatsapp" class="btn btn-whatsapp">
-                    💬 Enviar por WhatsApp
-                </button>
-            </div>
-
-            <!-- Sección Activación -->
-            <div class="licencia-section">
-                <h3>🔑 Clave de Licencia</h3>
-                <div class="form-group">
-                    <textarea id="txt-clave-licencia" class="input-licencia" placeholder="Pegá aquí tu clave de licencia..." rows="4"></textarea>
-                </div>
-                <button id="btn-activar-licencia" class="btn btn-primary" style="margin-top: 15px;">
-                    Activar Licencia
-                </button>
-            </div>
-
-            <!-- Sección Información de Licencia (oculta hasta activar) -->
-            <div id="licencia-info-panel" class="licencia-section" style="display:none;">
-                <h3>✅ Licencia Activa</h3>
-                <div class="licencia-detalles">
-                    <div class="detalle-item">
-                        <span class="detalle-label">Cliente:</span>
-                        <span id="lic-cliente" class="detalle-valor">-</span>
-                    </div>
-                    <div class="detalle-item">
-                        <span class="detalle-label">Tipo:</span>
-                        <span id="lic-tipo" class="detalle-valor">-</span>
-                    </div>
-                    <div class="detalle-item">
-                        <span class="detalle-label">Expiración:</span>
-                        <span id="lic-expiracion" class="detalle-valor">-</span>
-                    </div>
-                    <div class="detalle-item">
-                        <span class="detalle-label">Días offline:</span>
-                        <span id="lic-offline" class="detalle-valor">-</span>
-                    </div>
-                    <div class="detalle-item">
-                        <span class="detalle-label">Última validación:</span>
-                        <span id="lic-ultima-validacion" class="detalle-valor">-</span>
-                    </div>
-                </div>
-                <button id="btn-validar-ahora" class="btn btn-secondary">
-                    🔄 Validar Ahora
-                </button>
-            </div>
-
-            <p id="licencia-error" class="licencia-error"></p>
-            <p id="licencia-success" class="licencia-success"></p>
+  <div class="container">
+    <div class="content">
+      
+      <!-- PANEL-01: PIN (placeholder) -->
+      <div id="vista-pin" class="vista activa">
+        <h2>🔐 PIN de Ingreso</h2>
+        <p>Panel en desarrollo</p>
+        <button onclick="mostrarVista('mi-caja')">Ir a Mi Caja (demo)</button>
+      </div>
+      
+      <!-- PANEL-02: Licencias (placeholder) -->
+      <div id="vista-licencia" class="vista">
+        <h2> Licencias</h2>
+        <p>Panel en desarrollo</p>
+      </div>
+      
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- PANEL-03: MI CAJA -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="vista-mi-caja" class="vista">
+        
+        <!-- Header del panel -->
+        <div class="caja-header">
+          <h2>🏪 Mi Caja</h2>
+          <div class="caja-info">
+            <span id="cajaCajeroNombre">Cajero: Sin asignar</span>
+            <span id="cajaTicketNumero">Ticket #00000</span>
+          </div>
         </div>
+
+        <!-- Barra de búsqueda y escaneo -->
+        <div class="caja-busqueda">
+          <div class="caja-busqueda-input">
+            <input type="text" id="cajaBuscarProducto" placeholder="🔍 Buscar producto o escanear código..." autocomplete="off">
+            <div id="cajaResultadosBusqueda" class="caja-resultados-busqueda"></div>
+          </div>
+          <button id="cajaBtnEscanear" class="caja-btn-escanear" title="Escanear código de barras">📷</button>
+        </div>
+
+        <!-- Lista de productos disponibles -->
+        <div class="caja-productos-disponibles">
+          <h3>📦 Productos Disponibles</h3>
+          <div id="cajaListaProductos" class="caja-lista-productos">
+            <p class="caja-sin-productos">Buscá o escaneá un producto para agregar al ticket</p>
+          </div>
+        </div>
+
+        <!-- Ticket actual -->
+        <div class="caja-ticket">
+          <div class="caja-ticket-header">
+            <h3> Ticket Actual</h3>
+            <button id="cajaBtnLimpiarTicket" class="caja-btn-limpiar" title="Limpiar ticket">🗑️</button>
+          </div>
+          <div id="cajaListaTicket" class="caja-lista-ticket">
+            <p class="caja-ticket-vacio">El ticket está vacío</p>
+          </div>
+          <div class="caja-ticket-total">
+            <div class="caja-total-linea">
+              <span>Subtotal:</span>
+              <span id="cajaTicketSubtotal">$0,00</span>
+            </div>
+            <div class="caja-total-linea caja-total-final">
+              <span>TOTAL:</span>
+              <span id="cajaTicketTotal">$0,00</span>
+            </div>
+          </div>
+          <button id="cajaBtnCobrar" class="caja-btn-cobrar" disabled>💰 Cobrar</button>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- MODAL: Escaneo de código de barras -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="cajaModalEscanear" class="caja-modal">
+        <div class="caja-modal-content caja-modal-escanear">
+          <div class="caja-modal-header">
+            <h3>📷 Escanear Código de Barras</h3>
+            <button class="caja-btn-cerrar-modal" id="cajaBtnCerrarEscanear">✕</button>
+          </div>
+          <div id="cajaReader" class="caja-scanner-container"></div>
+          <div class="caja-scanner-actions">
+            <button id="cajaBtnIniciarEscaner" class="caja-btn-primario">▶️ Iniciar Cámara</button>
+            <button id="cajaBtnDetenerEscaner" class="caja-btn-secundario" style="display:none;">⏹️ Detener</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- MODAL: Cobro -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="cajaModalCobro" class="caja-modal">
+        <div class="caja-modal-content caja-modal-cobro">
+          <div class="caja-modal-header">
+            <h3> Cobrar Venta</h3>
+            <button class="caja-btn-cerrar-modal" id="cajaBtnCerrarCobro">✕</button>
+          </div>
+          <div class="caja-cobro-info">
+            <div class="caja-cobro-total">
+              <span>Total a pagar:</span>
+              <span id="cajaCobroTotal" class="caja-cobro-total-monto">$0,00</span>
+            </div>
+          </div>
+          <div class="caja-cobro-metodos">
+            <h4>Método de Pago</h4>
+            <div class="caja-metodos-grid">
+              <button class="caja-btn-metodo" data-metodo="efectivo">💵 Efectivo</button>
+              <button class="caja-btn-metodo" data-metodo="transferencia">🏦 Transferencia</button>
+              <button class="caja-btn-metodo" data-metodo="debito"> Tarjeta Débito</button>
+              <button class="caja-btn-metodo" data-metodo="credito">💳 Tarjeta Crédito</button>
+              <button class="caja-btn-metodo" data-metodo="mercadopago">📱 Mercado Pago</button>
+            </div>
+          </div>
+          <div id="cajaCobroEfectivo" class="caja-cobro-efectivo" style="display:none;">
+            <div class="caja-efectivo-input">
+              <label for="cajaMontoRecibido">Monto recibido:</label>
+              <input type="number" id="cajaMontoRecibido" placeholder="0,00" step="0.01" min="0">
+            </div>
+            <div class="caja-vuelto-info">
+              <span>Vuelto:</span>
+              <span id="cajaVueltoCalculado" class="caja-vuelto-monto">$0,00</span>
+            </div>
+          </div>
+          <div class="caja-cobro-actions">
+            <button id="cajaBtnCancelarCobro" class="caja-btn-secundario">Cancelar</button>
+            <button id="cajaBtnConfirmarVenta" class="caja-btn-primario" disabled>✅ Confirmar Venta</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- MODAL: Producto no encontrado -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="cajaModalProductoNoEncontrado" class="caja-modal">
+        <div class="caja-modal-content caja-modal-producto">
+          <div class="caja-modal-header">
+            <h3>⚠️ Producto No Encontrado</h3>
+            <button class="caja-btn-cerrar-modal" id="cajaBtnCerrarProductoNoEncontrado">✕</button>
+          </div>
+          <p class="caja-producto-no-encontrado-msg">El producto no existe en el stock. ¿Deseás agregarlo al ticket con datos mínimos?</p>
+          <div class="caja-form-producto">
+            <div class="caja-form-group">
+              <label for="cajaProdNombre">Nombre del producto:</label>
+              <input type="text" id="cajaProdNombre" placeholder="Ej: Coca Cola 500ml">
+            </div>
+            <div class="caja-form-group">
+              <label for="cajaProdCodigo">Código de barras:</label>
+              <input type="text" id="cajaProdCodigo" placeholder="Ej: 7790001000015">
+            </div>
+            <div class="caja-form-group">
+              <label for="cajaProdPrecio">Precio de venta:</label>
+              <input type="number" id="cajaProdPrecio" placeholder="0,00" step="0.01" min="0">
+            </div>
+            <div class="caja-form-group">
+              <label for="cajaProdCantidad">Cantidad:</label>
+              <input type="number" id="cajaProdCantidad" value="1" min="1">
+            </div>
+          </div>
+          <div class="caja-producto-actions">
+            <button id="cajaBtnCancelarProducto" class="caja-btn-secundario">Cancelar</button>
+            <button id="cajaBtnAgregarProducto" class="caja-btn-primario">Agregar al Ticket</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- MODAL: Impresión de ticket -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="cajaModalImpresion" class="caja-modal">
+        <div class="caja-modal-content caja-modal-impresion">
+          <div class="caja-modal-header">
+            <h3>🖨️ Imprimir Ticket</h3>
+            <button class="caja-btn-cerrar-modal" id="cajaBtnCerrarImpresion">✕</button>
+          </div>
+          <div id="cajaTicketPreview" class="caja-ticket-preview"></div>
+          <div class="caja-impresion-actions">
+            <button id="cajaBtnImprimir" class="caja-btn-primario">🖨️ Imprimir</button>
+            <button id="cajaBtnCerrarImpresion" class="caja-btn-secundario">Cerrar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toast notifications -->
+      <div id="cajaToastContainer" class="caja-toast-container"></div>
+      
+      <!-- Otros paneles (placeholders) -->
+      <div id="vista-stock" class="vista">
+        <h2>📦 Stock</h2>
+        <p>Panel en desarrollo</p>
+      </div>
+      
     </div>
+  </div>
 
-    <script>
-        // Configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyBKqZH1mF983q04o8_XtuE7waF3tlBeXnI",
-            authDomain: "mejora2-9eec7.firebaseapp.com",
-            projectId: "mejora2-9eec7",
-            storageBucket: "mejora2-9eec7.firebasestorage.app",
-            messagingSenderId: "892721742749",
-            appId: "1:892721742749:web:f37fa5364d2bc190736574"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        // Estado del panel
-        const licenciaState = {
-            deviceId: null,
-            licenciaActiva: false,
-            licenciaDatos: null,
-            usuarioUid: null
-        };
-
-        // Generar UUID v4
-        function generarUUID() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                const r = Math.random() * 16 | 0;
-                const v = c === 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
+  <script>
+    // ═══════════════════════════════════════════════════════════
+    // NAVEGACIÓN BASE
+    // ═══════════════════════════════════════════════════════════
+    function mostrarVista(vistaId) {
+      document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
+      const vista = document.getElementById('vista-' + vistaId);
+      if (vista) vista.classList.add('activa');
+    }
+    
+    // ═══════════════════════════════════════════════════════════
+    // PANEL-03: MI CAJA - LÓGICA PRINCIPAL
+    // ═══════════════════════════════════════════════════════════
+    
+    let cajaTicketActual = [];
+    let cajaProductosDisponibles = [];
+    let cajaScanner = null;
+    let cajaProductoNoEncontrado = null;
+    let cajaMetodoPagoSeleccionado = null;
+    
+    function cajaInicializar() {
+      console.log('[PANEL-03] Inicializando Mi Caja...');
+      
+      const datosKiosco = {
+        nombre_fantasia: "SUPER OSO",
+        razon_social: "POTELLI S.R.L.",
+        cuit: "30-71072660-0",
+        ingresos_brutos: "30710726600",
+        domicilio: "PELUFFO 1579-SAN MIGUEL",
+        cp: "1663-BUENOS AIRES",
+        inicio_actividades: "25/01/2022",
+        condicion_iva: "Responsable Inscripto",
+        punto_venta: "00012"
+      };
+      localStorage.setItem('caja_datos_kiosco', JSON.stringify(datosKiosco));
+      
+      const cajeroActual = localStorage.getItem('cajero_actual') || 'Cajero 1';
+      document.getElementById('cajaCajeroNombre').textContent = `Cajero: ${cajeroActual}`;
+      
+      let ticketCorrelativo = parseInt(localStorage.getItem('caja_ticket_correlativo') || '49637');
+      ticketCorrelativo++;
+      localStorage.setItem('caja_ticket_correlativo', ticketCorrelativo.toString());
+      document.getElementById('cajaTicketNumero').textContent = `Ticket #${ticketCorrelativo.toString().padStart(5, '0')}`;
+      
+      cajaCargarProductos();
+      cajaRestaurarTicket();
+      cajaConfigurarEventListeners();
+      
+      console.log('[PANEL-03] Inicialización completa');
+    }
+    
+    function cajaCargarProductos() {
+      const productos = JSON.parse(localStorage.getItem('productos_v1') || '[]');
+      cajaProductosDisponibles = productos.filter(p => p.stock > 0);
+      console.log(`[PANEL-03] ${cajaProductosDisponibles.length} productos disponibles`);
+    }
+    
+    function cajaBuscarProductos(query) {
+      if (!query || query.trim() === '') {
+        document.getElementById('cajaResultadosBusqueda').style.display = 'none';
+        return;
+      }
+      
+      const queryLower = query.toLowerCase().trim();
+      const resultados = cajaProductosDisponibles.filter(p => 
+        p.nombre.toLowerCase().includes(queryLower) || 
+        p.codigo.includes(queryLower)
+      ).slice(0, 10);
+      
+      cajaMostrarResultadosBusqueda(resultados);
+    }
+    
+    function cajaMostrarResultadosBusqueda(resultados) {
+      const contenedor = document.getElementById('cajaResultadosBusqueda');
+      
+      if (resultados.length === 0) {
+        contenedor.innerHTML = '<div class="caja-resultado-item"><span style="color:#94a3b8;">No se encontraron productos</span></div>';
+        contenedor.style.display = 'block';
+        return;
+      }
+      
+      contenedor.innerHTML = resultados.map(p => {
+        let stockClass = 'ok';
+        if (p.stock <= 5) stockClass = 'bajo';
+        if (p.stock === 0) stockClass = 'agotado';
+        
+        return `
+          <div class="caja-resultado-item" onclick="cajaAgregarProductoAlTicket('${p.id}')">
+            <div class="caja-resultado-nombre">${p.nombre}</div>
+            <div class="caja-resultado-info">
+              <span>Código: ${p.codigo}</span>
+              <span class="caja-resultado-stock ${stockClass}">Stock: ${p.stock}</span>
+              <span>$${cajaFormatearPrecio(p.precioVenta)}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      contenedor.style.display = 'block';
+    }
+    
+    function cajaAgregarProductoAlTicket(productoId) {
+      const producto = cajaProductosDisponibles.find(p => p.id === productoId);
+      
+      if (!producto) {
+        cajaMostrarToast('Producto no encontrado', 'error');
+        return;
+      }
+      
+      const itemExistente = cajaTicketActual.find(item => item.productoId === productoId);
+      
+      if (itemExistente) {
+        if (itemExistente.cantidad >= producto.stock) {
+          cajaMostrarToast(`Stock insuficiente. Disponible: ${producto.stock}`, 'advertencia');
+          return;
         }
-
-        // Generar Device ID en formato M2-XXXX
-        function generarDeviceId() {
-            const uuid = generarUUID();
-            const codigo = uuid.substring(0, 4).toUpperCase();
-            return `M2-${codigo}`;
-        }
-
-        // Obtener o crear usuario (independiente del PANEL-01)
-        async function obtenerUsuario() {
-            // Verificar si hay usuario autenticado del PANEL-01
-            const usuarioAuth = JSON.parse(localStorage.getItem('usuario_actual_v1'));
-            
-            if (usuarioAuth && usuarioAuth.uid) {
-                licenciaState.usuarioUid = usuarioAuth.uid;
-                return usuarioAuth.uid;
-            }
-            
-            // Si no hay usuario autenticado, crear uno temporal
-            let usuarioTemporal = JSON.parse(localStorage.getItem('usuario_temporal_v1'));
-            
-            if (!usuarioTemporal) {
-                usuarioTemporal = {
-                    uid: 'temp_' + generarUUID(),
-                    email: 'usuario@mejora2.com',
-                    nombre: 'Usuario Temporal',
-                    apellido: '',
-                    negocio: 'Negocio Temporal'
-                };
-                localStorage.setItem('usuario_temporal_v1', JSON.stringify(usuarioTemporal));
-            }
-            
-            licenciaState.usuarioUid = usuarioTemporal.uid;
-            return usuarioTemporal.uid;
-        }
-
-        // Obtener o crear Device ID
-        async function obtenerDeviceId() {
-            const uid = await obtenerUsuario();
-            
-            // Verificar si ya tiene Device ID en localStorage
-            const deviceIdLocal = localStorage.getItem('device_id_v1');
-            if (deviceIdLocal) {
-                licenciaState.deviceId = deviceIdLocal;
-                return deviceIdLocal;
-            }
-            
-            // Consultar Firestore
-            try {
-                const userDoc = await db.collection('usuarios').doc(uid).get();
-                
-                if (userDoc.exists && userDoc.data().device_id) {
-                    licenciaState.deviceId = userDoc.data().device_id;
-                    localStorage.setItem('device_id_v1', licenciaState.deviceId);
-                    return licenciaState.deviceId;
-                }
-            } catch (error) {
-                console.error('Error al consultar Firestore:', error);
-            }
-            
-            // Generar nuevo Device ID
-            const nuevoDeviceId = generarDeviceId();
-            licenciaState.deviceId = nuevoDeviceId;
-            
-            // Guardar en Firestore (si es posible)
-            try {
-                await db.collection('usuarios').doc(uid).set({
-                    device_id: nuevoDeviceId,
-                    email: 'usuario@mejora2.com',
-                    nombre: 'Usuario Temporal',
-                    licencia_activa: false,
-                    fecha_registro: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-            } catch (error) {
-                console.error('Error al guardar en Firestore:', error);
-            }
-            
-            // Guardar en localStorage
-            localStorage.setItem('device_id_v1', nuevoDeviceId);
-            
-            return nuevoDeviceId;
-        }
-
-        // Desencriptar JWT (payload en base64)
-        function desencriptarJWT(jwt) {
-            try {
-                const partes = jwt.split('.');
-                if (partes.length !== 3) {
-                    throw new Error('Formato de JWT inválido');
-                }
-
-                const payloadBase64 = partes[1];
-                const payloadJson = atob(payloadBase64);
-                const payload = JSON.parse(payloadJson);
-
-                if (!payload.device_id || !payload.fecha_expiracion || !payload.dias_offline) {
-                    throw new Error('Payload de licencia inválido');
-                }
-
-                return {
-                    valido: true,
-                    payload: payload,
-                    signature: partes[2]
-                };
-            } catch (error) {
-                console.error('Error al desencriptar JWT:', error);
-                return { valido: false, error: error.message };
-            }
-        }
-
-        // Verificar licencia en Firestore
-        async function verificarLicenciaEnFirestore(jwtHash, deviceId) {
-            try {
-                const licenciaDoc = await db.collection('licencias').doc(jwtHash).get();
-                
-                if (!licenciaDoc.exists) {
-                    return { valida: false, motivo: 'Licencia no encontrada' };
-                }
-
-                const licenciaData = licenciaDoc.data();
-                
-                if (!licenciaData.activa) {
-                    return { valida: false, motivo: 'Licencia deshabilitada' };
-                }
-
-                if (licenciaData.device_id !== deviceId) {
-                    return { valida: false, motivo: 'Device ID no coincide' };
-                }
-
-                return { valida: true, datos: licenciaData };
-            } catch (error) {
-                console.error('Error al verificar licencia:', error);
-                return { valida: false, motivo: 'Error de conexión' };
-            }
-        }
-
-        // Calcular hash SHA-256 del JWT
-        function calcularHashJWT(jwt) {
-            return CryptoJS.SHA256(jwt).toString();
-        }
-
-        // Activar licencia
-        async function activarLicencia() {
-            const txtClave = document.getElementById('txt-clave-licencia');
-            const btnActivar = document.getElementById('btn-activar-licencia');
-            const errorEl = document.getElementById('licencia-error');
-            const successEl = document.getElementById('licencia-success');
-            
-            const jwt = txtClave.value.trim();
-            
-            errorEl.textContent = '';
-            successEl.textContent = '';
-            
-            if (!jwt) {
-                errorEl.textContent = 'Ingresá una clave de licencia';
-                return;
-            }
-            
-            if (!licenciaState.deviceId) {
-                errorEl.textContent = 'Device ID no disponible';
-                return;
-            }
-            
-            btnActivar.disabled = true;
-            btnActivar.innerHTML = '<span class="spinner"></span>Activando...';
-            
-            try {
-                // Paso 1: Desencriptar JWT localmente
-                const resultadoDesencriptacion = desencriptarJWT(jwt);
-                
-                if (!resultadoDesencriptacion.valido) {
-                    throw new Error('Clave de licencia inválida');
-                }
-                
-                const payload = resultadoDesencriptacion.payload;
-                
-                // Paso 2: Verificar Device ID
-                if (payload.device_id !== licenciaState.deviceId) {
-                    throw new Error('Esta licencia no corresponde a este dispositivo');
-                }
-                
-                // Paso 3: Verificar fecha de expiración
-                const fechaExpiracion = new Date(payload.fecha_expiracion);
-                if (fechaExpiracion < new Date()) {
-                    throw new Error('La licencia ha expirado');
-                }
-                
-                // Paso 4: Calcular hash del JWT y verificar en Firestore
-                const jwtHash = calcularHashJWT(jwt);
-                const verificacionFirestore = await verificarLicenciaEnFirestore(jwtHash, licenciaState.deviceId);
-                
-                if (!verificacionFirestore.valida) {
-                    throw new Error(verificacionFirestore.motivo);
-                }
-                
-                // Paso 5: Guardar licencia en localStorage
-                const licenciaDatos = {
-                    cliente: payload.cliente,
-                    tipo: payload.tipo,
-                    fecha_expiracion: payload.fecha_expiracion,
-                    dias_offline: payload.dias_offline,
-                    device_id: payload.device_id,
-                    jwt_hash: jwtHash
-                };
-                
-                localStorage.setItem('licencia_v1', 'activa');
-                localStorage.setItem('licencia_datos_v1', JSON.stringify(licenciaDatos));
-                localStorage.setItem('licencia_ultima_validacion', Date.now().toString());
-                
-                // Paso 6: Actualizar Firestore
-                const uid = licenciaState.usuarioUid;
-                await db.collection('usuarios').doc(uid).update({
-                    licencia_activa: true,
-                    fecha_activacion: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                // Paso 7: Mostrar éxito
-                licenciaState.licenciaActiva = true;
-                licenciaState.licenciaDatos = licenciaDatos;
-                
-                successEl.textContent = '¡Licencia activada correctamente!';
-                txtClave.value = '';
-                
-                // Mostrar información de licencia
-                mostrarInformacionLicencia(licenciaDatos);
-                
-            } catch (error) {
-                console.error('Error al activar licencia:', error);
-                errorEl.textContent = 'Error de validación de licencia';
-            } finally {
-                btnActivar.disabled = false;
-                btnActivar.textContent = 'Activar Licencia';
-            }
-        }
-
-        // Mostrar información de licencia
-        function mostrarInformacionLicencia(datos) {
-            document.getElementById('licencia-info-panel').style.display = 'block';
-            document.getElementById('lic-cliente').textContent = datos.cliente || '-';
-            document.getElementById('lic-tipo').textContent = datos.tipo || '-';
-            
-            const fechaExpiracion = new Date(datos.fecha_expiracion);
-            document.getElementById('lic-expiracion').textContent = fechaExpiracion.toLocaleDateString('es-AR');
-            
-            document.getElementById('lic-offline').textContent = `${datos.dias_offline} días`;
-            
-            const ultimaValidacion = new Date(parseInt(localStorage.getItem('licencia_ultima_validacion')));
-            document.getElementById('lic-ultima-validacion').textContent = ultimaValidacion.toLocaleString('es-AR');
-        }
-
-        // Validar licencia (forzar validación online)
-        async function validarLicenciaAhora() {
-            const btnValidar = document.getElementById('btn-validar-ahora');
-            const errorEl = document.getElementById('licencia-error');
-            
-            errorEl.textContent = '';
-            
-            btnValidar.disabled = true;
-            btnValidar.innerHTML = '<span class="spinner"></span>Validando...';
-            
-            try {
-                const licenciaDatos = JSON.parse(localStorage.getItem('licencia_datos_v1'));
-                
-                if (!licenciaDatos) {
-                    throw new Error('No hay licencia activa');
-                }
-                
-                const verificacion = await verificarLicenciaEnFirestore(licenciaDatos.jwt_hash, licenciaState.deviceId);
-                
-                if (!verificacion.valida) {
-                    throw new Error(verificacion.motivo);
-                }
-                
-                localStorage.setItem('licencia_ultima_validacion', Date.now().toString());
-                
-                const ultimaValidacion = new Date();
-                document.getElementById('lic-ultima-validacion').textContent = ultimaValidacion.toLocaleString('es-AR');
-                
-                alert('Licencia validada correctamente');
-                
-            } catch (error) {
-                console.error('Error al validar licencia:', error);
-                errorEl.textContent = 'Error de validación de licencia';
-            } finally {
-                btnValidar.disabled = false;
-                btnValidar.textContent = '🔄 Validar Ahora';
-            }
-        }
-
-        // Inicializar Panel de Licencias
-        async function initLicenciaPanel() {
-            try {
-                // Obtener o crear Device ID
-                const deviceId = await obtenerDeviceId();
-                document.getElementById('device-id-display').textContent = deviceId;
-                
-                // Verificar si ya tiene licencia activa
-                const licenciaEstado = localStorage.getItem('licencia_v1');
-                
-                if (licenciaEstado === 'activa') {
-                    const licenciaDatos = JSON.parse(localStorage.getItem('licencia_datos_v1'));
-                    licenciaState.licenciaActiva = true;
-                    licenciaState.licenciaDatos = licenciaDatos;
-                    mostrarInformacionLicencia(licenciaDatos);
-                }
-                
-                // Event Listener: Copiar Device ID
-                document.getElementById('btn-copiar-device-id').addEventListener('click', () => {
-                    navigator.clipboard.writeText(deviceId).then(() => {
-                        alert('Device ID copiado al portapapeles');
-                    }).catch(err => {
-                        console.error('Error al copiar:', err);
-                        // Fallback para navegadores que no soportan clipboard API
-                        const textArea = document.createElement('textarea');
-                        textArea.value = deviceId;
-                        document.body.appendChild(textArea);
-                        textArea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(textArea);
-                        alert('Device ID copiado al portapapeles');
-                    });
-                });
-                
-                // Event Listener: Enviar por WhatsApp
-                document.getElementById('btn-whatsapp').addEventListener('click', () => {
-                    const mensaje = `Mi Device ID para Mejora 2 es: ${deviceId}`;
-                    const url = `https://wa.me/5491125816992?text=${encodeURIComponent(mensaje)}`;
-                    window.open(url, '_blank');
-                });
-                
-                // Event Listener: Activar Licencia
-                document.getElementById('btn-activar-licencia').addEventListener('click', activarLicencia);
-                
-                // Event Listener: Validar Ahora
-                document.getElementById('btn-validar-ahora').addEventListener('click', validarLicenciaAhora);
-                
-            } catch (error) {
-                console.error('Error al inicializar panel de licencias:', error);
-                document.getElementById('licencia-error').textContent = 'Error al cargar el panel';
-            }
-        }
-
-        // Inicializar al cargar la página
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initLicenciaPanel);
+        itemExistente.cantidad++;
+        itemExistente.subtotal = itemExistente.cantidad * itemExistente.precioUnitario;
+      } else {
+        cajaTicketActual.push({
+          productoId: producto.id,
+          nombre: producto.nombre,
+          codigo: producto.codigo,
+          precioUnitario: producto.precioVenta,
+          cantidad: 1,
+          subtotal: producto.precioVenta
+        });
+      }
+      
+      cajaGuardarTicket();
+      cajaRenderizarTicket();
+      cajaMostrarToast('Producto agregado al ticket', 'exito');
+      
+      document.getElementById('cajaResultadosBusqueda').style.display = 'none';
+      document.getElementById('cajaBuscarProducto').value = '';
+    }
+    
+    function cajaModificarCantidad(productoId, delta) {
+      const item = cajaTicketActual.find(i => i.productoId === productoId);
+      const producto = cajaProductosDisponibles.find(p => p.id === productoId);
+      
+      if (!item || !producto) return;
+      
+      const nuevaCantidad = item.cantidad + delta;
+      
+      if (nuevaCantidad <= 0) {
+        cajaEliminarItemDelTicket(productoId);
+        return;
+      }
+      
+      if (nuevaCantidad > producto.stock) {
+        cajaMostrarToast(`Stock insuficiente. Disponible: ${producto.stock}`, 'advertencia');
+        return;
+      }
+      
+      item.cantidad = nuevaCantidad;
+      item.subtotal = item.cantidad * item.precioUnitario;
+      
+      cajaGuardarTicket();
+      cajaRenderizarTicket();
+    }
+    
+    function cajaEliminarItemDelTicket(productoId) {
+      cajaTicketActual = cajaTicketActual.filter(item => item.productoId !== productoId);
+      cajaGuardarTicket();
+      cajaRenderizarTicket();
+      cajaMostrarToast('Producto eliminado del ticket', 'advertencia');
+    }
+    
+    function cajaLimpiarTicket() {
+      if (cajaTicketActual.length === 0) return;
+      
+      if (confirm('¿Estás seguro de limpiar el ticket actual?')) {
+        cajaTicketActual = [];
+        cajaGuardarTicket();
+        cajaRenderizarTicket();
+        cajaMostrarToast('Ticket limpiado', 'advertencia');
+      }
+    }
+    
+    function cajaRenderizarTicket() {
+      const contenedor = document.getElementById('cajaListaTicket');
+      const btnCobrar = document.getElementById('cajaBtnCobrar');
+      
+      if (cajaTicketActual.length === 0) {
+        contenedor.innerHTML = '<p class="caja-ticket-vacio">El ticket está vacío</p>';
+        document.getElementById('cajaTicketSubtotal').textContent = '$0,00';
+        document.getElementById('cajaTicketTotal').textContent = '$0,00';
+        btnCobrar.disabled = true;
+        return;
+      }
+      
+      contenedor.innerHTML = cajaTicketActual.map(item => `
+        <div class="caja-ticket-item">
+          <div class="caja-ticket-item-info">
+            <div class="caja-ticket-item-nombre">${item.nombre}</div>
+            <div class="caja-ticket-item-precio">$${cajaFormatearPrecio(item.precioUnitario)} c/u</div>
+          </div>
+          <div class="caja-ticket-item-controles">
+            <div class="caja-ticket-item-cantidad">
+              <button class="caja-btn-cantidad" onclick="cajaModificarCantidad('${item.productoId}', -1)">−</button>
+              <span class="caja-cantidad-valor">${item.cantidad}</span>
+              <button class="caja-btn-cantidad" onclick="cajaModificarCantidad('${item.productoId}', 1)">+</button>
+            </div>
+            <div class="caja-ticket-item-subtotal">$${cajaFormatearPrecio(item.subtotal)}</div>
+            <button class="caja-btn-eliminar-item" onclick="cajaEliminarItemDelTicket('${item.productoId}')">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+      
+      const total = cajaTicketActual.reduce((sum, item) => sum + item.subtotal, 0);
+      document.getElementById('cajaTicketSubtotal').textContent = `$${cajaFormatearPrecio(total)}`;
+      document.getElementById('cajaTicketTotal').textContent = `$${cajaFormatearPrecio(total)}`;
+      btnCobrar.disabled = false;
+    }
+    
+    function cajaGuardarTicket() {
+      localStorage.setItem('caja_ticket_actual', JSON.stringify(cajaTicketActual));
+    }
+    
+    function cajaRestaurarTicket() {
+      const ticketGuardado = localStorage.getItem('caja_ticket_actual');
+      if (ticketGuardado) {
+        cajaTicketActual = JSON.parse(ticketGuardado);
+        cajaRenderizarTicket();
+        console.log('[PANEL-03] Ticket restaurado:', cajaTicketActual.length, 'items');
+      }
+    }
+    
+    function cajaIniciarEscaner() {
+      const readerDiv = document.getElementById('cajaReader');
+      
+      if (!cajaScanner) {
+        cajaScanner = new Html5Qrcode("cajaReader");
+      }
+      
+      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+      
+      cajaScanner.start(
+        { facingMode: "environment" },
+        config,
+        cajaOnScanSuccess,
+        cajaOnScanFailure
+      ).then(() => {
+        document.getElementById('cajaBtnIniciarEscaner').style.display = 'none';
+        document.getElementById('cajaBtnDetenerEscaner').style.display = 'block';
+        console.log('[PANEL-03] Escáner iniciado');
+      }).catch(err => {
+        console.error('[PANEL-03] Error al iniciar escáner:', err);
+        cajaMostrarToast('Error al acceder a la cámara', 'error');
+      });
+    }
+    
+    function cajaDetenerEscaner() {
+      if (cajaScanner) {
+        cajaScanner.stop().then(() => {
+          document.getElementById('cajaBtnIniciarEscaner').style.display = 'block';
+          document.getElementById('cajaBtnDetenerEscaner').style.display = 'none';
+          console.log('[PANEL-03] Escáner detenido');
+        }).catch(err => {
+          console.error('[PANEL-03] Error al detener escáner:', err);
+        });
+      }
+    }
+    
+    function cajaOnScanSuccess(decodedText) {
+      console.log('[PANEL-03] Código escaneado:', decodedText);
+      
+      const producto = cajaProductosDisponibles.find(p => p.codigo === decodedText);
+      
+      if (producto) {
+        cajaAgregarProductoAlTicket(producto.id);
+        cajaDetenerEscaner();
+        cajaCerrarModalEscanear();
+      } else {
+        cajaProductoNoEncontrado = { codigo: decodedText };
+        cajaDetenerEscaner();
+        cajaCerrarModalEscanear();
+        cajaAbrirModalProductoNoEncontrado();
+      }
+    }
+    
+    function cajaOnScanFailure(error) {
+      // Ignorar errores de escaneo continuo
+    }
+    
+    function cajaAbrirModalProductoNoEncontrado() {
+      document.getElementById('cajaProdCodigo').value = cajaProductoNoEncontrado?.codigo || '';
+      document.getElementById('cajaProdNombre').value = '';
+      document.getElementById('cajaProdPrecio').value = '';
+      document.getElementById('cajaProdCantidad').value = '1';
+      
+      document.getElementById('cajaModalProductoNoEncontrado').classList.add('active');
+    }
+    
+    function cajaCerrarModalProductoNoEncontrado() {
+      document.getElementById('cajaModalProductoNoEncontrado').classList.remove('active');
+      cajaProductoNoEncontrado = null;
+    }
+    
+    function cajaAgregarProductoManual() {
+      const nombre = document.getElementById('cajaProdNombre').value.trim();
+      const codigo = document.getElementById('cajaProdCodigo').value.trim();
+      const precio = parseFloat(document.getElementById('cajaProdPrecio').value);
+      const cantidad = parseInt(document.getElementById('cajaProdCantidad').value);
+      
+      if (!nombre || !codigo || isNaN(precio) || precio <= 0 || isNaN(cantidad) || cantidad <= 0) {
+        cajaMostrarToast('Completa todos los campos correctamente', 'error');
+        return;
+      }
+      
+      const productoId = 'manual_' + Date.now();
+      cajaTicketActual.push({
+        productoId: productoId,
+        nombre: nombre,
+        codigo: codigo,
+        precioUnitario: precio,
+        cantidad: cantidad,
+        subtotal: precio * cantidad
+      });
+      
+      cajaGuardarTicket();
+      cajaRenderizarTicket();
+      cajaCerrarModalProductoNoEncontrado();
+      cajaMostrarToast('Producto agregado al ticket', 'exito');
+    }
+    
+    function cajaAbrirModalCobro() {
+      if (cajaTicketActual.length === 0) return;
+      
+      const total = cajaTicketActual.reduce((sum, item) => sum + item.subtotal, 0);
+      document.getElementById('cajaCobroTotal').textContent = `$${cajaFormatearPrecio(total)}`;
+      
+      cajaMetodoPagoSeleccionado = null;
+      document.querySelectorAll('.caja-btn-metodo').forEach(btn => btn.classList.remove('selected'));
+      document.getElementById('cajaCobroEfectivo').style.display = 'none';
+      document.getElementById('cajaMontoRecibido').value = '';
+      document.getElementById('cajaVueltoCalculado').textContent = '$0,00';
+      document.getElementById('cajaBtnConfirmarVenta').disabled = true;
+      
+      document.getElementById('cajaModalCobro').classList.add('active');
+    }
+    
+    function cajaCerrarModalCobro() {
+      document.getElementById('cajaModalCobro').classList.remove('active');
+      cajaMetodoPagoSeleccionado = null;
+    }
+    
+    function cajaSeleccionarMetodoPago(metodo) {
+      cajaMetodoPagoSeleccionado = metodo;
+      
+      document.querySelectorAll('.caja-btn-metodo').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.metodo === metodo);
+      });
+      
+      const efectivoDiv = document.getElementById('cajaCobroEfectivo');
+      if (metodo === 'efectivo') {
+        efectivoDiv.style.display = 'block';
+        document.getElementById('cajaMontoRecibido').focus();
+      } else {
+        efectivoDiv.style.display = 'none';
+      }
+      
+      cajaValidarCobro();
+    }
+    
+    function cajaCalcularVuelto() {
+      const total = cajaTicketActual.reduce((sum, item) => sum + item.subtotal, 0);
+      const recibido = parseFloat(document.getElementById('cajaMontoRecibido').value) || 0;
+      const vuelto = recibido - total;
+      
+      document.getElementById('cajaVueltoCalculado').textContent = `$${cajaFormatearPrecio(Math.max(0, vuelto))}`;
+      cajaValidarCobro();
+    }
+    
+    function cajaValidarCobro() {
+      const total = cajaTicketActual.reduce((sum, item) => sum + item.subtotal, 0);
+      let valido = false;
+      
+      if (!cajaMetodoPagoSeleccionado) return;
+      
+      if (cajaMetodoPagoSeleccionado === 'efectivo') {
+        const recibido = parseFloat(document.getElementById('cajaMontoRecibido').value) || 0;
+        valido = recibido >= total;
+      } else {
+        valido = true;
+      }
+      
+      document.getElementById('cajaBtnConfirmarVenta').disabled = !valido;
+    }
+    
+    function cajaConfirmarVenta() {
+      const total = cajaTicketActual.reduce((sum, item) => sum + item.subtotal, 0);
+      const recibido = cajaMetodoPagoSeleccionado === 'efectivo' 
+        ? parseFloat(document.getElementById('cajaMontoRecibido').value) || 0 
+        : total;
+      const vuelto = Math.max(0, recibido - total);
+      const ticketNumero = document.getElementById('cajaTicketNumero').textContent.replace('Ticket #', '');
+      
+      const venta = {
+        id: 'venta_' + Date.now(),
+        ticketNumero: ticketNumero,
+        fecha: Date.now(),
+        cajeroId: localStorage.getItem('cajero_actual') || 'Cajero 1',
+        productos: [...cajaTicketActual],
+        total: total,
+        metodoPago: cajaMetodoPagoSeleccionado,
+        montoRecibido: recibido,
+        vuelto: vuelto,
+        estado: 'pendiente_facturacion'
+      };
+      
+      const ventas = JSON.parse(localStorage.getItem('ventas_v1') || '[]');
+      ventas.push(venta);
+      if (ventas.length > 1000) {
+        localStorage.setItem('ventas_archivadas', JSON.stringify(ventas.slice(0, ventas.length - 1000)));
+        ventas.splice(0, ventas.length - 1000);
+      }
+      localStorage.setItem('ventas_v1', JSON.stringify(ventas));
+      
+      const turnoActivo = JSON.parse(localStorage.getItem('turno_activo') || 'null');
+      if (turnoActivo) {
+        turnoActivo.totalVendido = (turnoActivo.totalVendido || 0) + total;
+        turnoActivo.cantidadVentas = (turnoActivo.cantidadVentas || 0) + 1;
+        localStorage.setItem('turno_activo', JSON.stringify(turnoActivo));
+      }
+      
+      cajaDescontarStockFIFO(cajaTicketActual);
+      
+      cajaTicketActual = [];
+      cajaGuardarTicket();
+      cajaCerrarModalCobro();
+      cajaCargarProductos();
+      cajaRenderizarTicket();
+      
+      cajaMostrarPreviewImpresion(venta);
+      
+      cajaMostrarToast('Venta confirmada exitosamente', 'exito');
+    }
+    
+    function cajaDescontarStockFIFO(items) {
+      const productos = JSON.parse(localStorage.getItem('productos_v1') || '[]');
+      
+      items.forEach(item => {
+        const producto = productos.find(p => p.id === item.productoId);
+        if (!producto) return;
+        
+        let cantidadADescontar = item.cantidad;
+        
+        if (producto.lotes && producto.lotes.length > 0) {
+          producto.lotes.sort((a, b) => new Date(a.vencimiento) - new Date(b.vencimiento));
+          
+          for (let lote of producto.lotes) {
+            if (cantidadADescontar <= 0) break;
+            const aDescontar = Math.min(lote.cantidad, cantidadADescontar);
+            lote.cantidad -= aDescontar;
+            cantidadADescontar -= aDescontar;
+          }
+          producto.lotes = producto.lotes.filter(l => l.cantidad > 0);
         } else {
-            initLicenciaPanel();
+          producto.stock = Math.max(0, producto.stock - item.cantidad);
         }
-    </script>
+      });
+      
+      localStorage.setItem('productos_v1', JSON.stringify(productos));
+    }
+    
+    function cajaMostrarPreviewImpresion(venta) {
+      const textoTicket = cajaGenerarTextoTicket(venta);
+      document.getElementById('cajaTicketPreview').textContent = textoTicket;
+      document.getElementById('cajaModalImpresion').classList.add('active');
+    }
+    
+    function cajaCerrarModalImpresion() {
+      document.getElementById('cajaModalImpresion').classList.remove('active');
+    }
+    
+    function cajaGenerarTextoTicket(venta) {
+      const datosKiosco = JSON.parse(localStorage.getItem('caja_datos_kiosco') || '{}');
+      const fecha = new Date(venta.fecha);
+      const fechaStr = fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const horaStr = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      
+      let texto = '';
+      texto += `${(datosKiosco.nombre_fantasia || 'MI KIOSCO').toUpperCase()}\n`;
+      if (datosKiosco.razon_social) texto += `${datosKiosco.razon_social}\n`;
+      if (datosKiosco.cuit) texto += `C.U.I.T. Nro.: ${datosKiosco.cuit}\n`;
+      if (datosKiosco.ingresos_brutos) texto += `Ing. Brutos: ${datosKiosco.ingresos_brutos}\n`;
+      if (datosKiosco.domicilio) texto += `Domicilio: ${datosKiosco.domicilio}\n`;
+      if (datosKiosco.cp) texto += `C.P:${datosKiosco.cp}\n`;
+      if (datosKiosco.inicio_actividades) texto += `Inicio de Actividades: ${datosKiosco.inicio_actividades}\n`;
+      if (datosKiosco.condicion_iva) texto += `IVA ${datosKiosco.condicion_iva.toUpperCase()}\n`;
+      texto += `A CONSUMIDOR FINAL\n\n`;
+      
+      texto += `TIQUE (Cód.083)  P.V. N° ${datosKiosco.punto_venta || '00001'}  Nro. T. ${venta.ticketNumero}\n`;
+      texto += `Fecha ${fechaStr} Hora ${horaStr}\n\n`;
+      
+      venta.productos.forEach(item => {
+        texto += `${item.cantidad.toFixed(4)} (00) x ${item.precioUnitario.toFixed(4)}\n`;
+        texto += `${item.nombre.toUpperCase()}\n`;
+        texto += `${item.subtotal.toFixed(2).padStart(45)}\n`;
+      });
+      
+      const subtotal = venta.total;
+      texto += `Subtotal ${subtotal.toFixed(2).padStart(43)}\n\n`;
+      texto += `TOTAL ${subtotal.toFixed(2).padStart(48)}\n`;
+      texto += `RECIBI/MOS\n`;
+      texto += `  ${cajaCapitalizar(venta.metodoPago)} ${venta.montoRecibido.toFixed(2).padStart(35)}\n`;
+      texto += `  Suma de sus pagos ${venta.montoRecibido.toFixed(2).padStart(32)}\n`;
+      texto += `  Su Vuelto ${venta.vuelto.toFixed(2).padStart(40)}\n\n`;
+      
+      if (datosKiosco.condicion_iva === 'Responsable Inscripto') {
+        const iva = subtotal * 0.21 / 1.21;
+        texto += `REGIMEN DE TRANSPARENCIA FISCAL AL CONSUMIDOR (LEY 27.743)\n`;
+        texto += `IVA Contenido 21%:${iva.toFixed(2)}\n`;
+        texto += `OTROS TRIBUTOS NACIONALES INDIRECTOS          0,00\n\n`;
+      }
+      
+      texto += `Estado: ${venta.estado.replace('_', ' ').toUpperCase()}\n`;
+      texto += `========================================\n`;
+      
+      return texto;
+    }
+    
+    function cajaCapitalizar(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+    
+    function cajaImprimirTicket() {
+      const contenido = document.getElementById('cajaTicketPreview').textContent;
+      const ventana = window.open('', '_blank', 'width=400,height=600');
+      
+      if (ventana) {
+        ventana.document.write(`
+          <html>
+            <head>
+              <title>Ticket</title>
+              <style>
+                body { font-family: 'Courier New', Courier, monospace; font-size: 12px; white-space: pre-wrap; margin: 0; padding: 10px; }
+                @media print { body { margin: 0; padding: 0; } }
+              </style>
+            </head>
+            <body>${contenido}</body>
+          </html>
+        `);
+        ventana.document.close();
+        ventana.focus();
+        ventana.print();
+        ventana.close();
+      } else {
+        cajaMostrarToast('Error al abrir ventana de impresión', 'error');
+      }
+      
+      cajaCerrarModalImpresion();
+    }
+    
+    function cajaFormatearPrecio(precio) {
+      return precio.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    
+    function cajaMostrarToast(mensaje, tipo = 'exito') {
+      const contenedor = document.getElementById('cajaToastContainer');
+      const toast = document.createElement('div');
+      toast.className = `caja-toast caja-toast-${tipo}`;
+      
+      const iconos = { exito: '✅', error: '❌', advertencia: '⚠️' };
+      toast.innerHTML = `<span>${iconos[tipo] || '️'}</span><span>${mensaje}</span>`;
+      
+      contenedor.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.animation = 'cajaSlideOut 0.3s ease forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+    
+    function cajaCerrarModalEscanear() {
+      cajaDetenerEscaner();
+      document.getElementById('cajaModalEscanear').classList.remove('active');
+    }
+    
+    function cajaConfigurarEventListeners() {
+      document.getElementById('cajaBuscarProducto').addEventListener('input', (e) => {
+        cajaBuscarProductos(e.target.value);
+      });
+      
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.caja-busqueda-input')) {
+          document.getElementById('cajaResultadosBusqueda').style.display = 'none';
+        }
+      });
+      
+      document.getElementById('cajaBtnEscanear').addEventListener('click', () => {
+        document.getElementById('cajaModalEscanear').classList.add('active');
+      });
+      document.getElementById('cajaBtnCerrarEscanear').addEventListener('click', cajaCerrarModalEscanear);
+      document.getElementById('cajaBtnIniciarEscaner').addEventListener('click', cajaIniciarEscaner);
+      document.getElementById('cajaBtnDetenerEscaner').addEventListener('click', cajaDetenerEscaner);
+      
+      document.getElementById('cajaBtnLimpiarTicket').addEventListener('click', cajaLimpiarTicket);
+      document.getElementById('cajaBtnCobrar').addEventListener('click', cajaAbrirModalCobro);
+      
+      document.getElementById('cajaBtnCerrarProductoNoEncontrado').addEventListener('click', cajaCerrarModalProductoNoEncontrado);
+      document.getElementById('cajaBtnCancelarProducto').addEventListener('click', cajaCerrarModalProductoNoEncontrado);
+      document.getElementById('cajaBtnAgregarProducto').addEventListener('click', cajaAgregarProductoManual);
+      
+      document.querySelectorAll('.caja-btn-metodo').forEach(btn => {
+        btn.addEventListener('click', () => cajaSeleccionarMetodoPago(btn.dataset.metodo));
+      });
+      document.getElementById('cajaMontoRecibido').addEventListener('input', cajaCalcularVuelto);
+      document.getElementById('cajaBtnConfirmarVenta').addEventListener('click', cajaConfirmarVenta);
+      document.getElementById('cajaBtnCancelarCobro').addEventListener('click', cajaCerrarModalCobro);
+      document.getElementById('cajaBtnCerrarCobro').addEventListener('click', cajaCerrarModalCobro);
+      
+      document.getElementById('cajaBtnCerrarImpresion').addEventListener('click', cajaCerrarModalImpresion);
+      document.getElementById('cajaBtnImprimir').addEventListener('click', cajaImprimirTicket);
+    }
+    
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', cajaInicializar);
+    } else {
+      cajaInicializar();
+    }
+  </script>
 </body>
 </html>
