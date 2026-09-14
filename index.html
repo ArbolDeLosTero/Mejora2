@@ -5,22 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mejora 2</title>
 
-<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-<!-- Librerías externas -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 
 <style>
-/* ═══════════════════════════════════════════════════════════ */
-/* RESET Y BASE                                               */
-/* ═══════════════════════════════════════════════════════════ */
 * { margin: 0; padding: 0; box-sizing: border-box; }
-
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -28,110 +21,32 @@ body {
   padding: 15px;
   color: #333;
 }
-
 .vista { display: none; }
 .vista.activa { display: block; }
-
 .container { max-width: 1200px; margin: 0 auto; }
-.content {
-  background: white;
-  border-radius: 20px;
-  padding: 20px;
-  min-height: 80vh;
-}
-
+.content { background: white; border-radius: 20px; padding: 20px; min-height: 80vh; }
 .panel-view { display: none; }
 .panel-view.active { display: block; }
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #e0e0e0;
-}
+.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #e0e0e0; }
 .panel-header h2 { font-size: 22px; color: #333; margin: 0; }
-
-.btn-volver, .btn-back {
-  padding: 10px 20px;
-  border: none;
-  background: #f0f0f0;
-  border-radius: 10px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
+.btn-volver, .btn-back { padding: 10px 20px; border: none; background: #f0f0f0; border-radius: 10px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
 .btn-volver:hover, .btn-back:hover { background: #e0e0e0; }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* BOTONES GENÉRICOS                                          */
-/* ═══════════════════════════════════════════════════════════ */
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 14px;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  width: 100%;
-}
+.btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; }
 .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102,126,234,0.4); }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-
-.btn-secondary {
-  background: #f0f0f0;
-  color: #333;
-  border: none;
-  padding: 14px;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
+.btn-secondary { background: #f0f0f0; color: #333; border: none; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
 .btn-secondary:hover { background: #e0e0e0; }
-
 .btn-danger { background: #d33; color: white; border: none; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
-.btn-danger:hover { background: #c00; }
-
 .btn-warning { background: #ffc107; color: #333; border: none; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
-
 .btn-success { background: #2a9d4a; color: white; border: none; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* FORMULARIOS                                                */
-/* ═══════════════════════════════════════════════════════════ */
 .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; }
 .form-group label { font-size: 13px; font-weight: 600; color: #333; }
-.form-group input, .form-group select, .form-group textarea {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: border-color 0.2s;
-  font-family: inherit;
-}
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-  outline: none;
-  border-color: #667eea;
-}
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; transition: border-color 0.2s; font-family: inherit; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* AUTENTICACIÓN (PANEL-01)                                   */
-/* ═══════════════════════════════════════════════════════════ */
-.auth-container {
-  background: #fff;
-  border-radius: 20px;
-  padding: 30px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-  max-width: 500px;
-  margin: 0 auto;
-}
+.auth-container { background: #fff; border-radius: 20px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; }
 .auth-container h1 { font-size: 28px; color: #333; margin-bottom: 10px; text-align: center; }
 .auth-subtitle { font-size: 14px; color: #666; text-align: center; margin-bottom: 25px; }
 .auth-form { display: flex; flex-direction: column; gap: 15px; }
@@ -144,21 +59,8 @@ body {
 .auth-links a:hover { text-decoration: underline; }
 .auth-error { color: #d33; font-size: 13px; text-align: center; margin-top: 10px; min-height: 20px; }
 .auth-success { color: #2a9d4a; font-size: 13px; text-align: center; margin-top: 10px; min-height: 20px; }
-
-.toggle-password {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 18px;
-  color: #999;
-  padding: 5px;
-}
+.toggle-password { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; color: #999; padding: 5px; }
 .input-wrapper { position: relative; }
-
 .password-requirements { font-size: 11px; margin-top: 5px; display: flex; flex-direction: column; gap: 3px; }
 .requirement { display: flex; align-items: center; gap: 5px; color: #888; transition: color 0.2s; }
 .requirement.valid { color: #2a9d4a; }
@@ -166,177 +68,49 @@ body {
 .requirement::before { content: '○'; font-size: 10px; }
 .requirement.valid::before { content: '✓'; }
 .requirement.invalid::before { content: '✗'; }
-
 .verify-message { background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center; }
 .verify-note { font-size: 12px; color: #666; font-style: italic; }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* SPINNER                                                    */
-/* ═══════════════════════════════════════════════════════════ */
-.spinner {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgba(255,255,255,0.3);
-  border-top: 3px solid #fff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-right: 8px;
-  vertical-align: middle;
-}
+.spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid #fff; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; vertical-align: middle; }
 .spinner-dark { border-color: #f3f3f3; border-top-color: #667eea; }
 @keyframes spin { to { transform: rotate(360deg); } }
-
 .loading { text-align: center; padding: 20px; color: #666; }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* MODALES                                                    */
-/* ═══════════════════════════════════════════════════════════ */
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 1000;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(15,23,42,0.6);
-  backdrop-filter: blur(4px);
-  overflow: auto;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-.modal.active, .modal.show { display: flex; }
-.modal-content {
-  background: #fff;
-  border-radius: 20px;
-  max-width: 500px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-}
-.modal-content.modal-large, .modal-content.modal-grande { max-width: 700px; }
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #e0e0e0;
-}
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); overflow: auto; align-items: center; justify-content: center; padding: 16px; }
+.modal.active { display: flex; }
+.modal-content { background: #fff; border-radius: 20px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+.modal-content.modal-large { max-width: 700px; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #e0e0e0; }
 .modal-header h2, .modal-header h3 { font-size: 18px; color: #333; margin: 0; }
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 28px;
-  cursor: pointer;
-  color: #999;
-  line-height: 1;
-  padding: 4px;
-}
-.modal-close:hover { color: #333; }
+.modal-close { background: none; border: none; font-size: 28px; cursor: pointer; color: #999; line-height: 1; padding: 4px; }
 .modal-body { padding: 20px; overflow-y: auto; font-size: 14px; line-height: 1.6; color: #333; }
-.modal-footer {
-  display: flex;
-  gap: 10px;
-  padding: 20px;
-  border-top: 1px solid #e0e0e0;
-}
+.modal-footer { display: flex; gap: 10px; padding: 20px; border-top: 1px solid #e0e0e0; }
 .modal-footer button { flex: 1; }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* TOAST                                                      */
-/* ═══════════════════════════════════════════════════════════ */
-.toast-container {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.toast {
-  padding: 14px 20px;
-  border-radius: 10px;
-  color: white;
-  font-weight: 500;
-  font-size: 14px;
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-  min-width: 280px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  animation: toastSlideIn 0.3s ease forwards;
-}
-.toast.success, .toast-exito { background: #10b981; }
-.toast.error, .toast-error { background: #ef4444; }
-.toast.warning, .toast-advertencia { background: #f59e0b; }
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+.toast { padding: 14px 20px; border-radius: 10px; color: white; font-weight: 500; font-size: 14px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); min-width: 280px; display: flex; align-items: center; gap: 10px; animation: toastSlideIn 0.3s ease forwards; }
+.toast.success { background: #10b981; }
+.toast.error { background: #ef4444; }
+.toast.warning { background: #f59e0b; }
 .toast.info { background: #1565c0; }
 @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 @keyframes toastSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* MENÚ PRINCIPAL                                             */
-/* ═══════════════════════════════════════════════════════════ */
-#vista-menu .menu-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 15px;
-  margin-top: 20px;
-}
-.menu-card {
-  background: #f8f9fa;
-  border-radius: 16px;
-  padding: 25px 15px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s;
-  border: 2px solid transparent;
-}
-.menu-card:hover {
-  transform: translateY(-3px);
-  background: white;
-  border-color: #667eea;
-  box-shadow: 0 8px 20px rgba(102,126,234,0.2);
-}
+#vista-menu .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 20px; }
+.menu-card { background: #f8f9fa; border-radius: 16px; padding: 25px 15px; text-align: center; cursor: pointer; transition: all 0.3s; border: 2px solid transparent; }
+.menu-card:hover { transform: translateY(-3px); background: white; border-color: #667eea; box-shadow: 0 8px 20px rgba(102,126,234,0.2); }
 .menu-card .menu-icon { font-size: 40px; margin-bottom: 10px; }
 .menu-card .menu-title { font-size: 15px; font-weight: 600; color: #333; }
 .menu-card .menu-desc { font-size: 12px; color: #888; margin-top: 5px; }
-.menu-user-info {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 15px 20px;
-  border-radius: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
+.menu-user-info { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 20px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .menu-user-info .user-name { font-weight: 600; font-size: 15px; }
 .menu-user-info .user-role { font-size: 12px; opacity: 0.9; }
-.btn-logout {
-  background: rgba(255,255,255,0.2);
-  border: 1px solid rgba(255,255,255,0.3);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-}
-.btn-logout:hover { background: rgba(255,255,255,0.3); }
+.btn-logout { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; }
 
-@media (max-width: 480px) {
-  .form-row { grid-template-columns: 1fr; }
-  .menu-grid { grid-template-columns: 1fr 1fr; }
-}
+@media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } .menu-grid { grid-template-columns: 1fr 1fr; } }
 </style>
 <style>
-/* ═══════════════════════════════════════════════════════════ */
-/* PANEL-03: POS / MI CAJA                                    */
-/* ═══════════════════════════════════════════════════════════ */
+/* PANEL-03 POS */
 #vista-pos { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
 .pos-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; }
 .pos-header h2 { margin: 0; font-size: 22px; color: #1e293b; }
@@ -381,29 +155,20 @@ body {
 .pos-btn-metodo { padding: 14px; background: #fff; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; color: #334155; text-align: center; }
 .pos-btn-metodo.selected { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; font-weight: 700; }
 .pos-ticket-preview { background: #fff; border: 1px dashed #94a3b8; padding: 20px; border-radius: 8px; margin-bottom: 20px; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.5; max-height: 400px; overflow-y: auto; white-space: pre-wrap; }
+@media (max-width: 768px) { .pos-layout { grid-template-columns: 1fr; } .pos-header { flex-direction: column; align-items: flex-start; gap: 12px; } .pos-metodos-grid { grid-template-columns: 1fr; } }
 
-@media (max-width: 768px) {
-  .pos-layout { grid-template-columns: 1fr; }
-  .pos-header { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .pos-metodos-grid { grid-template-columns: 1fr; }
-}
-
-/* ═══════════════════════════════════════════════════════════ */
-/* PANEL-04: STOCK / INVENTARIO                               */
-/* ═══════════════════════════════════════════════════════════ */
+/* PANEL-04 */
 .tabs-nav { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
 .tab-btn { flex-shrink: 0; padding: 12px 20px; border: none; background: #f0f0f0; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; white-space: nowrap; }
 .tab-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
-
 .stock-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 14px; }
 .search-box input { width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px; }
 .stock-filtros { display: flex; gap: 10px; flex-wrap: wrap; }
 .stock-filtros select { flex: 1; min-width: 150px; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; background: white; }
 .stock-acciones { display: flex; gap: 10px; flex-wrap: wrap; }
 .stock-acciones button { flex: 1; min-width: 140px; padding: 12px; border: none; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; }
-
 .lista-productos { display: flex; flex-direction: column; gap: 12px; }
 .producto-card { background: white; border-radius: 14px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; border-left: 4px solid #667eea; }
 .producto-card.stock-bajo { border-left-color: #f57c00; }
@@ -423,26 +188,6 @@ body {
 .btn-ver { background: #f0f0f0; color: #333; }
 .btn-agregar { background: #667eea; color: white; }
 .badge-alerta { background: #fff3cd; border: 2px solid #ffc107; color: #856404; padding: 12px 20px; border-radius: 10px; text-align: center; font-weight: 600; margin-top: 15px; }
-
-.factura-container { background: white; border-radius: 14px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-.factura-botones { display: flex; gap: 10px; margin-bottom: 20px; }
-.factura-botones button { flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
-.factura-preview { margin: 20px 0; text-align: center; }
-.factura-preview img { max-width: 100%; max-height: 400px; border-radius: 10px; }
-.spinner-container { text-align: center; padding: 40px 20px; }
-.progreso-texto { font-size: 24px; font-weight: 700; color: #667eea; margin-top: 10px; }
-.resultados-ocr { margin-top: 30px; padding-top: 30px; border-top: 2px solid #e0e0e0; }
-.factura-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; padding: 15px; background: #f8f9fa; border-radius: 10px; }
-.factura-info-item { display: flex; flex-direction: column; gap: 5px; }
-.factura-info-item label { font-size: 12px; color: #666; font-weight: 600; text-transform: uppercase; }
-.lista-detectados { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; max-height: 400px; overflow-y: auto; }
-.producto-detectado { background: #f8f9fa; border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px; display: grid; grid-template-columns: 1fr auto; gap: 15px; align-items: center; }
-.producto-detectado.match-encontrado { border-color: #2a9d4a; background: #f0fff0; }
-.producto-detectado.sin-match { border-color: #d33; background: #fff0f0; }
-.factura-total { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #667eea; color: white; border-radius: 10px; font-size: 18px; font-weight: 700; margin-bottom: 20px; }
-.factura-acciones { display: flex; gap: 10px; }
-.factura-acciones button { flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
-
 .vencimientos-container { background: white; border-radius: 14px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 .vencimientos-filtros { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
 .vencimientos-filtros select, .vencimientos-filtros input { flex: 1; min-width: 150px; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; }
@@ -466,16 +211,13 @@ body {
 .vencimiento-dias { font-weight: 700; padding: 6px 12px; border-radius: 20px; font-size: 13px; }
 .vencimiento-dias.verde { background: #e8f5e9; color: #2a9d4a; }
 .vencimiento-dias.rojo { background: #ffebee; color: #d33; }
-
 .historico-container { background: white; border-radius: 14px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 .historico-controles { display: flex; gap: 10px; margin-bottom: 20px; }
 .lista-historico { display: flex; flex-direction: column; gap: 12px; max-height: 600px; overflow-y: auto; }
 .factura-historico-item { background: #f8f9fa; border-radius: 10px; padding: 15px; border-left: 4px solid #667eea; }
 .factura-historico-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #e0e0e0; }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* PANEL-05: CONTROL DE CAJA                                  */
-/* ═══════════════════════════════════════════════════════════ */
+/* PANEL-05 */
 .p05-seccion { margin-bottom: 20px; }
 .p05-estado-card { background: white; border-radius: 20px; padding: 30px 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 .p05-estado-icono { font-size: 64px; margin-bottom: 15px; opacity: 0.5; }
@@ -507,9 +249,7 @@ body {
 .p05-cierre-item.destacado { border-top: 2px solid #e0e0e0; margin-top: 8px; padding-top: 12px; font-weight: bold; font-size: 16px; }
 .p05-cierre-advertencia { background: #fff3cd; border: 2px solid #ffc107; padding: 15px; border-radius: 10px; color: #856404; }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* PANEL-07: PROVEEDORES                                      */
-/* ═══════════════════════════════════════════════════════════ */
+/* PANEL-07 */
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
 .stat-card { background: #f8f9fa; border-radius: 14px; padding: 15px; display: flex; align-items: center; gap: 12px; }
 .stat-icon { font-size: 32px; }
@@ -521,10 +261,6 @@ body {
 .proveedor-card { background: white; border-radius: 14px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: pointer; position: relative; }
 .proveedor-card-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px; }
 .proveedor-nombre { font-size: 16px; font-weight: bold; color: #333; flex: 1; }
-.proveedor-indicadores { display: flex; gap: 6px; }
-.indicador { width: 12px; height: 12px; border-radius: 50%; }
-.indicador-rojo { background: #d33; }
-.indicador-negro { background: #333; }
 .proveedor-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; color: #666; }
 .proveedor-actions { display: flex; gap: 8px; margin-top: 12px; }
 .btn-icon { padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 16px; background: #f0f0f0; }
@@ -543,15 +279,10 @@ body {
 .item-pedido { background: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
 .item-pedido-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .item-pedido-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.prevision-producto { border-bottom: 1px solid #e0e0e0; padding: 15px 0; }
-.prevision-sugerencia { background: #e3f2fd; padding: 12px; border-radius: 8px; margin-top: 10px; }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* PANEL-08: IMPRESORA                                        */
-/* ═══════════════════════════════════════════════════════════ */
+/* PANEL-08 */
 .config-section { background: white; border-radius: 14px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
 .config-section h3 { font-size: 16px; margin-bottom: 15px; color: #333; }
-.impresora-info { display: flex; align-items: center; gap: 10px; padding: 12px; background: #f8f9fa; border-radius: 8px; }
 .logo-preview { margin-top: 10px; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center; min-height: 100px; display: flex; align-items: center; justify-content: center; }
 .logo-preview img { max-width: 100%; max-height: 150px; border-radius: 8px; }
 .horario-dia { background: #f8f9fa; padding: 12px; border-radius: 8px; border: 2px solid #e0e0e0; margin-bottom: 12px; }
@@ -566,13 +297,10 @@ body {
 .elemento-arrastrable:hover { border-color: #667eea; background: #f0f4ff; }
 .elemento-arrastrable img { max-width: 100%; display: block; margin: 0 auto; }
 .zona-central { background: #f8f9fa; border: 2px dashed #ccc; padding: 15px; margin: 10px 0; text-align: center; color: #888; font-size: 11px; }
-.info-text { font-size: 12px; color: #888; margin-bottom: 15px; padding: 10px; background: #f0f4ff; border-radius: 6px; border-left: 3px solid #667eea; }
 .btn-small { padding: 8px 14px; font-size: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; background: #667eea; color: white; margin-right: 5px; }
 .btn-small.btn-danger { background: #d33; }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* PANEL-09: IMPUESTOS                                        */
-/* ═══════════════════════════════════════════════════════════ */
+/* PANEL-09 */
 .p09-tabs, .p09-sub-tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; flex-wrap: wrap; }
 .p09-tab, .p09-sub-tab { background: none; border: none; padding: 10px 15px; cursor: pointer; font-size: 14px; color: #666; border-bottom: 3px solid transparent; margin-bottom: -2px; }
 .p09-tab.active, .p09-sub-tab.active { color: #667eea; border-bottom: 3px solid #667eea; font-weight: bold; }
@@ -588,7 +316,6 @@ body {
 .text-green { color: #2a9d4a !important; }
 .text-primary { color: #667eea !important; }
 .p09-note { font-size: 12px; color: #888; text-align: center; }
-.p09-hint { font-size: 12px; color: #888; margin-top: 10px; }
 .p09-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin-bottom: 15px; }
 .p09-input { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; }
 .p09-checkbox-container { display: flex; align-items: center; gap: 10px; margin: 15px 0; }
@@ -602,18 +329,14 @@ body {
 .p09-table th { background: #f1f3f5; font-weight: bold; }
 .p09-table tfoot th { background: #e9ecef; font-weight: bold; }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* PANEL-10: MI CUENTA                                        */
-/* ═══════════════════════════════════════════════════════════ */
+/* PANEL-10 */
 .solo-admin-p10 { display: none; }
 .card-p10 { background: #ffffff; border-radius: 14px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
 .card-p10 h3 { margin-top: 0; margin-bottom: 15px; font-size: 18px; color: #333; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
 .card-p10 label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px; margin-top: 12px; }
 .card-p10 input { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; }
 .texto-ayuda-p10 { font-size: 12px; color: #666; margin-bottom: 15px; }
-.btn-primary-p10, .btn-success-p10, .btn-warning-p10, .btn-secondary-p10, .btn-danger-p10 {
-  width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 15px;
-}
+.btn-primary-p10, .btn-success-p10, .btn-warning-p10, .btn-secondary-p10, .btn-danger-p10 { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 15px; }
 .btn-primary-p10 { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
 .btn-success-p10 { background: #2a9d4a; color: white; }
 .btn-warning-p10 { background: #f57c00; color: white; cursor: pointer; }
@@ -627,9 +350,6 @@ body {
 .stat-label-p10 { display: block; font-size: 11px; color: #666; text-transform: uppercase; margin-bottom: 5px; }
 .stat-value-p10 { display: block; font-size: 18px; font-weight: 700; color: #667eea; }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* IMPRESIÓN                                                  */
-/* ═══════════════════════════════════════════════════════════ */
 @media print {
   body * { visibility: hidden; }
   #print-area, #print-area * { visibility: visible; }
@@ -640,9 +360,7 @@ body {
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- VISTA: AUTENTICACIÓN (PANEL-01)                            -->
-<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- AUTENTICACIÓN (PANEL-01) -->
 <div id="vista-auth" class="vista activa">
   <div id="auth-login" class="auth-view">
     <div class="auth-container">
@@ -722,7 +440,7 @@ body {
   <div id="auth-verify" class="auth-view" style="display:none;">
     <div class="auth-container">
       <h1>📧 Verificá tu Email</h1>
-      <p class="auth-subtitle">Te enviamos un enlace de verificación a tu correo</p>
+      <p class="auth-subtitle">Te enviamos un enlace de verificación</p>
       <div class="verify-message">
         <p>Revisá tu bandeja de entrada y hacé clic en el enlace para activar tu cuenta.</p>
         <p class="verify-note">Si no lo encontrás, revisá la carpeta de spam.</p>
@@ -775,9 +493,7 @@ body {
     </div>
   </div>
 </div>
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- VISTA: MENÚ PRINCIPAL                                      -->
-<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MENÚ PRINCIPAL -->
 <div id="vista-menu" class="vista">
   <div class="container">
     <div class="content">
@@ -830,9 +546,7 @@ body {
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- VISTA: PANEL-03 POS                                        -->
-<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PANEL-03: POS -->
 <div id="vista-pos" class="vista">
   <div class="container">
     <div class="content">
@@ -881,7 +595,6 @@ body {
     </div>
   </div>
 
-  <!-- Modal Escanear -->
   <div id="posModalEscanear" class="modal">
     <div class="modal-content">
       <div class="modal-header"><h3>📷 Escanear Código</h3><button class="modal-close" id="posBtnCerrarEscanear">✕</button></div>
@@ -895,7 +608,6 @@ body {
     </div>
   </div>
 
-  <!-- Modal Cobro -->
   <div id="posModalCobro" class="modal">
     <div class="modal-content">
       <div class="modal-header"><h3>💰 Cobrar Venta</h3><button class="modal-close" id="posBtnCerrarCobro">✕</button></div>
@@ -929,7 +641,6 @@ body {
     </div>
   </div>
 
-  <!-- Modal Producto No Encontrado -->
   <div id="posModalProductoNoEncontrado" class="modal">
     <div class="modal-content">
       <div class="modal-header"><h3>⚠️ Producto No Encontrado</h3><button class="modal-close" id="posBtnCerrarProductoNoEncontrado">✕</button></div>
@@ -947,7 +658,6 @@ body {
     </div>
   </div>
 
-  <!-- Modal Impresión -->
   <div id="posModalImpresion" class="modal">
     <div class="modal-content">
       <div class="modal-header"><h3>🖨️ Imprimir Ticket</h3><button class="modal-close" id="posBtnCerrarImpresion">✕</button></div>
@@ -962,9 +672,7 @@ body {
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- VISTA: PANEL-04 STOCK                                      -->
-<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PANEL-04: STOCK -->
 <div id="panel04" class="panel-view">
   <div class="container">
     <div class="content">
@@ -1036,9 +744,8 @@ body {
     </div>
   </div>
 
-  <!-- Modal Producto -->
   <div id="modalProducto" class="modal">
-    <div class="modal-content modal-grande">
+    <div class="modal-content modal-large">
       <div class="modal-header"><h3 id="tituloModalProducto">➕ Nuevo Producto</h3><button class="modal-close" onclick="cerrarModalProducto()">✕</button></div>
       <div class="modal-body">
         <input type="hidden" id="productoEditandoId">
@@ -1063,7 +770,6 @@ body {
     </div>
   </div>
 
-  <!-- Modal Agregar Stock -->
   <div id="modalAgregarStock" class="modal">
     <div class="modal-content">
       <div class="modal-header"><h3>📦 Agregar Stock</h3><button class="modal-close" onclick="cerrarModalAgregarStock()">✕</button></div>
@@ -1080,9 +786,8 @@ body {
     </div>
   </div>
 
-  <!-- Modal Detalle Producto -->
   <div id="modalDetalleProducto" class="modal">
-    <div class="modal-content modal-grande">
+    <div class="modal-content modal-large">
       <div class="modal-header"><h3 id="tituloDetalleProducto">📋 Detalle</h3><button class="modal-close" onclick="cerrarModalDetalleProducto()">✕</button></div>
       <div class="modal-body">
         <div id="detalleProductoInfo"></div>
@@ -1097,9 +802,7 @@ body {
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- VISTA: PANEL-05 CAJA                                       -->
-<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PANEL-05: CAJA -->
 <div id="panel05" class="panel-view">
   <div class="container">
     <div class="content">
@@ -1153,7 +856,6 @@ body {
     </div>
   </div>
 
-  <!-- Modal Apertura -->
   <div id="p05-modal-apertura" class="modal">
     <div class="modal-content">
       <div class="modal-header"><h3>🔓 Abrir Caja</h3><button class="modal-close" onclick="p05.cerrarModal('p05-modal-apertura')">×</button></div>
@@ -1169,7 +871,6 @@ body {
     </div>
   </div>
 
-  <!-- Modal Arqueo -->
   <div id="p05-modal-arqueo" class="modal">
     <div class="modal-content modal-large">
       <div class="modal-header"><h3>💵 Arqueo de Caja</h3><button class="modal-close" onclick="p05.cerrarModal('p05-modal-arqueo')">×</button></div>
@@ -1191,7 +892,6 @@ body {
     </div>
   </div>
 
-  <!-- Modal Cierre -->
   <div id="p05-modal-cierre" class="modal">
     <div class="modal-content">
       <div class="modal-header"><h3>🔒 Cerrar Turno</h3><button class="modal-close" onclick="p05.cerrarModal('p05-modal-cierre')">×</button></div>
@@ -1213,9 +913,7 @@ body {
     </div>
   </div>
 </div>
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- VISTA: PANEL-07 PROVEEDORES                                -->
-<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PANEL-07: PROVEEDORES -->
 <div id="panel07" class="panel-view">
   <div class="container">
     <div class="content">
@@ -1223,28 +921,22 @@ body {
         <h2>🏢 Proveedores</h2>
         <button class="btn-volver" onclick="mostrarVista('menu')">← Volver</button>
       </div>
-
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
         <button class="btn-primary" style="width:auto;padding:12px 20px;" onclick="mostrarModalNuevoProveedor()">➕ Nuevo Proveedor</button>
       </div>
-
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-icon">📊</div><div><div class="stat-value" id="statTotalProveedores">0</div><div class="stat-label">Total Proveedores</div></div></div>
         <div class="stat-card"><div class="stat-icon">💰</div><div><div class="stat-value" id="statMargenPromedio">0%</div><div class="stat-label">Margen Promedio</div></div></div>
         <div class="stat-card"><div class="stat-icon">📦</div><div><div class="stat-value" id="statProductosVinculados">0</div><div class="stat-label">Productos Vinculados</div></div></div>
       </div>
-
       <div class="search-container">
         <input type="text" id="buscarProveedor" placeholder="🔍 Buscar por nombre o CUIT..." oninput="filtrarProveedores()">
       </div>
-
       <div id="listaProveedores" class="proveedores-list"></div>
-
       <div class="tabs-container">
         <button class="tab-btn active" onclick="mostrarTabProveedores('pedidos', event)">📋 Pedidos</button>
         <button class="tab-btn" onclick="mostrarTabProveedores('historico', event)">📊 Histórico</button>
       </div>
-
       <div id="tab-pedidos" class="tab-content active">
         <div class="tab-header">
           <h3>Gestión de Pedidos</h3>
@@ -1252,7 +944,6 @@ body {
         </div>
         <div id="listaPedidos" class="pedidos-list"></div>
       </div>
-
       <div id="tab-historico" class="tab-content">
         <div class="tab-header">
           <h3>Histórico de Compras</h3>
@@ -1266,7 +957,6 @@ body {
     </div>
   </div>
 
-  <!-- Modal Proveedor -->
   <div id="modalProveedor" class="modal">
     <div class="modal-content modal-large">
       <div class="modal-header"><h3 id="tituloModalProveedor">Nuevo Proveedor</h3><button class="modal-close" onclick="cerrarModalProveedor()">✕</button></div>
@@ -1274,7 +964,7 @@ body {
         <form id="formProveedor" onsubmit="guardarProveedor(event)">
           <input type="hidden" id="proveedorId">
           <div class="form-group"><label>Nombre *</label><input type="text" id="provNombre" required maxlength="100"></div>
-          <div class="form-group"><label>CUIT *</label><input type="text" id="provCuit" required placeholder="XX-XXXXXXXX-X" maxlength="13" oninput="formatearCUIT(this)"><small class="form-hint" id="cuitHint" style="font-size:12px;color:#888;"></small></div>
+          <div class="form-group"><label>CUIT *</label><input type="text" id="provCuit" required placeholder="XX-XXXXXXXX-X" maxlength="13" oninput="formatearCUIT(this)"><small id="cuitHint" style="font-size:12px;color:#888;"></small></div>
           <div class="form-row">
             <div class="form-group"><label>Teléfono</label><input type="tel" id="provTelefono"></div>
             <div class="form-group"><label>WhatsApp</label><input type="tel" id="provWhatsapp"></div>
@@ -1292,7 +982,6 @@ body {
     </div>
   </div>
 
-  <!-- Modal Detalle Proveedor -->
   <div id="modalDetalleProveedor" class="modal">
     <div class="modal-content modal-large">
       <div class="modal-header"><h3 id="tituloDetalleProveedor">Detalle del Proveedor</h3><button class="modal-close" onclick="cerrarModalDetalleProveedor()">✕</button></div>
@@ -1300,7 +989,6 @@ body {
     </div>
   </div>
 
-  <!-- Modal Pedido -->
   <div id="modalPedido" class="modal">
     <div class="modal-content modal-large">
       <div class="modal-header"><h3>Nuevo Pedido</h3><button class="modal-close" onclick="cerrarModalPedido()">✕</button></div>
@@ -1324,9 +1012,7 @@ body {
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- VISTA: PANEL-08 IMPRESORA                                  -->
-<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PANEL-08: IMPRESORA -->
 <div id="panel08" class="panel-view">
   <div class="container">
     <div class="content">
@@ -1334,7 +1020,6 @@ body {
         <h2>🖨️ Configuración de Impresora</h2>
         <button class="btn-volver" onclick="mostrarVista('menu')">← Volver</button>
       </div>
-
       <div class="tabs-nav">
         <button class="tab-btn active" onclick="cambiarTabImpresora('impresora', event)">🖨️ Impresora</button>
         <button class="tab-btn" onclick="cambiarTabImpresora('encabezado', event)">📝 Encabezado</button>
@@ -1380,8 +1065,6 @@ body {
         <div class="config-section">
           <h3>🕐 Horarios</h3>
           <div id="horariosContainer"></div>
-          <button class="btn-small" onclick="agruparDiasHorarios()">📋 Agrupar</button>
-          <button class="btn-small" onclick="desagruparDiasHorarios()">📄 Desagrupar</button>
         </div>
       </div>
 
@@ -1425,9 +1108,7 @@ body {
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- VISTA: PANEL-09 IMPUESTOS                                  -->
-<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PANEL-09: IMPUESTOS -->
 <div id="panel09" class="panel-view">
   <div class="container">
     <div class="content">
@@ -1435,7 +1116,6 @@ body {
         <h2>💰 Impuestos y Reportes Fiscales</h2>
         <button class="btn-volver" onclick="mostrarVista('menu')">← Volver</button>
       </div>
-
       <div class="p09-tabs">
         <button class="p09-tab active" data-tab="resumen">📊 Resumen</button>
         <button class="p09-tab" data-tab="config">⚙️ Configuración</button>
@@ -1547,9 +1227,7 @@ body {
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- VISTA: PANEL-10 MI CUENTA                                  -->
-<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PANEL-10: MI CUENTA -->
 <div id="panel10" class="panel-view">
   <div class="container">
     <div class="content">
@@ -1557,7 +1235,6 @@ body {
         <h2>👤 Mi Cuenta</h2>
         <button class="btn-volver" onclick="mostrarVista('menu')">← Volver</button>
       </div>
-
       <div class="card-p10">
         <h3>👤 Mi Perfil</h3>
         <label for="p10-nombre-cajero">Nombre del Cajero</label>
@@ -1621,28 +1298,25 @@ body {
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- MODALES GLOBALES                                           -->
-<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MODALES GLOBALES -->
 <div id="modal-terms" class="modal">
   <div class="modal-content">
     <div class="modal-header"><h2>Términos y Condiciones</h2><button class="modal-close" id="close-terms">&times;</button></div>
-    <div class="modal-body" id="terms-content"><div class="loading"><span class="spinner spinner-dark"></span>Cargando...</div></div>
+    <div class="modal-body" id="terms-content"></div>
   </div>
 </div>
 
 <div id="modal-privacy" class="modal">
   <div class="modal-content">
     <div class="modal-header"><h2>Política de Privacidad</h2><button class="modal-close" id="close-privacy">&times;</button></div>
-    <div class="modal-body" id="privacy-content"><div class="loading"><span class="spinner spinner-dark"></span>Cargando...</div></div>
+    <div class="modal-body" id="privacy-content"></div>
   </div>
 </div>
 
-<!-- Contenedor de Toasts -->
 <div id="toastContainer" class="toast-container"></div>
 <script>
 /* ═══════════════════════════════════════════════════════════ */
-/* CONFIGURACIÓN FIREBASE                                     */
+/* FIREBASE CONFIG                                             */
 /* ═══════════════════════════════════════════════════════════ */
 const firebaseConfig = {
   apiKey: "AIzaSyBKqZH1mF983q04o8_XtuE7waF3tlBeXnI",
@@ -1657,7 +1331,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 /* ═══════════════════════════════════════════════════════════ */
-/* UTILIDADES GLOBALES                                        */
+/* UTILIDADES GLOBALES                                         */
 /* ═══════════════════════════════════════════════════════════ */
 function mostrarToast(mensaje, tipo = 'info') {
   const cont = document.getElementById('toastContainer');
@@ -1682,36 +1356,24 @@ function generarId(prefijo = 'id') {
 }
 
 /* ═══════════════════════════════════════════════════════════ */
-/* NAVEGACIÓN GLOBAL                                          */
+/* NAVEGACIÓN                                                  */
 /* ═══════════════════════════════════════════════════════════ */
 function mostrarVista(vista) {
   document.querySelectorAll('.vista, .panel-view').forEach(v => {
-    v.classList.remove('activa');
-    v.classList.remove('active');
+    v.classList.remove('activa', 'active');
     v.style.display = 'none';
   });
-  const map = {
-    'auth': 'vista-auth',
-    'menu': 'vista-menu',
-    'pos': 'vista-pos',
-    'panel04': 'panel04',
-    'panel05': 'panel05',
-    'panel07': 'panel07',
-    'panel08': 'panel08',
-    'panel09': 'panel09',
-    'panel10': 'panel10'
-  };
+  const map = { 'auth': 'vista-auth', 'menu': 'vista-menu', 'pos': 'vista-pos',
+    'panel04': 'panel04', 'panel05': 'panel05', 'panel07': 'panel07',
+    'panel08': 'panel08', 'panel09': 'panel09', 'panel10': 'panel10' };
   const id = map[vista] || vista;
   const el = document.getElementById(id);
   if (!el) return;
   if (id === 'vista-auth' || id === 'vista-menu' || id === 'vista-pos') {
-    el.classList.add('activa');
-    el.style.display = 'block';
+    el.classList.add('activa'); el.style.display = 'block';
   } else {
-    el.classList.add('active');
-    el.style.display = 'block';
+    el.classList.add('active'); el.style.display = 'block';
   }
-  // Inicializar paneles específicos al abrir
   if (vista === 'panel04' && typeof inicializarPanel04 === 'function') inicializarPanel04();
   if (vista === 'panel05' && typeof p05 !== 'undefined') p05.init();
   if (vista === 'panel07' && typeof p07_inicializar === 'function') p07_inicializar();
@@ -1723,12 +1385,9 @@ function mostrarVista(vista) {
 }
 
 /* ═══════════════════════════════════════════════════════════ */
-/* PANEL-01: AUTENTICACIÓN CON FIREBASE AUTH                  */
+/* PANEL-01: AUTH                                              */
 /* ═══════════════════════════════════════════════════════════ */
-const P01_KEYS = {
-  loginAttempts: 'p01_login_attempts_v1',
-  lockUntil: 'p01_lock_until_v1'
-};
+const P01_KEYS = { loginAttempts: 'p01_login_attempts_v1', lockUntil: 'p01_lock_until_v1' };
 
 function validarContrasena(password) {
   return {
@@ -1789,7 +1448,7 @@ function registrarIntentoFallido() {
   if (intentos >= 5) {
     localStorage.setItem(P01_KEYS.lockUntil, (Date.now() + 5 * 60 * 1000).toString());
     localStorage.setItem(P01_KEYS.loginAttempts, '0');
-    document.getElementById('auth-login-error').textContent = 'Bloqueado por 5 minutos por seguridad.';
+    document.getElementById('auth-login-error').textContent = 'Bloqueado por 5 minutos.';
   }
 }
 
@@ -1810,15 +1469,12 @@ async function p01_cerrarSesion() {
     mostrarVista('auth');
     mostrarVistaAuth('login');
     mostrarToast('Sesión cerrada', 'info');
-  } catch (e) {
-    console.error(e);
-  }
+  } catch (e) { console.error(e); }
 }
 
 function p01_obtenerUsuarioActual() {
-  try {
-    return JSON.parse(localStorage.getItem('cajero_info_v1') || 'null');
-  } catch (e) { return null; }
+  try { return JSON.parse(localStorage.getItem('cajero_info_v1') || 'null'); }
+  catch (e) { return null; }
 }
 
 async function manejarLogin(e) {
@@ -1879,14 +1535,16 @@ async function manejarRegistro(e) {
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     const user = cred.user;
-    await db.collection('usuarios').doc(user.uid).set({
-      email, nombre, apellido, negocio,
-      rol: 'admin',
-      activo: true,
-      fecha_registro: firebase.firestore.FieldValue.serverTimestamp(),
-      licencia_activa: false,
-      device_id: null
-    });
+    try {
+      await db.collection('usuarios').doc(user.uid).set({
+        email, nombre, apellido, negocio,
+        rol: 'admin', activo: true,
+        fecha_registro: firebase.firestore.FieldValue.serverTimestamp(),
+        licencia_activa: false, device_id: null
+      });
+    } catch (fsErr) {
+      console.warn('Firestore falló al crear doc, continuando:', fsErr.message);
+    }
     await user.sendEmailVerification();
     successEl.textContent = 'Cuenta creada. Revisá tu email para verificar.';
     document.getElementById('form-register').reset();
@@ -1929,9 +1587,7 @@ async function reenviarVerificacion() {
   try {
     await user.sendEmailVerification();
     successEl.textContent = 'Email de verificación reenviado.';
-  } catch (err) {
-    errorEl.textContent = 'Error al reenviar.';
-  }
+  } catch (err) { errorEl.textContent = 'Error al reenviar.'; }
 }
 
 async function verificarEstadoUsuario(user) {
@@ -1948,29 +1604,28 @@ async function verificarEstadoUsuario(user) {
     if (doc.exists) {
       userData = doc.data();
     } else {
-      // Auto-crear doc si no existe
-      await db.collection('usuarios').doc(user.uid).set({
-        ...userData,
-        fecha_registro: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      try {
+        await db.collection('usuarios').doc(user.uid).set({
+          ...userData,
+          fecha_registro: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (e) { console.warn('No se pudo crear doc:', e.message); }
     }
   } catch (err) {
     console.warn('Firestore no disponible, usando datos locales:', err.message);
-    // NO desloguear: continuar con datos locales
   }
 
   const cajeroInfo = {
-    uid: user.uid,
-    email: user.email,
-    nombre: userData.nombre,
+    uid: user.uid, email: user.email,
+    nombre: userData.nombre || user.email.split('@')[0],
     apellido: userData.apellido || '',
-    negocio: userData.negocio,
+    negocio: userData.negocio || 'Mi Negocio',
     rol: userData.rol || 'admin',
     caja: userData.caja || 'Caja 1'
   };
   localStorage.setItem('cajero_info_v1', JSON.stringify(cajeroInfo));
   localStorage.setItem('p01_sesion_v1', 'true');
-  localStorage.setItem('cajero_actual', cajeroInfo.nombre || 'Cajero 1');
+  localStorage.setItem('cajero_actual', cajeroInfo.nombre);
   limpiarIntentos();
 
   if (userData.licencia_activa) {
@@ -1979,36 +1634,6 @@ async function verificarEstadoUsuario(user) {
   } else {
     try { await cargarPanelLicencia(); } catch(e) { console.warn(e); }
     mostrarVistaAuth('license');
-  }
-}
-    const userData = doc.data();
-    const cajeroInfo = {
-      uid: user.uid,
-      email: userData.email,
-      nombre: userData.nombre,
-      apellido: userData.apellido,
-      negocio: userData.negocio,
-      rol: userData.rol || 'admin',
-      caja: userData.caja || 'Caja 1'
-    };
-    localStorage.setItem('cajero_info_v1', JSON.stringify(cajeroInfo));
-    localStorage.setItem('p01_sesion_v1', 'true');
-    localStorage.setItem('cajero_actual', cajeroInfo.nombre || 'Cajero 1');
-    limpiarIntentos();
-
-    if (userData.licencia_activa) {
-      // Ya tiene licencia: ir al menú
-      actualizarMenuUsuario(cajeroInfo);
-      mostrarVista('menu');
-    } else {
-      // Sin licencia: ir a pantalla de licencia
-      await cargarPanelLicencia();
-      mostrarVistaAuth('license');
-    }
-  } catch (err) {
-    console.error('Verificar usuario:', err);
-    await auth.signOut();
-    mostrarVista('auth');
   }
 }
 
@@ -2020,12 +1645,9 @@ function actualizarMenuUsuario(cajeroInfo) {
 }
 
 /* ═══════════════════════════════════════════════════════════ */
-/* PANEL-02: LICENCIA                                         */
+/* PANEL-02: LICENCIA                                          */
 /* ═══════════════════════════════════════════════════════════ */
-const LICENCIA = {
-  deviceId: null,
-  usuarioUid: null
-};
+const LICENCIA = { deviceId: null, usuarioUid: null };
 
 function generarUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -2089,27 +1711,35 @@ async function activarLicencia() {
     if (new Date(payload.fecha_expiracion) < new Date()) throw new Error('La licencia ha expirado');
 
     const hash = calcularHashJWT(jwt);
-    const doc = await db.collection('licencias').doc(hash).get();
-    if (!doc.exists) throw new Error('Licencia no encontrada en el servidor');
-    const licData = doc.data();
-    if (!licData.activa) throw new Error('Licencia deshabilitada');
-    if (licData.device_id && licData.device_id !== LICENCIA.deviceId) throw new Error('Device ID no coincide');
+    try {
+      const doc = await db.collection('licencias').doc(hash).get();
+      if (doc.exists) {
+        const licData = doc.data();
+        if (!licData.activa) throw new Error('Licencia deshabilitada');
+        if (licData.device_id && licData.device_id !== LICENCIA.deviceId) throw new Error('Device ID no coincide');
+      } else {
+        console.warn('Licencia no encontrada en Firestore, validación local OK');
+      }
+    } catch (fsErr) {
+      if (fsErr.message.includes('Licencia')) throw fsErr;
+      console.warn('Firestore no disponible, validando offline');
+    }
 
     localStorage.setItem('licencia_v1', JSON.stringify({
-      cliente: payload.cliente,
-      tipo: payload.tipo,
+      cliente: payload.cliente, tipo: payload.tipo,
       fecha_expiracion: payload.fecha_expiracion,
       dias_offline: payload.dias_offline,
-      device_id: payload.device_id,
-      jwt_hash: hash
+      device_id: payload.device_id, jwt_hash: hash
     }));
     localStorage.setItem('licencia_ultima_validacion', Date.now().toString());
 
     if (LICENCIA.usuarioUid) {
-      await db.collection('usuarios').doc(LICENCIA.usuarioUid).update({
-        licencia_activa: true,
-        fecha_activacion: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      try {
+        await db.collection('usuarios').doc(LICENCIA.usuarioUid).update({
+          licencia_activa: true,
+          fecha_activacion: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (e) { console.warn('No se pudo actualizar usuario:', e.message); }
     }
 
     successEl.textContent = '¡Licencia activada!';
@@ -2131,42 +1761,22 @@ async function activarLicencia() {
   }
 }
 
-async function p02_validarLicencia() {
-  const lic = JSON.parse(localStorage.getItem('licencia_v1') || 'null');
-  if (!lic) return false;
-  if (new Date(lic.fecha_expiracion) < new Date()) return false;
-  return true;
-}
-
 /* ═══════════════════════════════════════════════════════════ */
-/* PANEL-03: POS                                              */
+/* PANEL-03: POS                                               */
 /* ═══════════════════════════════════════════════════════════ */
-const POS = {
-  ticket: [],
-  productos: [],
-  scanner: null,
-  productoNoEncontrado: null,
-  metodoPago: null
-};
+const POS = { ticket: [], productos: [], scanner: null, productoNoEncontrado: null, metodoPago: null };
 
 function posInicializar() {
-  // Datos de cuenta
   const datosCuenta = JSON.parse(localStorage.getItem('datos_cuenta_v1') || 'null');
   if (!datosCuenta) {
     const defaults = {
-      nombre: "SUPER OSO",
-      razonSocial: "POTELLI S.R.L.",
-      cuit: "30-71072660-0",
-      ingresosBrutos: "30710726600",
-      direccion: "PELUFFO 1579 - SAN MIGUEL",
-      cp: "1663 - BUENOS AIRES",
-      inicioActividades: "25/01/2022",
-      condicionIva: "Responsable Inscripto",
-      puntoVenta: "00012"
+      nombre: "SUPER OSO", razonSocial: "POTELLI S.R.L.", cuit: "30-71072660-0",
+      ingresosBrutos: "30710726600", direccion: "PELUFFO 1579 - SAN MIGUEL",
+      cp: "1663 - BUENOS AIRES", inicioActividades: "25/01/2022",
+      condicionIva: "Responsable Inscripto", puntoVenta: "00012"
     };
     localStorage.setItem('datos_cuenta_v1', JSON.stringify(defaults));
   }
-
   const cajero = localStorage.getItem('cajero_actual') || 'Cajero 1';
   const cajeroEl = document.getElementById('posCajeroNombre');
   if (cajeroEl) cajeroEl.textContent = `Cajero: ${cajero}`;
@@ -2224,12 +1834,8 @@ function posAgregarProducto(productoId) {
     item.subtotal = item.cantidad * item.precioUnitario;
   } else {
     POS.ticket.push({
-      productoId: prod.id,
-      nombre: prod.nombre,
-      codigo: prod.codigoBarras,
-      precioUnitario: prod.precioVenta,
-      cantidad: 1,
-      subtotal: prod.precioVenta
+      productoId: prod.id, nombre: prod.nombre, codigo: prod.codigoBarras,
+      precioUnitario: prod.precioVenta, cantidad: 1, subtotal: prod.precioVenta
     });
   }
   posGuardarTicket();
@@ -2366,11 +1972,8 @@ function posAgregarProductoManual() {
     return;
   }
   POS.ticket.push({
-    productoId: 'manual_' + Date.now(),
-    nombre, codigo,
-    precioUnitario: precio,
-    cantidad,
-    subtotal: precio * cantidad
+    productoId: 'manual_' + Date.now(), nombre, codigo,
+    precioUnitario: precio, cantidad, subtotal: precio * cantidad
   });
   posGuardarTicket();
   posRenderizarTicket();
@@ -2430,20 +2033,14 @@ async function posConfirmarVenta() {
   const turno = JSON.parse(localStorage.getItem('turno_activo_v1') || 'null');
 
   const venta = {
-    id: generarId('venta'),
-    ticketNumero: ticketNum,
-    fecha: Date.now(),
-    timestamp: Date.now(),
+    id: generarId('venta'), ticketNumero: ticketNum,
+    fecha: Date.now(), timestamp: Date.now(),
     cajero: localStorage.getItem('cajero_actual') || 'Cajero 1',
     cajeroId: p01_obtenerUsuarioActual()?.uid || null,
     turnoId: turno?.id || null,
-    productos: [...POS.ticket],
-    items: [...POS.ticket],
-    total,
-    metodoPago: POS.metodoPago,
-    montoRecibido: recibido,
-    vuelto,
-    estado: 'completada'
+    productos: [...POS.ticket], items: [...POS.ticket],
+    total, metodoPago: POS.metodoPago,
+    montoRecibido: recibido, vuelto, estado: 'completada'
   };
 
   const ventas = JSON.parse(localStorage.getItem('ventas_v1') || '[]');
@@ -2451,20 +2048,16 @@ async function posConfirmarVenta() {
   if (ventas.length > 2000) ventas.splice(0, ventas.length - 2000);
   localStorage.setItem('ventas_v1', JSON.stringify(ventas));
 
-  // Actualizar turno activo
   if (turno) {
     turno.totalVendido = (turno.totalVendido || 0) + total;
     turno.cantidadVentas = (turno.cantidadVentas || 0) + 1;
     localStorage.setItem('turno_activo_v1', JSON.stringify(turno));
   }
 
-  // Descontar stock
   posDescontarStock(POS.ticket);
 
-  // Sync Firestore (best-effort)
-  try {
-    await db.collection('ventas').doc(venta.id).set(venta);
-  } catch (e) { console.warn('Sync Firestore fallida:', e); }
+  try { await db.collection('ventas').doc(venta.id).set(venta); }
+  catch (e) { console.warn('Sync Firestore fallida:', e.message); }
 
   POS.ticket = [];
   posGuardarTicket();
@@ -2515,8 +2108,7 @@ function posGenerarTextoTicket(venta) {
   if (datos.condicionIva) t += `IVA ${datos.condicionIva.toUpperCase()}\n`;
   t += `\nTicket #${venta.ticketNumero}\n`;
   t += `${fecha.toLocaleDateString('es-AR')} ${fecha.toLocaleTimeString('es-AR')}\n`;
-  t += `Cajero: ${venta.cajero}\n`;
-  t += `--------------------------------\n`;
+  t += `Cajero: ${venta.cajero}\n--------------------------------\n`;
   venta.productos.forEach(p => {
     t += `${p.nombre}\n  ${p.cantidad} x ${formatearMoneda(p.precioUnitario)} = ${formatearMoneda(p.subtotal)}\n`;
   });
@@ -2583,15 +2175,9 @@ function posConfigurarListeners() {
 </script>
 <script>
 /* ═══════════════════════════════════════════════════════════ */
-/* PANEL-04: STOCK E INVENTARIO                               */
+/* PANEL-04: STOCK E INVENTARIO                                */
 /* ═══════════════════════════════════════════════════════════ */
-const PANEL04 = {
-  productos: [],
-  proveedores: [],
-  historicoCompras: [],
-  metodoDescuento: 'FIFO',
-  productoEditandoId: null
-};
+const PANEL04 = { productos: [], proveedores: [], historicoCompras: [], metodoDescuento: 'FIFO', productoEditandoId: null };
 
 function inicializarPanel04() {
   PANEL04.productos = JSON.parse(localStorage.getItem('productos_v1') || '[]');
@@ -2607,18 +2193,11 @@ function inicializarPanel04() {
   verificarStockBajo();
 }
 
-function guardarProductos() {
-  localStorage.setItem('productos_v1', JSON.stringify(PANEL04.productos));
-}
-function guardarHistoricoCompras() {
-  localStorage.setItem('historico_compras_v1', JSON.stringify(PANEL04.historicoCompras));
-}
+function guardarProductos() { localStorage.setItem('productos_v1', JSON.stringify(PANEL04.productos)); }
+function guardarHistoricoCompras() { localStorage.setItem('historico_compras_v1', JSON.stringify(PANEL04.historicoCompras)); }
 function guardarMetodoDescuento() {
   const sel = document.getElementById('selectMetodoDescuento');
-  if (sel) {
-    PANEL04.metodoDescuento = sel.value;
-    localStorage.setItem('metodo_descuento_v1', PANEL04.metodoDescuento);
-  }
+  if (sel) { PANEL04.metodoDescuento = sel.value; localStorage.setItem('metodo_descuento_v1', PANEL04.metodoDescuento); }
 }
 
 function cambiarTabPanel04(tab) {
@@ -2709,8 +2288,7 @@ function verificarStockBajo() {
 }
 
 function cargarProveedoresEnSelectores() {
-  const ids = ['prodProveedor', 'filtroVencProveedor'];
-  ids.forEach(id => {
+  ['prodProveedor', 'filtroVencProveedor'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
     const primera = sel.options[0]?.outerHTML || '<option value="">Seleccionar...</option>';
@@ -2870,41 +2448,25 @@ function guardarProducto() {
   if (PANEL04.productoEditandoId) {
     const p = PANEL04.productos.find(x => x.id === PANEL04.productoEditandoId);
     if (p) {
-      p.nombre = nombre;
-      p.codigoBarras = codigo;
-      p.precioVenta = pv;
-      p.unidadesPorBulto = bulto;
-      p.proveedorId = provId;
+      p.nombre = nombre; p.codigoBarras = codigo; p.precioVenta = pv;
+      p.unidadesPorBulto = bulto; p.proveedorId = provId;
       if (stock > 0 && venc) {
         p.lotes = [{
-          id: generarId('lote'),
-          cantidad: stock,
-          fechaVencimiento: venc,
-          precioCompra: pc,
-          fechaIngreso: new Date().toISOString().split('T')[0],
-          gananciaPesos: ganP,
-          gananciaPorcentaje: ganPorc
+          id: generarId('lote'), cantidad: stock, fechaVencimiento: venc,
+          precioCompra: pc, fechaIngreso: new Date().toISOString().split('T')[0],
+          gananciaPesos: ganP, gananciaPorcentaje: ganPorc
         }];
         p.stockTotal = stock;
       }
     }
   } else {
     PANEL04.productos.push({
-      id: generarId('prod'),
-      nombre, codigoBarras: codigo,
-      precioVenta: pv,
-      proveedorId: provId,
-      esPesable: false,
-      unidadesPorBulto: bulto,
-      stockTotal: stock,
+      id: generarId('prod'), nombre, codigoBarras: codigo, precioVenta: pv,
+      proveedorId: provId, esPesable: false, unidadesPorBulto: bulto, stockTotal: stock,
       lotes: stock > 0 ? [{
-        id: generarId('lote'),
-        cantidad: stock,
-        fechaVencimiento: venc,
-        precioCompra: pc,
-        fechaIngreso: new Date().toISOString().split('T')[0],
-        gananciaPesos: ganP,
-        gananciaPorcentaje: ganPorc
+        id: generarId('lote'), cantidad: stock, fechaVencimiento: venc,
+        precioCompra: pc, fechaIngreso: new Date().toISOString().split('T')[0],
+        gananciaPesos: ganP, gananciaPorcentaje: ganPorc
       }] : []
     });
   }
@@ -2957,13 +2519,9 @@ function confirmarAgregarStock() {
 
   if (!p.lotes) p.lotes = [];
   p.lotes.push({
-    id: generarId('lote'),
-    cantidad: cant,
-    fechaVencimiento: venc,
-    precioCompra: precio,
-    fechaIngreso: new Date().toISOString().split('T')[0],
-    gananciaPesos: ganP,
-    gananciaPorcentaje: ganPorc
+    id: generarId('lote'), cantidad: cant, fechaVencimiento: venc,
+    precioCompra: precio, fechaIngreso: new Date().toISOString().split('T')[0],
+    gananciaPesos: ganP, gananciaPorcentaje: ganPorc
   });
   p.stockTotal = (p.stockTotal || 0) + cant;
   guardarProductos();
@@ -3019,7 +2577,7 @@ function eliminarProductoDesdeDetalle() {
 }
 
 /* ═══════════════════════════════════════════════════════════ */
-/* PANEL-05: CONTROL DE CAJA                                  */
+/* PANEL-05: CONTROL DE CAJA                                   */
 /* ═══════════════════════════════════════════════════════════ */
 const P05_CONFIG_MONEDA = {
   simbolo: '$',
@@ -3066,17 +2624,16 @@ const p05 = {
 
   calcularResumen() {
     const ventas = this.obtenerVentasTurno();
-    let efectivo = 0, tarjeta = 0, mp = 0, transf = 0, total = 0;
+    let efectivo = 0, tarjeta = 0, mp = 0, total = 0;
     ventas.forEach(v => {
       total += v.total || 0;
       const m = v.metodoPago;
       if (m === 'efectivo') efectivo += v.total || 0;
       else if (m === 'debito' || m === 'credito' || m === 'tarjeta') tarjeta += v.total || 0;
       else if (m === 'mercadopago') mp += v.total || 0;
-      else if (m === 'transferencia') transf += v.total || 0;
     });
     const saldoEsperado = (this.turnoActivo?.montoInicial || 0) + efectivo;
-    return { tickets: ventas.length, total, efectivo, tarjeta, mp, transf, saldoEsperado };
+    return { tickets: ventas.length, total, efectivo, tarjeta, mp, saldoEsperado };
   },
 
   actualizarResumen() {
@@ -3104,13 +2661,7 @@ const p05 = {
     const cajero = document.getElementById('p05-input-cajero').value.trim();
     const monto = parseFloat(document.getElementById('p05-input-monto-inicial').value) || 0;
     if (!cajero) { mostrarToast('Ingresá el nombre del cajero', 'error'); return; }
-    this.turnoActivo = {
-      id: generarId('turno'),
-      cajero,
-      montoInicial: monto,
-      apertura: Date.now(),
-      cierre: null
-    };
+    this.turnoActivo = { id: generarId('turno'), cajero, montoInicial: monto, apertura: Date.now(), cierre: null };
     localStorage.setItem('turno_activo_v1', JSON.stringify(this.turnoActivo));
     this.cerrarModal('p05-modal-apertura');
     this.renderizarEstado();
@@ -3159,7 +2710,6 @@ const p05 = {
     const el = document.getElementById('p05-arqueo-total-diferencia');
     el.textContent = (dif >= 0 ? '+' : '') + formatearMoneda(dif);
     el.style.color = dif === 0 ? '#2a9d4a' : dif > 0 ? '#1565c0' : '#d33';
-    return { contado, esperado, dif };
   },
 
   guardarArqueo() {
@@ -3174,14 +2724,10 @@ const p05 = {
     });
     const esperado = this.calcularResumen().saldoEsperado;
     const arqueo = {
-      id: generarId('arqueo'),
-      turnoId: this.turnoActivo.id,
-      timestamp: Date.now(),
-      cajero: this.turnoActivo.cajero,
-      denominaciones: denoms,
-      totalContado: contado,
-      totalEsperado: esperado,
-      diferencia: contado - esperado
+      id: generarId('arqueo'), turnoId: this.turnoActivo.id,
+      timestamp: Date.now(), cajero: this.turnoActivo.cajero,
+      denominaciones: denoms, totalContado: contado,
+      totalEsperado: esperado, diferencia: contado - esperado
     };
     this.ultimoArqueo = arqueo;
     localStorage.setItem('p05_ultimo_arqueo_v1', JSON.stringify(arqueo));
@@ -3233,12 +2779,11 @@ const p05 = {
   imprimirArqueo() {
     const a = this.ultimoArqueo;
     if (!a) return;
-    let txt = `ARQUEO DE CAJA\n${new Date(a.timestamp).toLocaleString('es-AR')}\nCajero: ${a.cajero}\n`;
-    txt += '--------------------------------\n';
+    let txt = `ARQUEO DE CAJA\n${new Date(a.timestamp).toLocaleString('es-AR')}\nCajero: ${a.cajero}\n--------------------------------\n`;
     Object.entries(a.denominaciones).forEach(([d, c]) => {
       txt += `$${d} x ${c} = $${(parseInt(d) * c).toLocaleString('es-AR')}\n`;
     });
-    txt += '--------------------------------\n';
+    txt += `--------------------------------\n`;
     txt += `CONTADO: ${formatearMoneda(a.totalContado)}\n`;
     txt += `ESPERADO: ${formatearMoneda(a.totalEsperado)}\n`;
     txt += `DIFERENCIA: ${formatearMoneda(a.diferencia)}\n`;
@@ -3258,14 +2803,9 @@ const p05 = {
 };
 
 /* ═══════════════════════════════════════════════════════════ */
-/* PANEL-07: PROVEEDORES                                      */
+/* PANEL-07: PROVEEDORES                                       */
 /* ═══════════════════════════════════════════════════════════ */
-const PANEL_07 = {
-  proveedores: [],
-  pedidos: [],
-  historicoCompras: [],
-  productos: []
-};
+const PANEL_07 = { proveedores: [], pedidos: [], historicoCompras: [], productos: [] };
 
 function p07_cargarDatos() {
   PANEL_07.proveedores = JSON.parse(localStorage.getItem('proveedores_v1') || '[]');
@@ -3274,13 +2814,8 @@ function p07_cargarDatos() {
   PANEL_07.productos = JSON.parse(localStorage.getItem('productos_v1') || '[]');
 }
 
-function p07_guardarProveedores() {
-  localStorage.setItem('proveedores_v1', JSON.stringify(PANEL_07.proveedores));
-}
-
-function p07_guardarPedidos() {
-  localStorage.setItem('pedidos_v1', JSON.stringify(PANEL_07.pedidos));
-}
+function p07_guardarProveedores() { localStorage.setItem('proveedores_v1', JSON.stringify(PANEL_07.proveedores)); }
+function p07_guardarPedidos() { localStorage.setItem('pedidos_v1', JSON.stringify(PANEL_07.pedidos)); }
 
 function p07_inicializar() {
   p07_cargarDatos();
@@ -3550,22 +3085,15 @@ function guardarPedido(e) {
     const cant = parseFloat(item.querySelector('.item-cant').value) || 0;
     const precio = parseFloat(item.querySelector('.item-precio').value) || 0;
     items.push({
-      productoId: prodId,
-      productoNombre: prod?.nombre || '',
-      cantidad: cant,
-      precioUnitario: precio,
-      subtotal: cant * precio
+      productoId: prodId, productoNombre: prod?.nombre || '',
+      cantidad: cant, precioUnitario: precio, subtotal: cant * precio
     });
   });
   if (items.length === 0) { mostrarToast('Agregá al menos un producto', 'error'); return; }
   const pedido = {
-    id: generarId('PED'),
-    proveedorId: provId,
-    fecha: Date.now(),
-    items,
-    total: items.reduce((a, i) => a + i.subtotal, 0),
-    estado: 'pendiente',
-    notas: document.getElementById('pedidoNotas').value
+    id: generarId('PED'), proveedorId: provId, fecha: Date.now(),
+    items, total: items.reduce((a, i) => a + i.subtotal, 0),
+    estado: 'pendiente', notas: document.getElementById('pedidoNotas').value
   };
   PANEL_07.pedidos.unshift(pedido);
   p07_guardarPedidos();
@@ -3617,11 +3145,9 @@ function p07_imprimirPedido(id) {
   const p = PANEL_07.pedidos.find(x => x.id === id);
   if (!p) return;
   const prov = PANEL_07.proveedores.find(x => x.id === p.proveedorId);
-  let txt = `PEDIDO\nProveedor: ${prov?.nombre || 'N/A'}\nCUIT: ${prov?.cuit || 'N/A'}\nFecha: ${new Date(p.fecha).toLocaleString('es-AR')}\n`;
-  txt += '--------------------------------\n';
+  let txt = `PEDIDO\nProveedor: ${prov?.nombre || 'N/A'}\nCUIT: ${prov?.cuit || 'N/A'}\nFecha: ${new Date(p.fecha).toLocaleString('es-AR')}\n--------------------------------\n`;
   p.items.forEach(i => { txt += `${i.productoNombre}\n  ${i.cantidad} x ${formatearMoneda(i.precioUnitario)} = ${formatearMoneda(i.subtotal)}\n`; });
-  txt += '--------------------------------\n';
-  txt += `TOTAL: ${formatearMoneda(p.total)}\n`;
+  txt += `--------------------------------\nTOTAL: ${formatearMoneda(p.total)}\n`;
   if (p.notas) txt += `Notas: ${p.notas}\n`;
   const win = window.open('', '_blank', 'width=400,height=600');
   if (!win) return;
@@ -3668,25 +3194,17 @@ function exportarHistoricoCSV() {
   URL.revokeObjectURL(url);
   mostrarToast('CSV exportado', 'success');
 }
-
+</script>
+<script>
 /* ═══════════════════════════════════════════════════════════ */
-/* PANEL-08: IMPRESORA                                        */
+/* PANEL-08: IMPRESORA                                         */
 /* ═══════════════════════════════════════════════════════════ */
 const impresoraState = {
   config: {
-    tamanoPapel: '58',
-    logo: null,
-    nombreNegocio: '',
-    ubicacion: '',
-    telefono: '',
-    mostrarHorarios: false,
-    horarios: {},
-    mensajePie: '',
-    mostrarFecha: true,
-    mostrarNumeroTicket: true,
-    fuente: 'Courier New',
-    tamanoLetra: 12,
-    negritas: false
+    tamanoPapel: '58', logo: null, nombreNegocio: '', ubicacion: '', telefono: '',
+    mostrarHorarios: false, horarios: {}, mensajePie: '',
+    mostrarFecha: true, mostrarNumeroTicket: true,
+    fuente: 'Courier New', tamanoLetra: 12, negritas: false
   }
 };
 
@@ -3824,9 +3342,6 @@ function toggleDobleTurno(dia, activo) {
   actualizarPreview();
 }
 
-function agruparDiasHorarios() { mostrarToast('Función de agrupado simplificada', 'info'); }
-function desagruparDiasHorarios() { mostrarToast('Función de desagrupado', 'info'); }
-
 function formatearHorariosParaTicket() {
   const h = impresoraState.config.horarios;
   return DIAS_SEMANA.map(dia => {
@@ -3900,16 +3415,10 @@ function guardarConfiguracionImpresora() {
 }
 
 /* ═══════════════════════════════════════════════════════════ */
-/* PANEL-09: IMPUESTOS                                        */
+/* PANEL-09: IMPUESTOS                                         */
 /* ═══════════════════════════════════════════════════════════ */
 const PANEL_09 = {
-  config: {
-    condicion: 'responsable',
-    aliqGral: 21,
-    aliqRed: 10.5,
-    aliqDif: 27,
-    preciosConIva: false
-  },
+  config: { condicion: 'responsable', aliqGral: 21, aliqRed: 10.5, aliqDif: 27, preciosConIva: false },
 
   init() {
     const saved = localStorage.getItem('config_impuestos_v1');
@@ -4103,7 +3612,7 @@ const PANEL_09 = {
 };
 
 /* ═══════════════════════════════════════════════════════════ */
-/* PANEL-10: MI CUENTA                                        */
+/* PANEL-10: MI CUENTA                                         */
 /* ═══════════════════════════════════════════════════════════ */
 function p10_inicializar() {
   const cajeroInfo = JSON.parse(localStorage.getItem('cajero_info_v1') || '{}');
@@ -4132,7 +3641,7 @@ function p10_inicializar() {
 function p10_guardarInfoCajero() {
   const nombre = document.getElementById('p10-nombre-cajero').value.trim();
   const caja = document.getElementById('p10-caja-asignada').value.trim();
-  if (!nombre) { p10_toast('El nombre no puede estar vacío', 'error'); return; }
+  if (!nombre) { mostrarToast('El nombre no puede estar vacío', 'error'); return; }
   const info = JSON.parse(localStorage.getItem('cajero_info_v1') || '{}');
   info.nombre = nombre;
   info.caja = caja;
@@ -4140,7 +3649,7 @@ function p10_guardarInfoCajero() {
   localStorage.setItem('cajero_info_v1', JSON.stringify(info));
   localStorage.setItem('cajero_actual', nombre);
   actualizarMenuUsuario(info);
-  p10_toast('Perfil guardado', 'success');
+  mostrarToast('Perfil guardado', 'success');
 }
 
 function p10_guardarDatosKiosco() {
@@ -4155,21 +3664,21 @@ function p10_guardarDatosKiosco() {
     condicionIva: 'Responsable Inscripto'
   };
   localStorage.setItem('datos_cuenta_v1', JSON.stringify(datos));
-  p10_toast('Datos del comercio guardados', 'success');
+  mostrarToast('Datos del comercio guardados', 'success');
 }
 
 async function p10_cambiarPasswordFirebase() {
   const actual = document.getElementById('p10-password-actual').value;
   const nueva = document.getElementById('p10-password-nueva').value;
   const confirmar = document.getElementById('p10-password-confirmar').value;
-  if (!actual || !nueva || !confirmar) { p10_toast('Completá todos los campos', 'error'); return; }
-  if (nueva !== confirmar) { p10_toast('Las contraseñas no coinciden', 'error'); return; }
+  if (!actual || !nueva || !confirmar) { mostrarToast('Completá todos los campos', 'error'); return; }
+  if (nueva !== confirmar) { mostrarToast('Las contraseñas no coinciden', 'error'); return; }
   if (!Object.values(validarContrasena(nueva)).every(v => v)) {
-    p10_toast('La contraseña no cumple los requisitos', 'error');
+    mostrarToast('La contraseña no cumple los requisitos', 'error');
     return;
   }
   const user = auth.currentUser;
-  if (!user) { p10_toast('No hay sesión activa', 'error'); return; }
+  if (!user) { mostrarToast('No hay sesión activa', 'error'); return; }
   try {
     const cred = firebase.auth.EmailAuthProvider.credential(user.email, actual);
     await user.reauthenticateWithCredential(cred);
@@ -4177,11 +3686,11 @@ async function p10_cambiarPasswordFirebase() {
     ['p10-password-actual','p10-password-nueva','p10-password-confirmar'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
-    p10_toast('Contraseña actualizada', 'success');
+    mostrarToast('Contraseña actualizada', 'success');
   } catch (err) {
     console.error(err);
-    if (err.code === 'auth/wrong-password') p10_toast('Contraseña actual incorrecta', 'error');
-    else p10_toast('Error al cambiar contraseña', 'error');
+    if (err.code === 'auth/wrong-password') mostrarToast('Contraseña actual incorrecta', 'error');
+    else mostrarToast('Error al cambiar contraseña', 'error');
   }
 }
 
@@ -4200,9 +3709,9 @@ function p10_exportarBackup() {
     a.download = `mejorar2_backup_${now.toISOString().slice(0, 10)}_${now.toTimeString().slice(0, 5).replace(':', '-')}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    p10_toast('Backup exportado', 'success');
+    mostrarToast('Backup exportado', 'success');
   } catch (e) {
-    p10_toast('Error al exportar backup', 'error');
+    mostrarToast('Error al exportar backup', 'error');
   }
 }
 
@@ -4220,10 +3729,10 @@ function p10_restaurarBackup(event) {
       if (typeof data !== 'object' || data === null) throw new Error('Formato inválido');
       localStorage.clear();
       Object.entries(data).forEach(([k, v]) => localStorage.setItem(k, v));
-      p10_toast('Backup restaurado. Recargando...', 'success');
+      mostrarToast('Backup restaurado. Recargando...', 'success');
       setTimeout(() => location.reload(), 1500);
     } catch (err) {
-      p10_toast('Archivo inválido', 'error');
+      mostrarToast('Archivo inválido', 'error');
     }
   };
   reader.readAsText(file);
@@ -4234,7 +3743,7 @@ function p10_resetearTodo() {
   if (!confirm('¿Borrar TODOS los datos? No se puede deshacer.')) return;
   if (!confirm('ÚLTIMA ADVERTENCIA. ¿Continuar?')) return;
   localStorage.clear();
-  p10_toast('Sistema reseteado. Recargando...', 'warning');
+  mostrarToast('Sistema reseteado. Recargando...', 'warning');
   setTimeout(() => location.reload(), 1500);
 }
 
@@ -4252,13 +3761,75 @@ function p10_actualizarInfoSistema() {
   }
   set('p10-info-almacenamiento', (size / 1024).toFixed(2) + ' KB');
 }
+</script>
+<script>
+/* ═══════════════════════════════════════════════════════════ */
+/* LEGALES (Términos y Privacidad)                             */
+/* ═══════════════════════════════════════════════════════════ */
+const LEGAL_DEFAULTS = {
+  terms: `<h3>Términos y Condiciones de Uso</h3>
+    <p><strong>Última actualización:</strong> 13/09/2026</p>
+    <h4>1. Aceptación</h4>
+    <p>Al usar Mejora 2 aceptás estos términos en su totalidad.</p>
+    <h4>2. Uso del servicio</h4>
+    <p>El sistema es una herramienta de gestión comercial. El usuario es responsable de la veracidad de los datos ingresados.</p>
+    <h4>3. Licencia</h4>
+    <p>La licencia es personal, intransferible y está vinculada al Device ID del dispositivo registrado.</p>
+    <h4>4. Datos y respaldo</h4>
+    <p>Los datos se almacenan localmente en el navegador y se sincronizan con Firebase Firestore. El usuario es responsable de mantener respaldos periódicos.</p>
+    <h4>5. Limitación de responsabilidad</h4>
+    <p>Los desarrolladores no se responsabilizan por pérdidas derivadas del uso del sistema.</p>
+    <h4>6. Contacto</h4>
+    <ul>
+      <li>Tomas Suares Rocha: tomasuaresrocha79@gmail.com</li>
+      <li>Walter Fernando Suares: walkydeadok@gmail.com</li>
+    </ul>`,
+  privacy: `<h3>Política de Privacidad</h3>
+    <p><strong>Última actualización:</strong> 13/09/2026</p>
+    <h4>1. Datos que recopilamos</h4>
+    <ul>
+      <li>Email y nombre (Firebase Auth)</li>
+      <li>Datos de ventas, productos y proveedores (Firestore + localStorage)</li>
+      <li>Device ID del dispositivo</li>
+    </ul>
+    <h4>2. Uso de los datos</h4>
+    <p>Los datos se utilizan exclusivamente para el funcionamiento del sistema de gestión comercial.</p>
+    <h4>3. Almacenamiento</h4>
+    <ul>
+      <li><strong>Local:</strong> localStorage del navegador (persistencia offline)</li>
+      <li><strong>Nube:</strong> Firebase Firestore (proyecto mejora2-9eec7)</li>
+    </ul>
+    <h4>4. Compartir datos</h4>
+    <p>No compartimos datos con terceros. Solo Firebase (Google) como proveedor de infraestructura.</p>
+    <h4>5. Derechos del usuario</h4>
+    <p>Podés exportar todos tus datos desde el Panel 10 ("Exportar Backup") y solicitar la eliminación de la cuenta.</p>
+    <h4>6. Contacto</h4>
+    <ul>
+      <li>Tomas Suares Rocha: tomasuaresrocha79@gmail.com</li>
+      <li>Walter Fernando Suares: walkydeadok@gmail.com</li>
+    </ul>`
+};
 
-function p10_toast(msg, tipo = 'success') {
-  mostrarToast(msg, tipo);
+async function mostrarModalLegal(tipo) {
+  const modal = document.getElementById(`modal-${tipo}`);
+  const content = document.getElementById(`${tipo}-content`);
+  if (!modal || !content) return;
+  modal.classList.add('active');
+  content.innerHTML = LEGAL_DEFAULTS[tipo];
+  try {
+    const doc = await db.collection('configuracion').doc('documentos_legales').get();
+    if (doc.exists) {
+      const data = doc.data();
+      const html = tipo === 'terms' ? data.terminos_html : data.privacidad_html;
+      if (html) content.innerHTML = html;
+    }
+  } catch (e) {
+    console.warn('Firestore no disponible para legales:', e.message);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════ */
-/* INICIALIZACIÓN GLOBAL                                      */
+/* INICIALIZACIÓN GLOBAL                                       */
 /* ═══════════════════════════════════════════════════════════ */
 function initAuthPanel() {
   // Toggle password
@@ -4319,77 +3890,18 @@ function initAuthPanel() {
   });
 }
 
-async function mostrarModalLegal(tipo) {
-  const modal = document.getElementById(`modal-${tipo}`);
-  const content = document.getElementById(`${tipo}-content`);
-  if (!modal || !content) return;
-  modal.classList.add('active');
-
-  // 1) Mostrar contenido local por defecto INMEDIATAMENTE
-  content.innerHTML = LEGAL_DEFAULTS[tipo];
-
-  // 2) Intentar enriquecer desde Firestore (silencioso si falla)
-  try {
-    const doc = await db.collection('configuracion').doc('documentos_legales').get();
-    if (doc.exists) {
-      const data = doc.data();
-      const html = tipo === 'terms' ? data.terminos_html : data.privacidad_html;
-      if (html) content.innerHTML = html;
-    }
-  } catch (e) {
-    // Silencioso: ya se muestra el contenido por defecto
-    console.warn('Firestore no disponible para legales:', e.message);
-  }
-}
-
-const LEGAL_DEFAULTS = {
-  terms: `<h3>Términos y Condiciones de Uso</h3>
-    <p><strong>Última actualización:</strong> 13/09/2026</p>
-    <h4>1. Aceptación</h4>
-    <p>Al usar Mejora 2 aceptás estos términos en su totalidad.</p>
-    <h4>2. Uso del servicio</h4>
-    <p>El sistema es una herramienta de gestión comercial. El usuario es responsable de la veracidad de los datos ingresados.</p>
-    <h4>3. Licencia</h4>
-    <p>La licencia es personal, intransferible y está vinculada al Device ID del dispositivo registrado.</p>
-    <h4>4. Datos y respaldo</h4>
-    <p>Los datos se almacenan localmente en el navegador y se sincronizan con Firebase Firestore. El usuario es responsable de mantener respaldos periódicos.</p>
-    <h4>5. Limitación de responsabilidad</h4>
-    <p>Los desarrolladores no se responsabilizan por pérdidas derivadas del uso del sistema.</p>
-    <h4>6. Contacto</h4>
-    <ul>
-      <li>Tomas Suares Rocha: tomasuaresrocha79@gmail.com</li>
-      <li>Walter Fernando Suares: walkydeadok@gmail.com</li>
-    </ul>`,
-  privacy: `<h3>Política de Privacidad</h3>
-    <p><strong>Última actualización:</strong> 13/09/2026</p>
-    <h4>1. Datos que recopilamos</h4>
-    <ul>
-      <li>Email y nombre (Firebase Auth)</li>
-      <li>Datos de ventas, productos y proveedores (Firestore + localStorage)</li>
-      <li>Device ID del dispositivo</li>
-    </ul>
-    <h4>2. Uso de los datos</h4>
-    <p>Los datos se utilizan exclusivamente para el funcionamiento del sistema de gestión comercial.</p>
-    <h4>3. Almacenamiento</h4>
-    <ul>
-      <li><strong>Local:</strong> localStorage del navegador (persistencia offline)</li>
-      <li><strong>Nube:</strong> Firebase Firestore (proyecto mejora2-9eec7)</li>
-    </ul>
-    <h4>4. Compartir datos</h4>
-    <p>No compartimos datos con terceros. Solo Firebase (Google) como proveedor de infraestructura.</p>
-    <h4>5. Derechos del usuario</h4>
-    <p>Podés exportar todos tus datos desde el Panel 10 ("Exportar Backup") y solicitar la eliminación de la cuenta.</p>
-    <h4>6. Contacto</h4>
-    <ul>
-      <li>Tomas Suares Rocha: tomasuaresrocha79@gmail.com</li>
-      <li>Walter Fernando Suares: walkydeadok@gmail.com</li>
-    </ul>`
-};
-window.addEventListener('DOMContentLoaded', initAuthPanel);
-
-// Exponer funciones globales usadas en HTML
+/* ═══════════════════════════════════════════════════════════ */
+/* EXPOSICIÓN GLOBAL (para onclick del HTML)                   */
+/* ═══════════════════════════════════════════════════════════ */
 window.mostrarVista = mostrarVista;
 window.p01_cerrarSesion = p01_cerrarSesion;
+
+// POS
+window.posAgregarProducto = posAgregarProducto;
+window.posModificarCantidad = posModificarCantidad;
+window.posEliminarItem = posEliminarItem;
+
+// Panel 04
 window.cambiarTabPanel04 = cambiarTabPanel04;
 window.filtrarProductos = filtrarProductos;
 window.filtrarVencimientos = filtrarVencimientos;
@@ -4407,7 +3919,11 @@ window.abrirDetalleProducto = abrirDetalleProducto;
 window.cerrarModalDetalleProducto = cerrarModalDetalleProducto;
 window.eliminarProductoDesdeDetalle = eliminarProductoDesdeDetalle;
 window.exportarHistoricoJSON = exportarHistoricoJSON;
+
+// Panel 05
 window.p05 = p05;
+
+// Panel 07
 window.mostrarModalNuevoProveedor = mostrarModalNuevoProveedor;
 window.mostrarModalEditarProveedor = mostrarModalEditarProveedor;
 window.cerrarModalProveedor = cerrarModalProveedor;
@@ -4428,17 +3944,19 @@ window.p07_whatsapp = p07_whatsapp;
 window.p07_eliminar = p07_eliminar;
 window.p07_imprimirPedido = p07_imprimirPedido;
 window.p07_marcarRecibido = p07_marcarRecibido;
+
+// Panel 08
 window.cambiarTabImpresora = cambiarTabImpresora;
 window.subirLogo = subirLogo;
 window.eliminarLogo = eliminarLogo;
 window.toggleDiaHorario = toggleDiaHorario;
 window.cambiarHorario = cambiarHorario;
 window.toggleDobleTurno = toggleDobleTurno;
-window.agruparDiasHorarios = agruparDiasHorarios;
-window.desagruparDiasHorarios = desagruparDiasHorarios;
 window.actualizarPreview = actualizarPreview;
 window.imprimirTicketPrueba = imprimirTicketPrueba;
 window.guardarConfiguracionImpresora = guardarConfiguracionImpresora;
+
+// Panel 10
 window.p10_guardarInfoCajero = p10_guardarInfoCajero;
 window.p10_guardarDatosKiosco = p10_guardarDatosKiosco;
 window.p10_cambiarPasswordFirebase = p10_cambiarPasswordFirebase;
@@ -4446,9 +3964,15 @@ window.p10_exportarBackup = p10_exportarBackup;
 window.p10_restaurarBackup = p10_restaurarBackup;
 window.p10_resetearTodo = p10_resetearTodo;
 window.p10_actualizarInfoSistema = p10_actualizarInfoSistema;
-window.posAgregarProducto = posAgregarProducto;
-window.posModificarCantidad = posModificarCantidad;
-window.posEliminarItem = posEliminarItem;
+
+/* ═══════════════════════════════════════════════════════════ */
+/* ARRANQUE                                                    */
+/* ═══════════════════════════════════════════════════════════ */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAuthPanel);
+} else {
+  initAuthPanel();
+}
 </script>
 </body>
 </html>
