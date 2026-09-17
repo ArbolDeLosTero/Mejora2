@@ -1180,410 +1180,964 @@
   </style>
   <style>
     /* ═══════════════════════════════════════════════════════════ */
-    /* BLOQUE 02 — CSS AUTH + LICENCIA                            */
-    /* Estilos de login, registro, verificación, recuperación,    */
-    /* licencia y modales de T&C / Privacidad                     */
+    /* BLOQUE 03 — CSS MENÚ + POS + CAJA                          */
+    /* Estilos del menú principal, Punto de Venta y Control de    */
+    /* Caja + Historial. Incluye estilos de impresión.            */
     /* ═══════════════════════════════════════════════════════════ */
 
     /* ─────────────────────────────────────────────────────────── */
-    /* AUTH — CONTENEDOR PRINCIPAL                                */
+    /* MENÚ PRINCIPAL                                             */
     /* ─────────────────────────────────────────────────────────── */
-    .auth-container {
-      background: var(--m2-card-bg);
-      border-radius: var(--m2-radius-lg);
-      padding: var(--m2-gap-xl);
-      box-shadow: var(--m2-shadow-md);
-      max-width: 500px;
-      margin: 0 auto;
-      animation: m2SlideIn 0.3s ease;
+    .menu-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--m2-gap-lg);
+      padding-bottom: var(--m2-gap-sm);
+      border-bottom: 2px solid var(--m2-border);
+      gap: var(--m2-gap-sm);
     }
 
-    .auth-container h1 {
-      font-size: 28px;
+    .menu-user {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .menu-user-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--m2-text-dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .menu-user-role {
+      font-size: 12px;
+      color: var(--m2-text-mid);
+      text-transform: capitalize;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--m2-gap-md);
+    }
+
+    .menu-item {
+      background: var(--m2-card-bg);
+      border-radius: var(--m2-radius-md);
+      padding: var(--m2-gap-lg) var(--m2-gap-md);
       text-align: center;
-      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid var(--m2-border);
+      font-family: inherit;
+      box-shadow: var(--m2-shadow-sm);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 110px;
+    }
+
+    .menu-item:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: var(--m2-shadow-md);
+      border-color: var(--m2-primary);
+    }
+
+    .menu-item:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .menu-item:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .menu-icon {
+      font-size: 36px;
+      line-height: 1;
+    }
+
+    .menu-label {
+      font-size: 14px;
+      font-weight: 600;
       color: var(--m2-text-dark);
     }
 
-    .auth-subtitle {
-      font-size: 14px;
-      color: var(--m2-text-mid);
-      text-align: center;
-      margin-bottom: var(--m2-gap-xl);
-      line-height: 1.5;
-    }
-
     /* ─────────────────────────────────────────────────────────── */
-    /* AUTH — VISTAS                                              */
+    /* POS — LAYOUT PRINCIPAL                                     */
     /* ─────────────────────────────────────────────────────────── */
-    .auth-view {
-      display: none;
-    }
-
-    .auth-view.activa {
-      display: block;
-    }
-
-    /* ─────────────────────────────────────────────────────────── */
-    /* AUTH — FORMULARIO                                          */
-    /* ─────────────────────────────────────────────────────────── */
-    .auth-form {
-      display: flex;
+    #vista-pos {
+      padding: var(--m2-gap-md);
       flex-direction: column;
       gap: var(--m2-gap-md);
     }
 
-    .auth-form .input-group {
-      margin-bottom: 0;
-    }
-
-    /* ─────────────────────────────────────────────────────────── */
-    /* AUTH — LINKS                                               */
-    /* ─────────────────────────────────────────────────────────── */
-    .auth-links {
+    #vista-pos.activa {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: var(--m2-gap-md);
-      text-align: center;
     }
 
-    .auth-links a {
-      font-size: 13px;
-      color: var(--m2-primary);
-      text-decoration: none;
-      cursor: pointer;
-      transition: color 0.2s;
-    }
-
-    .auth-links a:hover {
-      color: var(--m2-primary-dark);
-      text-decoration: underline;
-    }
-
-    /* ─────────────────────────────────────────────────────────── */
-    /* AUTH — MENSAJES                                            */
-    /* ─────────────────────────────────────────────────────────── */
-    .auth-error {
-      color: var(--m2-error);
-      font-size: 13px;
-      text-align: center;
-      margin-top: 10px;
-      min-height: 20px;
-      line-height: 1.4;
-    }
-
-    .auth-success {
-      color: var(--m2-success);
-      font-size: 13px;
-      text-align: center;
-      margin-top: 10px;
-      min-height: 20px;
-      line-height: 1.4;
-    }
-
-    .auth-info {
-      color: var(--m2-info);
-      font-size: 13px;
-      text-align: center;
-      margin-top: 10px;
-    }
-
-    /* ─────────────────────────────────────────────────────────── */
-    /* AUTH — REQUISITOS DE CONTRASEÑA                            */
-    /* ─────────────────────────────────────────────────────────── */
-    .password-requirements {
-      font-size: 11px;
-      margin-top: 5px;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-
-    .requirement {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      color: var(--m2-text-light);
-      transition: color 0.2s;
-      line-height: 1.4;
-    }
-
-    .requirement::before {
-      content: '○';
-      font-size: 10px;
-      flex-shrink: 0;
-    }
-
-    .requirement.valid {
-      color: var(--m2-success);
-    }
-
-    .requirement.valid::before {
-      content: '✓';
-    }
-
-    .requirement.invalid {
-      color: var(--m2-error);
-    }
-
-    .requirement.invalid::before {
-      content: '✗';
-    }
-
-    /* ─────────────────────────────────────────────────────────── */
-    /* AUTH — VERIFICACIÓN DE EMAIL                               */
-    /* ─────────────────────────────────────────────────────────── */
-    .verify-message {
-      background: var(--m2-card-bg-soft);
-      border-radius: var(--m2-radius-md);
-      padding: var(--m2-gap-lg);
-      margin-bottom: var(--m2-gap-md);
-      text-align: center;
-    }
-
-    .verify-message p {
-      font-size: 14px;
-      color: var(--m2-text-dark);
-      margin-bottom: 10px;
-      line-height: 1.5;
-    }
-
-    .verify-message p:last-child {
-      margin-bottom: 0;
-    }
-
-    .verify-note {
-      font-size: 12px;
-      color: var(--m2-text-mid);
-      font-style: italic;
-    }
-
-    /* ─────────────────────────────────────────────────────────── */
-    /* LICENCIA — CONTENEDOR                                      */
-    /* ─────────────────────────────────────────────────────────── */
-    .licencia-container {
-      background: var(--m2-card-bg);
-      border-radius: var(--m2-radius-lg);
-      padding: var(--m2-gap-xl);
-      box-shadow: var(--m2-shadow-md);
-      max-width: 500px;
-      margin: 0 auto;
-      animation: m2SlideIn 0.3s ease;
-    }
-
-    .licencia-container h1 {
-      font-size: 28px;
-      text-align: center;
-      margin-bottom: 10px;
-      color: var(--m2-text-dark);
-    }
-
-    /* ─────────────────────────────────────────────────────────── */
-    /* LICENCIA — SECCIONES                                       */
-    /* ─────────────────────────────────────────────────────────── */
-    .licencia-section {
-      margin-bottom: var(--m2-gap-lg);
-      padding-bottom: var(--m2-gap-md);
-      border-bottom: 1px solid var(--m2-border);
-    }
-
-    .licencia-section:last-child {
-      border-bottom: none;
-      margin-bottom: 0;
-      padding-bottom: 0;
-    }
-
-    .licencia-section h3 {
-      font-size: 16px;
-      color: var(--m2-primary);
-      margin-bottom: var(--m2-gap-sm);
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    /* ─────────────────────────────────────────────────────────── */
-    /* LICENCIA — DEVICE ID                                       */
-    /* ─────────────────────────────────────────────────────────── */
-    .device-id-box {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--m2-card-bg-soft);
-      padding: var(--m2-gap-md);
-      border-radius: var(--m2-radius-sm);
-      margin-bottom: 10px;
-      border: 2px solid var(--m2-border);
-    }
-
-    .device-id-text {
-      flex: 1;
-      font-size: 20px;
-      font-weight: 600;
-      color: var(--m2-text-dark);
-      font-family: var(--m2-font-mono);
-      letter-spacing: 2px;
-      word-break: break-all;
-    }
-
-    .licencia-info {
-      font-size: 12px;
-      color: var(--m2-text-mid);
-      text-align: center;
-      margin-bottom: var(--m2-gap-md);
-      line-height: 1.4;
-    }
-
-    /* ─────────────────────────────────────────────────────────── */
-    /* LICENCIA — DETALLES                                        */
-    /* ─────────────────────────────────────────────────────────── */
-    .licencia-detalles {
-      background: var(--m2-card-bg-soft);
-      padding: var(--m2-gap-md);
-      border-radius: var(--m2-radius-sm);
-      margin-bottom: var(--m2-gap-md);
-    }
-
-    .detalle-item {
+    .p03-header {
       display: flex;
       justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--m2-border);
+      align-items: center;
+      padding-bottom: var(--m2-gap-sm);
+      border-bottom: 2px solid var(--m2-border);
       gap: var(--m2-gap-sm);
+      flex-wrap: wrap;
     }
 
-    .detalle-item:last-child {
-      border-bottom: none;
+    .p03-header h2 {
+      font-size: 22px;
+      color: var(--m2-text-dark);
+      margin: 0;
     }
 
-    .detalle-label {
-      font-size: 13px;
+    .p03-header-info {
+      display: flex;
+      gap: var(--m2-gap-sm);
+      font-size: 12px;
       color: var(--m2-text-mid);
+      flex-wrap: wrap;
+    }
+
+    .p03-header-info span {
+      background: var(--m2-card-bg-soft);
+      padding: 4px 10px;
+      border-radius: 8px;
       font-weight: 500;
-      flex-shrink: 0;
-    }
-
-    .detalle-valor {
-      font-size: 13px;
-      color: var(--m2-text-dark);
-      font-weight: 600;
-      text-align: right;
-      word-break: break-word;
     }
 
     /* ─────────────────────────────────────────────────────────── */
-    /* LICENCIA — TEXTAREA                                        */
+    /* POS — BÚSQUEDA                                             */
     /* ─────────────────────────────────────────────────────────── */
-    .input-licencia {
+    .p03-busqueda {
+      display: flex;
+      gap: 10px;
+      position: relative;
+    }
+
+    .p03-busqueda-input {
+      flex: 1;
+      position: relative;
+    }
+
+    .p03-busqueda-input input {
       width: 100%;
-      padding: 12px;
+      padding: 14px 16px;
       border: 2px solid var(--m2-border);
-      border-radius: var(--m2-radius-xs);
-      font-size: 14px;
-      font-family: var(--m2-font-mono);
-      resize: vertical;
+      border-radius: var(--m2-radius-sm);
+      font-size: 15px;
       transition: border-color 0.2s, box-shadow 0.2s;
-      background: white;
-      color: var(--m2-text-dark);
-      min-height: 80px;
+      font-family: inherit;
     }
 
-    .input-licencia:focus {
+    .p03-busqueda-input input:focus {
       outline: none;
       border-color: var(--m2-border-focus);
       box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
-    /* ─────────────────────────────────────────────────────────── */
-    /* LICENCIA — CÓDIGO DE INVITACIÓN                            */
-    /* ─────────────────────────────────────────────────────────── */
-    #txt-codigo-invitacion {
-      font-family: var(--m2-font-mono);
-      font-size: 22px;
-      text-align: center;
-      letter-spacing: 8px;
-      font-weight: 700;
-      padding: 16px;
+    .p03-btn-escanear {
+      padding: 0 20px;
+      background: var(--m2-primary);
+      color: white;
+      border: none;
+      border-radius: var(--m2-radius-sm);
+      font-size: 20px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 60px;
+    }
+
+    .p03-btn-escanear:hover {
+      background: #5568d3;
+    }
+
+    .p03-btn-escanear:active {
+      transform: scale(0.95);
     }
 
     /* ─────────────────────────────────────────────────────────── */
-    /* LICENCIA — ESTADO CONECTADO                                */
+    /* POS — DROPDOWN DE RESULTADOS                               */
     /* ─────────────────────────────────────────────────────────── */
-    .licencia-estado-conectado {
-      background: rgba(42, 157, 74, 0.1);
-      border-left: 4px solid var(--m2-success);
-      padding: 12px;
+    .p03-resultados-busqueda {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid var(--m2-border);
+      border-radius: var(--m2-radius-sm);
+      margin-top: 6px;
+      max-height: 280px;
+      overflow-y: auto;
+      z-index: 50;
+      display: none;
+      box-shadow: var(--m2-shadow-lg);
+    }
+
+    .p03-resultado-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--m2-border);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .p03-resultado-item:hover {
+      background: var(--m2-card-bg-soft);
+    }
+
+    .p03-resultado-item:last-child {
+      border-bottom: none;
+    }
+
+    .p03-resultado-nombre {
+      font-weight: 600;
+      color: var(--m2-text-dark);
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .p03-resultado-info {
+      font-size: 12px;
+      color: var(--m2-text-mid);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .p03-resultado-info .stock-ok { color: var(--m2-success); font-weight: 600; }
+    .p03-resultado-info .stock-bajo { color: var(--m2-warning); font-weight: 600; }
+    .p03-resultado-info .stock-agotado { color: var(--m2-error); font-weight: 600; }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* POS — LAYOUT DE DOS COLUMNAS                               */
+    /* ─────────────────────────────────────────────────────────── */
+    .p03-layout-principal {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: var(--m2-gap-md);
+      align-items: start;
+    }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* POS — LISTA DE PRODUCTOS DISPONIBLES                       */
+    /* ─────────────────────────────────────────────────────────── */
+    .p03-lista-productos {
+      max-height: 500px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .p03-lista-productos-vacia {
+      text-align: center;
+      color: var(--m2-text-light);
+      padding: 40px 16px;
+      font-size: 14px;
+      font-style: italic;
+    }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* POS — TICKET                                               */
+    /* ─────────────────────────────────────────────────────────── */
+    .p03-ticket {
+      background: white;
+      border-radius: var(--m2-radius-md);
+      padding: var(--m2-gap-md);
+      box-shadow: var(--m2-shadow-sm);
+      border: 1px solid var(--m2-border);
+      display: flex;
+      flex-direction: column;
+      max-height: 700px;
+      position: sticky;
+      top: var(--m2-gap-md);
+    }
+
+    .p03-lista-ticket {
+      max-height: 350px;
+      overflow-y: auto;
+      margin-bottom: var(--m2-gap-sm);
+      flex: 1;
+      padding-right: 4px;
+    }
+
+    .p03-ticket-vacio {
+      text-align: center;
+      color: var(--m2-text-light);
+      padding: 32px 16px;
+      font-size: 14px;
+      font-style: italic;
+    }
+
+    .p03-ticket-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 10px;
+      background: var(--m2-card-bg-soft);
       border-radius: var(--m2-radius-xs);
-      font-size: 13px;
+      margin-bottom: 8px;
+      border: 1px solid var(--m2-border);
+      gap: 10px;
+    }
+
+    .p03-ticket-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .p03-ticket-item-nombre {
+      font-weight: 600;
+      color: var(--m2-text-dark);
+      font-size: 14px;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+
+    .p03-ticket-item-precio {
+      font-size: 12px;
+      color: var(--m2-text-mid);
+    }
+
+    .p03-ticket-item-controles {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .p03-ticket-item-cantidad {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: white;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 2px;
+    }
+
+    .p03-btn-cantidad {
+      width: 26px;
+      height: 26px;
+      border: none;
+      background: var(--m2-card-bg-soft);
+      color: var(--m2-text-dark);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      line-height: 1;
+    }
+
+    .p03-btn-cantidad:hover {
+      background: var(--m2-border);
+    }
+
+    .p03-cantidad-valor {
+      min-width: 24px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .p03-ticket-item-subtotal {
+      font-weight: 700;
+      color: var(--m2-text-dark);
+      font-size: 14px;
+    }
+
+    .p03-btn-eliminar {
+      background: transparent;
+      color: var(--m2-error);
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 4px;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+
+    .p03-btn-eliminar:hover {
+      background: #fee2e2;
+    }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* POS — TOTALES                                              */
+    /* ─────────────────────────────────────────────────────────── */
+    .p03-ticket-total {
+      border-top: 2px solid var(--m2-border);
+      padding-top: var(--m2-gap-sm);
+      margin-bottom: var(--m2-gap-sm);
+    }
+
+    .p03-total-linea {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: var(--m2-text-mid);
+    }
+
+    .p03-total-final {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--m2-text-dark);
+      margin-top: 8px;
+    }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* POS — BOTÓN COBRAR                                         */
+    /* ─────────────────────────────────────────────────────────── */
+    .p03-btn-cobrar {
+      width: 100%;
+      padding: 16px;
+      background: var(--m2-success);
+      color: white;
+      border: none;
+      border-radius: var(--m2-radius-sm);
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      font-family: inherit;
+    }
+
+    .p03-btn-cobrar:hover:not(:disabled) {
+      background: #1e7a36;
+      transform: translateY(-1px);
+    }
+
+    .p03-btn-cobrar:disabled {
+      background: #cbd5e1;
+      color: var(--m2-text-mid);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* POS — MODAL COBRO                                          */
+    /* ─────────────────────────────────────────────────────────── */
+    .p03-cobro-info {
+      background: rgba(42, 157, 74, 0.08);
+      border: 1px solid rgba(42, 157, 74, 0.3);
+      padding: 20px;
+      border-radius: var(--m2-radius-sm);
+      margin-bottom: var(--m2-gap-lg);
+      text-align: center;
+    }
+
+    .p03-cobro-total {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .p03-cobro-total > span:first-child {
+      font-size: 14px;
       color: var(--m2-success);
+      font-weight: 500;
+    }
+
+    .p03-cobro-total-monto {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--m2-success);
+    }
+
+    .p03-cobro-metodos h4 {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      color: var(--m2-text-mid);
       font-weight: 600;
     }
 
-    /* ─────────────────────────────────────────────────────────── */
-    /* MODALES LEGALES (T&C / PRIVACIDAD)                         */
-    /* ─────────────────────────────────────────────────────────── */
-    .modal-legal .modal-content {
-      max-width: 700px;
+    .p03-metodos-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: var(--m2-gap-lg);
     }
 
-    .modal-legal .modal-body {
-      line-height: 1.6;
+    .p03-btn-metodo {
+      padding: 14px;
+      background: white;
+      border: 2px solid var(--m2-border);
+      border-radius: var(--m2-radius-sm);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--m2-text-dark);
+      transition: all 0.2s;
+      text-align: center;
+      font-family: inherit;
+    }
+
+    .p03-btn-metodo:hover {
+      border-color: var(--m2-primary);
+      background: #eff6ff;
+    }
+
+    .p03-btn-metodo.selected {
+      border-color: var(--m2-primary);
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 700;
+    }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* POS — COBRO EFECTIVO                                       */
+    /* ─────────────────────────────────────────────────────────── */
+    .p03-cobro-efectivo {
+      background: var(--m2-card-bg-soft);
+      padding: 16px;
+      border-radius: var(--m2-radius-sm);
+      margin-bottom: var(--m2-gap-lg);
+      border: 1px solid var(--m2-border);
+    }
+
+    .p03-efectivo-input {
+      margin-bottom: 12px;
+    }
+
+    .p03-efectivo-input label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: var(--m2-text-mid);
+      font-weight: 500;
+    }
+
+    .p03-efectivo-input input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid var(--m2-border);
+      border-radius: var(--m2-radius-xs);
+      font-size: 18px;
+      font-weight: 600;
+      font-family: inherit;
+    }
+
+    .p03-efectivo-input input:focus {
+      outline: none;
+      border-color: var(--m2-border-focus);
+    }
+
+    .p03-vuelto-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--m2-text-dark);
+      padding-top: 8px;
+      border-top: 1px dashed #cbd5e1;
+    }
+
+    .p03-vuelto-monto {
+      color: var(--m2-success);
+      font-size: 20px;
+    }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* POS — ESCÁNER                                              */
+    /* ─────────────────────────────────────────────────────────── */
+    .p03-scanner-container {
+      width: 100%;
+      min-height: 300px;
+      background: #0f172a;
+      border-radius: var(--m2-radius-sm);
+      margin-bottom: var(--m2-gap-md);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--m2-text-light);
+      position: relative;
+    }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* POS — PREVIEW DE IMPRESIÓN                                 */
+    /* ─────────────────────────────────────────────────────────── */
+    .p03-ticket-preview {
+      background: white;
+      border: 1px dashed var(--m2-text-light);
+      padding: 20px;
+      border-radius: var(--m2-radius-xs);
+      margin-bottom: var(--m2-gap-md);
+      font-family: var(--m2-font-mono);
+      font-size: 12px;
+      line-height: 1.5;
+      max-height: 400px;
+      overflow-y: auto;
+      color: var(--m2-text-dark);
+      white-space: pre-wrap;
+    }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* CAJA — ESTADO                                              */
+    /* ─────────────────────────────────────────────────────────── */
+    #vista-caja {
+      padding: var(--m2-gap-md);
+    }
+
+    .p05-tab-content {
+      margin-top: var(--m2-gap-md);
+    }
+
+    .p05-estado-card {
+      background: var(--m2-card-bg);
+      border-radius: var(--m2-radius-lg);
+      padding: var(--m2-gap-xl) var(--m2-gap-lg);
+      text-align: center;
+      box-shadow: var(--m2-shadow-sm);
+      border: 2px solid var(--m2-border);
+    }
+
+    .p05-estado-icono {
+      font-size: 64px;
+      margin-bottom: var(--m2-gap-sm);
+      opacity: 0.5;
+      line-height: 1;
+    }
+
+    .p05-estado-icono.activo {
+      opacity: 1;
+    }
+
+    .p05-estado-card h3 {
+      font-size: 20px;
+      color: var(--m2-text-dark);
+      margin: 0 0 10px 0;
+    }
+
+    .p05-estado-card p {
+      color: var(--m2-text-mid);
+      margin: 0 0 var(--m2-gap-md) 0;
+    }
+
+    .p05-estado-header {
+      display: flex;
+      align-items: center;
+      gap: var(--m2-gap-md);
+      margin-bottom: var(--m2-gap-md);
+      text-align: left;
+    }
+
+    .p05-estado-info {
+      flex: 1;
+    }
+
+    .p05-estado-info h3 {
+      margin: 0 0 5px 0;
+    }
+
+    .p05-estado-info p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--m2-text-mid);
+    }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* CAJA — RESUMEN                                             */
+    /* ─────────────────────────────────────────────────────────── */
+    .p05-resumen-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin: var(--m2-gap-md) 0;
+    }
+
+    .p05-resumen-item {
+      background: var(--m2-card-bg-soft);
+      padding: 12px;
+      border-radius: var(--m2-radius-sm);
+      text-align: center;
+      border: 1px solid var(--m2-border);
+    }
+
+    .p05-resumen-item.destacado {
+      background: var(--m2-gradient);
+      color: white;
+      grid-column: span 2;
+      border: none;
+    }
+
+    .p05-resumen-label {
+      display: block;
+      font-size: 11px;
+      opacity: 0.8;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .p05-resumen-valor {
+      display: block;
+      font-size: 18px;
+      font-weight: bold;
+      word-break: break-word;
+    }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* CAJA — ACCIONES DEL TURNO                                  */
+    /* ─────────────────────────────────────────────────────────── */
+    .p05-acciones-turno {
+      display: flex;
+      gap: 10px;
+      margin-top: var(--m2-gap-md);
+    }
+
+    .p05-acciones-turno button {
+      flex: 1;
+    }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* CAJA — ARQUEO                                              */
+    /* ─────────────────────────────────────────────────────────── */
+    .p05-arqueo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--m2-gap-lg);
+      margin-bottom: var(--m2-gap-lg);
+    }
+
+    .p05-arqueo-columna h4 {
+      margin: 0 0 var(--m2-gap-sm) 0;
+      font-size: 15px;
+      color: var(--m2-text-dark);
+    }
+
+    .p05-arqueo-items {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .p05-arqueo-item-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--m2-card-bg-soft);
+      padding: 10px;
+      border-radius: var(--m2-radius-xs);
+      border: 1px solid var(--m2-border);
+    }
+
+    .p05-arqueo-item-row .denominacion {
+      font-weight: bold;
+      min-width: 70px;
       font-size: 14px;
       color: var(--m2-text-dark);
     }
 
-    .modal-legal .modal-body h3 {
-      font-size: 16px;
+    .p05-arqueo-item-row input {
+      width: 60px;
+      padding: 6px;
+      border: 2px solid var(--m2-border);
+      border-radius: 6px;
+      text-align: center;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .p05-arqueo-item-row input:focus {
+      outline: none;
+      border-color: var(--m2-border-focus);
+    }
+
+    .p05-arqueo-item-row .subtotal {
+      margin-left: auto;
+      font-weight: 600;
       color: var(--m2-primary);
-      margin-top: var(--m2-gap-md);
-      margin-bottom: 10px;
+      font-size: 13px;
     }
 
-    .modal-legal .modal-body h3:first-child {
-      margin-top: 0;
+    .p05-arqueo-total {
+      background: var(--m2-card-bg-soft);
+      padding: 15px;
+      border-radius: var(--m2-radius-sm);
+      border: 2px solid var(--m2-border);
     }
 
-    .modal-legal .modal-body p {
-      margin-bottom: 10px;
-      line-height: 1.6;
+    /* ─────────────────────────────────────────────────────────── */
+    /* CAJA — HISTORIAL                                           */
+    /* ─────────────────────────────────────────────────────────── */
+    .p05-historial-container {
+      overflow-x: auto;
+      margin-top: var(--m2-gap-sm);
     }
 
-    .modal-legal .modal-body ul,
-    .modal-legal .modal-body ol {
-      margin-left: 20px;
-      margin-bottom: var(--m2-gap-sm);
-      line-height: 1.6;
+    .p05-historial-tabla {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 600px;
     }
 
-    .modal-legal .modal-body li {
-      margin-bottom: 6px;
+    .p05-historial-tabla th,
+    .p05-historial-tabla td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--m2-border);
+      white-space: nowrap;
+    }
+
+    .p05-historial-tabla th {
+      background: var(--m2-card-bg-soft);
+      font-weight: 700;
+      color: var(--m2-text-dark);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .p05-historial-tabla tbody tr:hover {
+      background: var(--m2-card-bg-soft);
+    }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /* IMPRESIÓN                                                  */
+    /* ─────────────────────────────────────────────────────────── */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+
+      .print-area,
+      .print-area * {
+        visibility: visible;
+      }
+
+      .print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 80mm;
+        font-family: var(--m2-font-mono);
+        font-size: 12px;
+        padding: 5mm;
+        margin: 0;
+      }
+
+      .print-header {
+        text-align: center;
+        margin-bottom: 10px;
+        font-weight: bold;
+      }
+
+      .print-line {
+        border-top: 1px dashed #000;
+        margin: 5px 0;
+      }
+
+      .print-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 2px 0;
+      }
+
+      .print-total {
+        font-weight: bold;
+        font-size: 14px;
+        margin-top: 10px;
+        border-top: 1px solid #000;
+        padding-top: 5px;
+      }
     }
 
     /* ─────────────────────────────────────────────────────────── */
     /* RESPONSIVE                                                 */
     /* ─────────────────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .p03-layout-principal {
+        grid-template-columns: 1fr;
+      }
+
+      .p03-ticket {
+        position: static;
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .menu-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .menu-item {
+        min-height: 80px;
+        flex-direction: row;
+        justify-content: flex-start;
+        text-align: left;
+      }
+
+      .menu-icon {
+        font-size: 28px;
+      }
+
+      .p03-metodos-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .p03-ticket-item {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .p03-ticket-item-controles {
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+        align-items: center;
+      }
+
+      .p05-resumen-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .p05-resumen-item.destacado {
+        grid-column: span 1;
+      }
+
+      .p05-arqueo-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .p05-acciones-turno {
+        flex-direction: column;
+      }
+    }
+
     @media (max-width: 480px) {
-      .auth-container,
-      .licencia-container {
-        padding: var(--m2-gap-lg);
+      .p03-header {
+        flex-direction: column;
+        align-items: flex-start;
       }
 
-      .auth-container h1,
-      .licencia-container h1 {
-        font-size: 24px;
+      .p05-estado-header {
+        flex-direction: column;
+        text-align: center;
       }
 
-      .device-id-text {
-        font-size: 16px;
-        letter-spacing: 1px;
-      }
-
-      #txt-codigo-invitacion {
-        font-size: 18px;
-        letter-spacing: 6px;
-        padding: 14px;
+      .p05-estado-card {
+        padding: var(--m2-gap-lg) var(--m2-gap-md);
       }
     }
   </style>
@@ -5658,10 +6212,11 @@
       }
     })();
   </script>
-  <script>
+<script>
     /* ═══════════════════════════════════════════════════════════ */
     /* BLOQUE 11 — JS DATA LAYER                                  */
     /* Firestore + caché + cola offline + onSnapshot              */
+    /* VERSIÓN CORREGIDA — Bugfix A.3, A.4, A.7                   */
     /* ═══════════════════════════════════════════════════════════ */
     (function () {
       'use strict';
@@ -5677,6 +6232,9 @@
       /* ESTADO INTERNO                                         */
       /* ─────────────────────────────────────────────────────── */
       let _comercioId = null;
+      // CAMBIO A.7: ahora es un objeto de arrays para permitir
+      // múltiples listeners sobre la misma colección.
+      // { coleccion: [unsubscribe1, unsubscribe2, ...] }
       const _unsubscribers = {};
 
       /* ─────────────────────────────────────────────────────── */
@@ -5767,6 +6325,16 @@
         }
       }
 
+      // CAMBIO A.3/A.4: helper para derivar un prefijo legible
+      // desde el nombre de la colección.
+      // 'ventas'           -> 'venta'
+      // 'productos'        -> 'producto'
+      // 'historico_compras'-> 'historico_compra'
+      function _prefijoDesdeColeccion(coleccion) {
+        const c = String(coleccion || 'item');
+        return c.endsWith('s') ? c.slice(0, -1) : c;
+      }
+
       /* ─────────────────────────────────────────────────────── */
       /* CRUD — READ                                            */
       /* ─────────────────────────────────────────────────────── */
@@ -5837,24 +6405,17 @@
         }
       };
 
+      // CAMBIO A.3/A.4: Data.add ahora genera el ID del lado
+      // del cliente y delega en Data.set. De esta forma:
+      //  - Online y offline devuelven exactamente la misma forma:
+      //    { id, ...data }
+      //  - El ID es estable y se puede usar como referencia
+      //    (ej: venta.id para ARCA, turno_id, etc.)
+      //  - Cuando se sincroniza la cola, la operación encolada
+      //    es un 'set' con el id ya resuelto → no se pierde.
       Data.add = async function (coleccion, data) {
-        const payload = Object.assign({}, data, {
-          _ts: Date.now(),
-          _device: App.getDeviceId()
-        });
-
-        if (!App.esOnline()) {
-          return _encolar({ tipo: 'add', coleccion: coleccion, data: payload });
-        }
-
-        try {
-          const ref = await App.getDb().collection(_path(coleccion)).add(payload);
-          _actualizarItemEnCache(coleccion, Object.assign({ id: ref.id }, payload));
-          return Object.assign({ id: ref.id }, payload);
-        } catch (e) {
-          console.error('[Data] Error add(' + coleccion + '):', e);
-          return _encolar({ tipo: 'add', coleccion: coleccion, data: payload });
-        }
+        const id = App.generarId(_prefijoDesdeColeccion(coleccion));
+        return Data.set(coleccion, id, data);
       };
 
       Data.update = async function (coleccion, id, data) {
@@ -5894,14 +6455,18 @@
       /* ─────────────────────────────────────────────────────── */
       /* ONSNAPSHOT (tiempo real)                               */
       /* ─────────────────────────────────────────────────────── */
+      // CAMBIO A.7: ahora soporta múltiples listeners por
+      // colección. Cada llamada agrega un unsubscribe al array.
+      // POS y Stock pueden escuchar 'productos' al mismo tiempo
+      // sin pisarse.
       Data.onSnapshot = function (coleccion, callback, filtros) {
         if (!_comercioId) {
           console.error('[Data] onSnapshot sin comercioId');
           return function () {};
         }
 
-        if (_unsubscribers[coleccion]) {
-          _unsubscribers[coleccion]();
+        if (!_unsubscribers[coleccion]) {
+          _unsubscribers[coleccion] = [];
         }
 
         filtros = filtros || [];
@@ -5910,7 +6475,7 @@
           ref = ref.where(f.campo, f.operador || '==', f.valor);
         });
 
-        _unsubscribers[coleccion] = ref.onSnapshot(
+        const unsubscribe = ref.onSnapshot(
           function (snap) {
             const items = snap.docs.map(function (d) {
               return Object.assign({ id: d.id }, d.data());
@@ -5927,23 +6492,28 @@
           }
         );
 
-        return _unsubscribers[coleccion];
+        _unsubscribers[coleccion].push(unsubscribe);
+        return unsubscribe;
       };
 
       Data.cancelarSnapshot = function (coleccion) {
         if (_unsubscribers[coleccion]) {
-          _unsubscribers[coleccion]();
+          _unsubscribers[coleccion].forEach(function (u) {
+            try { u(); } catch (e) {
+              console.warn('[Data] Error al cancelar snapshot de ' + coleccion + ':', e);
+            }
+          });
           delete _unsubscribers[coleccion];
         }
       };
 
       Data.cancelarTodosLosSnapshots = function () {
         Object.keys(_unsubscribers).forEach(function (k) {
-          try {
-            _unsubscribers[k]();
-          } catch (e) {
-            console.warn('[Data] Error al cancelar snapshot ' + k + ':', e);
-          }
+          _unsubscribers[k].forEach(function (u) {
+            try { u(); } catch (e) {
+              console.warn('[Data] Error al cancelar snapshot ' + k + ':', e);
+            }
+          });
         });
         Object.keys(_unsubscribers).forEach(function (k) {
           delete _unsubscribers[k];
@@ -6040,6 +6610,9 @@
             await db.doc(_path(op.coleccion, op.id)).set(op.data);
           }
         } else if (op.tipo === 'add') {
+          // Compatibilidad: si quedó algún 'add' viejo en la cola
+          // de una versión anterior, lo aplicamos con .add().
+          // (En la nueva lógica ya no se encolan 'add'.)
           await db.collection(_path(op.coleccion)).add(op.data);
         } else if (op.tipo === 'update') {
           await db.doc(_path(op.coleccion, op.id)).update(op.data);
@@ -6129,11 +6702,12 @@
       window.Data = Data;
     })();
   </script>
-  <script>
+<script>
     /* ═══════════════════════════════════════════════════════════ */
     /* BLOQUE 12 — JS AUTH + LICENCIA                             */
     /* Login, registro, verificación, recuperación, licencia,     */
     /* vinculación de cajeros, rate limiting.                     */
+    /* VERSIÓN CORREGIDA — Bugfix B.4/B.5, B.6 + rate limit       */
     /* ═══════════════════════════════════════════════════════════ */
     (function () {
       'use strict';
@@ -6148,6 +6722,7 @@
       /* ESTADO INTERNO                                         */
       /* ─────────────────────────────────────────────────────── */
       let _unsubscribeLicencia = null;
+      let _authInitialized = false;
 
       /* ─────────────────────────────────────────────────────── */
       /* OBJETOS                                                */
@@ -6158,11 +6733,23 @@
       /* ═══════════════════════════════════════════════════════ */
       /* AUTH — INICIALIZACIÓN                                  */
       /* ═══════════════════════════════════════════════════════ */
+      // CAMBIO B.4/B.5: init idempotente. La segunda llamada
+      // ya no registra listeners duplicados.
       Auth.init = function () {
+        if (_authInitialized) {
+          console.info('[Auth] Ya inicializado, ignorando segunda llamada');
+          return;
+        }
+        _authInitialized = true;
+
         App.getAuth().onAuthStateChanged(async function (user) {
           if (user) {
             console.info('[Auth] Usuario logueado:', user.email);
-            await _verificarEstadoUsuario(user);
+            try {
+              await _verificarEstadoUsuario(user);
+            } catch (e) {
+              console.error('[Auth] Error en onAuthStateChanged:', e);
+            }
           } else {
             console.info('[Auth] Sin sesión activa');
             _limpiarSesionLocal();
@@ -6187,24 +6774,32 @@
           throw new Error('Demasiados intentos. Esperá ' + bloqueo.minutosRestantes + ' minutos.');
         }
 
+        let cred;
         try {
-          const cred = await App.getAuth().signInWithEmailAndPassword(email, password);
-          const user = cred.user;
-
-          _limpiarIntentos(email);
-
-          if (!user.emailVerified) {
-            await App.getAuth().signOut();
-            App.navegar('verify');
-            return null;
-          }
-
-          await _verificarEstadoUsuario(user);
-          return user;
+          cred = await App.getAuth().signInWithEmailAndPassword(email, password);
         } catch (error) {
           _registrarIntentoFallido(email);
           throw _traducirError(error);
         }
+
+        const user = cred.user;
+        _limpiarIntentos(email);
+
+        if (!user.emailVerified) {
+          // CAMBIO B.6: signOut con try/catch por si falla.
+          try {
+            await App.getAuth().signOut();
+          } catch (e) {
+            console.warn('[Auth] Error al cerrar sesión tras verificación pendiente:', e);
+          }
+          App.navegar('verify');
+          return null;
+        }
+
+        // CAMBIO B.6: _verificarEstadoUsuario puede lanzar. Lo
+        // dejamos propagar para que el handler muestre el error.
+        await _verificarEstadoUsuario(user);
+        return user;
       };
 
       /* ═══════════════════════════════════════════════════════ */
@@ -6228,10 +6823,18 @@
           throw new Error('Las contraseñas no coinciden');
         }
 
+        let cred;
         try {
-          const cred = await App.getAuth().createUserWithEmailAndPassword(email, password);
-          const user = cred.user;
+          cred = await App.getAuth().createUserWithEmailAndPassword(email, password);
+        } catch (error) {
+          throw _traducirError(error);
+        }
 
+        const user = cred.user;
+
+        // CAMBIO B.6: si falla la creación del doc en Firestore,
+        // borramos el usuario de Auth para no dejar cuentas colgadas.
+        try {
           await App.getDb().collection('usuarios').doc(user.uid).set({
             email: email,
             nombre: nombre,
@@ -6248,14 +6851,28 @@
             terminos_version: 'v1.0',
             terminos_aceptados: firebase.firestore.FieldValue.serverTimestamp()
           });
-
-          await user.sendEmailVerification();
-          await App.getAuth().signOut();
-          App.navegar('verify');
-          return user.uid;
-        } catch (error) {
-          throw _traducirError(error);
+        } catch (e) {
+          console.error('[Auth] Error al crear doc de usuario, borrando cuenta de Auth:', e);
+          try { await user.delete(); } catch (e2) {
+            console.error('[Auth] No se pudo borrar la cuenta de Auth:', e2);
+          }
+          throw new Error('No se pudo crear la cuenta. Intentá nuevamente.');
         }
+
+        try {
+          await user.sendEmailVerification();
+        } catch (e) {
+          console.warn('[Auth] No se pudo enviar email de verificación:', e);
+        }
+
+        try {
+          await App.getAuth().signOut();
+        } catch (e) {
+          console.warn('[Auth] Error al cerrar sesión post-registro:', e);
+        }
+
+        App.navegar('verify');
+        return user.uid;
       };
 
       /* ═══════════════════════════════════════════════════════ */
@@ -6276,8 +6893,12 @@
       Auth.reenviarVerificacion = async function () {
         const user = App.getAuth().currentUser;
         if (!user) throw new Error('No hay sesión activa');
-        await user.sendEmailVerification();
-        return true;
+        try {
+          await user.sendEmailVerification();
+          return true;
+        } catch (error) {
+          throw _traducirError(error);
+        }
       };
 
       /* ═══════════════════════════════════════════════════════ */
@@ -6306,6 +6927,11 @@
       /* AUTH — VALIDAR PASSWORD EN VIVO                        */
       /* ═══════════════════════════════════════════════════════ */
       Auth.validarPasswordEnVivo = function (password) {
+        // CAMBIO: si no estamos en la vista de registro (no hay
+        // ningún elemento req-*), no hacemos nada.
+        const primerReq = document.getElementById('req-length');
+        if (!primerReq) return false;
+
         const checks = {
           length: password.length >= 8,
           uppercase: /[A-Z]/.test(password),
@@ -6326,49 +6952,57 @@
       /* AUTH — VERIFICAR ESTADO DEL USUARIO                    */
       /* ═══════════════════════════════════════════════════════ */
       async function _verificarEstadoUsuario(user) {
+        let docRef;
+        let doc;
+
         try {
-          const docRef = App.getDb().collection('usuarios').doc(user.uid);
-          const doc = await docRef.get();
+          docRef = App.getDb().collection('usuarios').doc(user.uid);
+          doc = await docRef.get();
+        } catch (e) {
+          console.error('[Auth] Error al leer doc del usuario:', e);
+          throw new Error('No se pudo verificar tu cuenta. Revisá tu conexión.');
+        }
 
-          if (!doc.exists) {
-            await App.getAuth().signOut();
-            throw new Error('Usuario no encontrado en Firestore');
+        if (!doc.exists) {
+          // CAMBIO: usuario sin doc en Firestore. Cerramos sesión
+          // de forma controlada.
+          try { await App.getAuth().signOut(); } catch (e) {}
+          _limpiarSesionLocal();
+          App.navegar('login');
+          throw new Error('Usuario no encontrado en la base de datos.');
+        }
+
+        const data = doc.data();
+
+        localStorage.setItem('usuario_actual_v1', JSON.stringify({
+          uid: user.uid,
+          email: data.email,
+          nombre: data.nombre,
+          apellido: data.apellido,
+          negocio: data.negocio,
+          rol: data.rol,
+          comercioId: data.comercioId
+        }));
+        localStorage.setItem('sesion_activa_v1', 'true');
+        localStorage.setItem('ultimo_login_v1', String(Date.now()));
+
+        // Fire and forget con catch interno.
+        docRef.update({
+          ultimo_login: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(function (e) {
+          console.warn('[Auth] No se pudo actualizar ultimo_login:', e);
+        });
+
+        _actualizarMenuUsuario(data);
+
+        if (data.licencia_activa && data.comercioId) {
+          if (window.Data && Data.init) {
+            Data.init(data.comercioId);
           }
-
-          const data = doc.data();
-
-          localStorage.setItem('usuario_actual_v1', JSON.stringify({
-            uid: user.uid,
-            email: data.email,
-            nombre: data.nombre,
-            apellido: data.apellido,
-            negocio: data.negocio,
-            rol: data.rol,
-            comercioId: data.comercioId
-          }));
-          localStorage.setItem('sesion_activa_v1', 'true');
-          localStorage.setItem('ultimo_login_v1', String(Date.now()));
-
-          docRef.update({
-            ultimo_login: firebase.firestore.FieldValue.serverTimestamp()
-          }).catch(function (e) {
-            console.warn('[Auth] No se pudo actualizar ultimo_login:', e);
-          });
-
-          _actualizarMenuUsuario(data);
-
-          if (data.licencia_activa && data.comercioId) {
-            if (window.Data && Data.init) {
-              Data.init(data.comercioId);
-            }
-            _iniciarValidacionLicencia(user.uid);
-            App.navegar('menu');
-          } else {
-            App.navegar('licencia');
-          }
-        } catch (error) {
-          console.error('[Auth] Error al verificar usuario:', error);
-          throw error;
+          _iniciarValidacionLicencia(user.uid);
+          App.navegar('menu');
+        } else {
+          App.navegar('licencia');
         }
       }
 
@@ -6380,16 +7014,42 @@
       }
 
       function _leerIntentos(email) {
+        // CAMBIO: localStorage como fuente primaria; sessionStorage
+        // como backup para que limpiar localStorage no resetee el
+        // bloqueo dentro de la misma sesión del navegador.
+        let local = null;
+        let sesion = null;
+
         try {
           const raw = localStorage.getItem(_keyIntentos(email));
-          return raw ? JSON.parse(raw) : { intentos: 0, ultimoIntento: 0, bloqueadoHasta: 0 };
-        } catch (e) {
-          return { intentos: 0, ultimoIntento: 0, bloqueadoHasta: 0 };
-        }
+          if (raw) local = JSON.parse(raw);
+        } catch (e) { local = null; }
+
+        try {
+          const rawS = sessionStorage.getItem(_keyIntentos(email));
+          if (rawS) sesion = JSON.parse(rawS);
+        } catch (e) { sesion = null; }
+
+        // Nos quedamos con el más restrictivo (mayor bloqueadoHasta).
+        const base = { intentos: 0, ultimoIntento: 0, bloqueadoHasta: 0 };
+        if (!local && !sesion) return base;
+        if (!local) return sesion;
+        if (!sesion) return local;
+
+        return {
+          intentos: Math.max(local.intentos || 0, sesion.intentos || 0),
+          ultimoIntento: Math.max(local.ultimoIntento || 0, sesion.ultimoIntento || 0),
+          bloqueadoHasta: Math.max(local.bloqueadoHasta || 0, sesion.bloqueadoHasta || 0)
+        };
       }
 
       function _guardarIntentos(email, data) {
-        localStorage.setItem(_keyIntentos(email), JSON.stringify(data));
+        try {
+          localStorage.setItem(_keyIntentos(email), JSON.stringify(data));
+        } catch (e) {}
+        try {
+          sessionStorage.setItem(_keyIntentos(email), JSON.stringify(data));
+        } catch (e) {}
       }
 
       function _verificarRateLimit(email) {
@@ -6416,7 +7076,8 @@
       }
 
       function _limpiarIntentos(email) {
-        localStorage.removeItem(_keyIntentos(email));
+        try { localStorage.removeItem(_keyIntentos(email)); } catch (e) {}
+        try { sessionStorage.removeItem(_keyIntentos(email)); } catch (e) {}
       }
 
       /* ═══════════════════════════════════════════════════════ */
@@ -6466,7 +7127,7 @@
           'turno_activo_v1'
         ];
         claves.forEach(function (k) {
-          localStorage.removeItem(k);
+          try { localStorage.removeItem(k); } catch (e) {}
         });
       }
 
@@ -6516,51 +7177,70 @@
         const user = App.getAuth().currentUser;
         if (!user) throw new Error('No hay sesión activa');
 
-        const userDoc = await App.getDb().collection('usuarios').doc(user.uid).get();
-        const userData = userDoc.data();
+        // CAMBIO B.6: lectura del doc con try/catch.
+        let userData;
+        try {
+          const userDoc = await App.getDb().collection('usuarios').doc(user.uid).get();
+          userData = userDoc.data();
+        } catch (e) {
+          console.error('[Licencia] Error al leer doc de usuario:', e);
+          throw new Error('No se pudo verificar tu cuenta. Revisá tu conexión.');
+        }
 
         let comercioId = payload.comercio_id || userData.comercioId;
 
+        // CAMBIO B.6: escrituras envueltas en try/catch. Si falla
+        // la creación del comercio, no seguimos.
         if (!userData.comercioId) {
           if (!comercioId) {
             comercioId = App.generarId('comercio');
           }
 
-          await App.getDb().collection('comercios').doc(comercioId).set({
-            nombre_comercio: userData.negocio || 'Mi Comercio',
-            admin_uid: user.uid,
-            cajeros: [],
-            modo_fiscal: 'particular',
-            arca_config: null,
-            config_impuestos: {
-              condicion: 'responsable',
-              aliqGral: 21,
-              aliqRed: 10.5,
-              aliqDif: 27,
-              preciosConIva: false
-            },
-            config_ticket: {},
-            datos_cuenta: {
-              nombre: userData.negocio || '',
-              propietario: (userData.nombre || '') + ' ' + (userData.apellido || ''),
-              cuit: '',
-              direccion: '',
-              telefono: '',
-              email: userData.email || ''
-            },
-            fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
-            fecha_actualizacion: firebase.firestore.FieldValue.serverTimestamp()
-          });
+          try {
+            await App.getDb().collection('comercios').doc(comercioId).set({
+              nombre_comercio: userData.negocio || 'Mi Comercio',
+              admin_uid: user.uid,
+              cajeros: [],
+              modo_fiscal: 'particular',
+              arca_config: null,
+              config_impuestos: {
+                condicion: 'responsable',
+                aliqGral: 21,
+                aliqRed: 10.5,
+                aliqDif: 27,
+                preciosConIva: false
+              },
+              config_ticket: {},
+              datos_cuenta: {
+                nombre: userData.negocio || '',
+                propietario: (userData.nombre || '') + ' ' + (userData.apellido || ''),
+                cuit: '',
+                direccion: '',
+                telefono: '',
+                email: userData.email || ''
+              },
+              fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
+              fecha_actualizacion: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          } catch (e) {
+            console.error('[Licencia] Error al crear comercio:', e);
+            throw new Error('No se pudo crear el comercio. Intentá nuevamente.');
+          }
 
-          await App.getDb().collection('usuarios').doc(user.uid).update({
-            comercioId: comercioId,
-            rol: 'admin',
-            licencia_activa: true,
-            licencia_tipo: 'admin',
-            device_id: deviceId,
-            fecha_expiracion: payload.fecha_expiracion ? new Date(payload.fecha_expiracion) : null,
-            dias_offline: payload.dias_offline || 7
-          });
+          try {
+            await App.getDb().collection('usuarios').doc(user.uid).update({
+              comercioId: comercioId,
+              rol: 'admin',
+              licencia_activa: true,
+              licencia_tipo: 'admin',
+              device_id: deviceId,
+              fecha_expiracion: payload.fecha_expiracion ? new Date(payload.fecha_expiracion) : null,
+              dias_offline: payload.dias_offline || 7
+            });
+          } catch (e) {
+            console.error('[Licencia] Error al actualizar usuario:', e);
+            throw new Error('No se pudo activar la licencia. Intentá nuevamente.');
+          }
         }
 
         localStorage.setItem('licencia_v1', JSON.stringify({
@@ -6621,11 +7301,17 @@
         const user = App.getAuth().currentUser;
         if (!user) throw new Error('No hay sesión activa');
 
-        const snap = await App.getDb().collection('invitaciones')
-          .where('codigo', '==', codigo)
-          .where('usada', '==', false)
-          .limit(1)
-          .get();
+        let snap;
+        try {
+          snap = await App.getDb().collection('invitaciones')
+            .where('codigo', '==', codigo)
+            .where('usada', '==', false)
+            .limit(1)
+            .get();
+        } catch (e) {
+          console.error('[Licencia] Error al buscar invitación:', e);
+          throw new Error('No se pudo verificar el código. Revisá tu conexión.');
+        }
 
         if (snap.empty) throw new Error('Código inválido o ya usado');
 
@@ -6638,25 +7324,48 @@
           }
         }
 
-        if (data.email_cajero !== user.email) {
-          throw new Error('Este código no es para tu email');
+        // CAMBIO: comparación case-insensitive de email.
+        const emailInvitacion = String(data.email_cajero || '').toLowerCase().trim();
+        const emailUsuario = String(user.email || '').toLowerCase().trim();
+        if (emailInvitacion !== emailUsuario) {
+          throw new Error('Este código fue generado para otro email. Verificá que estés logueado con la cuenta correcta.');
         }
 
-        await App.getDb().collection('usuarios').doc(user.uid).update({
-          comercioId: data.comercioId,
-          rol: 'cajero',
-          licencia_activa: true,
-          licencia_tipo: 'cajero',
-          device_id: App.getDeviceId(),
-          fecha_expiracion: data.fecha_expiracion || null,
-          dias_offline: 7
-        });
+        // CAMBIO B.6: actualización del usuario envuelta.
+        try {
+          await App.getDb().collection('usuarios').doc(user.uid).update({
+            comercioId: data.comercioId,
+            rol: 'cajero',
+            licencia_activa: true,
+            licencia_tipo: 'cajero',
+            device_id: App.getDeviceId(),
+            fecha_expiracion: data.fecha_expiracion || null,
+            dias_offline: 7
+          });
+        } catch (e) {
+          console.error('[Licencia] Error al actualizar usuario:', e);
+          throw new Error('No se pudo vincular. Intentá nuevamente.');
+        }
 
-        await App.getDb().collection('comercios').doc(data.comercioId).update({
-          cajeros: firebase.firestore.FieldValue.arrayUnion(user.uid)
-        });
+        // CAMBIO B.6: agregar al comercio envuelto.
+        try {
+          await App.getDb().collection('comercios').doc(data.comercioId).update({
+            cajeros: firebase.firestore.FieldValue.arrayUnion(user.uid)
+          });
+        } catch (e) {
+          console.error('[Licencia] Error al agregar cajero al comercio:', e);
+          // No relanzamos: el usuario ya está vinculado, el array
+          // se puede reparar después. Logueamos.
+        }
 
-        await invitacion.ref.update({ usada: true });
+        // CAMBIO B.6: marcar invitación como usada envuelto.
+        try {
+          await invitacion.ref.update({ usada: true });
+        } catch (e) {
+          console.error('[Licencia] Error al marcar invitación como usada:', e);
+          // No relanzamos: si falla, la invitación queda reutilizable
+          // pero el usuario ya está vinculado.
+        }
 
         localStorage.setItem('licencia_v1', JSON.stringify({
           activa: true,
@@ -7002,9 +7711,10 @@
       }
     })();
   </script>
-  <script>
+<script>
     /* ═══════════════════════════════════════════════════════════ */
     /* BLOQUE 13 — JS POS + CAJA + HISTORIAL                      */
+    /* VERSIÓN CORREGIDA — Bugfix A.8, A.9, B.4/B.5, C.10         */
     /* ═══════════════════════════════════════════════════════════ */
     (function () {
       'use strict';
@@ -7018,6 +7728,12 @@
       let _productoNoEncontrado = null;
       let _metodoPagoSeleccionado = null;
       let _turnoActual = null;
+      let _ultimaVenta = null;
+
+      // CAMBIO B.4/B.5: guards para no registrar listeners
+      // más de una vez por panel.
+      let _posInitialized = false;
+      let _cajaInitialized = false;
 
       const DENOMINACIONES = {
         billetes: [20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20],
@@ -7030,6 +7746,9 @@
       /* ═══════════════════════════════════════════════════════ */
       /* POS — INICIALIZACIÓN                                   */
       /* ═══════════════════════════════════════════════════════ */
+      // CAMBIO B.4/B.5: init ahora es idempotente. La primera
+      // vez registra listeners y abre el snapshot de productos.
+      // Las siguientes veces solo refresca datos.
       POS.init = async function () {
         try {
           _turnoActual = JSON.parse(localStorage.getItem('turno_activo_v1') || 'null');
@@ -7042,15 +7761,20 @@
           await POS.cargarProductos();
           POS.restaurarTicket();
           _actualizarHeaderPOS();
-          _configurarListenersPOS();
 
-          if (window.Data && Data.onSnapshot) {
-            Data.onSnapshot('productos', function (items) {
-              _productosDisponibles = items.filter(function (p) {
-                return (p.stock_total || 0) > 0;
+          if (!_posInitialized) {
+            _configurarListenersPOS();
+
+            if (window.Data && Data.onSnapshot) {
+              Data.onSnapshot('productos', function (items) {
+                _productosDisponibles = items.filter(function (p) {
+                  return (p.stock_total || 0) > 0;
+                });
+                POS.renderTicket();
               });
-              POS.renderTicket();
-            });
+            }
+
+            _posInitialized = true;
           }
         } catch (e) {
           console.error('[POS] Error al inicializar:', e);
@@ -7401,6 +8125,10 @@
           const guardada = await Data.add('ventas', venta);
           venta.id = guardada.id;
 
+          // Guardamos la última venta para poder reimprimirla
+          // desde el modal de impresión.
+          _ultimaVenta = venta;
+
           if (window.Stock && Stock.descontarStockPorVenta) {
             await Stock.descontarStockPorVenta(_ticketActual);
           }
@@ -7408,6 +8136,11 @@
           _ticketActual = [];
           POS.guardarTicket();
           POS.renderTicket();
+
+          // CAMBIO A.9: refrescar el header para que el número
+          // de ticket visible coincida con el correlativo nuevo.
+          _actualizarHeaderPOS();
+
           App.cerrarModal('modal-p03-cobro');
           App.toast('Venta confirmada', 'success');
 
@@ -7415,10 +8148,14 @@
             Impresora.imprimirTicket(venta);
           }
 
+          // Si el modo fiscal NO es particular, intentamos
+          // emitir factura. El guard del bloque 16 maneja el
+          // caso sin Blaze (muestra "Próximamente" y no rompe).
           if (modoFiscal !== 'particular' && window.Arca && Arca.emitirFactura) {
             Arca.emitirFactura(venta).catch(function (e) {
               console.warn('[POS] Error al emitir factura:', e);
-              App.toast('Factura pendiente de emisión', 'warning');
+              // No mostramos toast de error acá: el bloque 16
+              // ya se encarga de avisar lo que corresponda.
             });
           }
         } catch (e) {
@@ -7530,6 +8267,54 @@
       };
 
       /* ═══════════════════════════════════════════════════════ */
+      /* POS — MODAL IMPRESIÓN (reimprimir)                     */
+      /* ═══════════════════════════════════════════════════════ */
+      // CAMBIO A.8 / C.10: abre el modal de impresión y lo llena
+      // con un preview textual de la última venta. El botón
+      // "Imprimir" usa Impresora.imprimirTicket con esa venta.
+      POS.abrirModalImpresion = function () {
+        if (!_ultimaVenta) {
+          App.toast('No hay ticket reciente para reimprimir', 'info');
+          return;
+        }
+
+        const preview = document.getElementById('p03-ticket-preview');
+        if (preview) {
+          const v = _ultimaVenta;
+          let texto = '';
+          texto += 'Ticket #' + String(v.ticket_numero || '').padStart(5, '0') + '\n';
+          texto += 'Fecha: ' + App.formatearFechaHora(v.fecha) + '\n';
+          texto += 'Cajero: ' + (v.cajero_nombre || '') + '\n';
+          texto += '--------------------------------\n';
+          (v.items || []).forEach(function (it) {
+            texto += it.cantidad + ' x ' + it.nombre + '  ' + App.formatearMoneda(it.subtotal) + '\n';
+          });
+          texto += '--------------------------------\n';
+          texto += 'TOTAL: ' + App.formatearMoneda(v.total) + '\n';
+          if (v.metodo_pago) {
+            texto += 'Pago: ' + v.metodo_pago + '\n';
+            texto += 'Recibido: ' + App.formatearMoneda(v.monto_recibido || 0) + '\n';
+            texto += 'Vuelto: ' + App.formatearMoneda(v.vuelto || 0) + '\n';
+          }
+          preview.textContent = texto;
+        }
+
+        App.abrirModal('modal-p03-impresion');
+      };
+
+      POS.confirmarImpresion = function () {
+        if (!_ultimaVenta) {
+          App.toast('No hay ticket para imprimir', 'info');
+          App.cerrarModal('modal-p03-impresion');
+          return;
+        }
+        if (window.Impresora && Impresora.imprimirTicket) {
+          Impresora.imprimirTicket(_ultimaVenta);
+        }
+        App.cerrarModal('modal-p03-impresion');
+      };
+
+      /* ═══════════════════════════════════════════════════════ */
       /* POS — LISTENERS                                        */
       /* ═══════════════════════════════════════════════════════ */
       function _configurarListenersPOS() {
@@ -7612,6 +8397,11 @@
           });
         }
 
+        // CAMBIO A.8: listener del botón "Imprimir" del modal.
+        // Reimprime la última venta.
+        const btnImprimir = document.getElementById('p03-btn-imprimir');
+        if (btnImprimir) btnImprimir.addEventListener('click', POS.confirmarImpresion);
+
         const btnCerrarImpresion = document.getElementById('p03-btn-cerrar-impresion');
         if (btnCerrarImpresion) {
           btnCerrarImpresion.addEventListener('click', function () {
@@ -7640,10 +8430,15 @@
       /* ═══════════════════════════════════════════════════════ */
       /* CAJA — INICIALIZACIÓN                                  */
       /* ═══════════════════════════════════════════════════════ */
+      // CAMBIO B.4/B.5: init idempotente igual que POS.
       Caja.init = async function () {
         Caja.cargarTurno();
         Caja.renderEstado();
-        _configurarListenersCaja();
+
+        if (!_cajaInitialized) {
+          _configurarListenersCaja();
+          _cajaInitialized = true;
+        }
 
         if (_esAdmin()) {
           Caja.cargarHistorial();
@@ -7878,6 +8673,61 @@
       };
 
       /* ═══════════════════════════════════════════════════════ */
+      /* CAJA — IMPRIMIR ARQUEO                                 */
+      /* ═══════════════════════════════════════════════════════ */
+      // CAMBIO A.8: implementación de impresión del último arqueo.
+      Caja.imprimirArqueo = function () {
+        if (!_turnoActual || !_turnoActual.arqueos || _turnoActual.arqueos.length === 0) {
+          App.toast('No hay arqueo para imprimir', 'info');
+          return;
+        }
+
+        const a = _turnoActual.arqueos[_turnoActual.arqueos.length - 1];
+        const ventana = window.open('', '_blank', 'width=400,height=600');
+
+        if (!ventana) {
+          App.toast('Permitir ventanas emergentes para imprimir', 'warning');
+          return;
+        }
+
+        const lineasDenom = Object.keys(a.denominaciones || {}).map(function (d) {
+          const cant = a.denominaciones[d];
+          const sub = parseInt(d, 10) * cant;
+          return '<div class="item"><span>$' + App.formatearNumero(d) + ' x ' + cant + '</span><span>' + App.formatearMoneda(sub) + '</span></div>';
+        }).join('');
+
+        ventana.document.write(
+          '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Arqueo</title>' +
+          '<style>' +
+          '@page { margin: 0; }' +
+          'body { font-family: "Courier New", monospace; font-size: 12px; width: 58mm; padding: 5mm; margin: 0 auto; }' +
+          '.item { display: flex; justify-content: space-between; }' +
+          '.sep { border-top: 1px dashed #000; margin: 5px 0; }' +
+          '.center { text-align: center; }' +
+          'h2 { text-align: center; margin: 0 0 8px 0; font-size: 14px; }' +
+          '</style></head><body>' +
+          '<h2>ARQUEO DE CAJA</h2>' +
+          '<div class="center">' + App.formatearFechaHora(a.timestamp) + '</div>' +
+          '<div class="sep"></div>' +
+          '<div class="item"><span>Cajero:</span><span>' + App.escapeHtml(a.cajero || '-') + '</span></div>' +
+          '<div class="item"><span>Turno:</span><span>' + App.escapeHtml(String(_turnoActual.id).slice(0, 12)) + '</span></div>' +
+          '<div class="sep"></div>' +
+          '<div class="center"><strong>Denominaciones contadas</strong></div>' +
+          (lineasDenom || '<div class="center">(sin denominaciones)</div>') +
+          '<div class="sep"></div>' +
+          '<div class="item"><strong>Total contado:</strong><strong>' + App.formatearMoneda(a.total_contado) + '</strong></div>' +
+          '<div class="item"><span>Total esperado:</span><span>' + App.formatearMoneda(a.total_esperado) + '</span></div>' +
+          '<div class="item"><span>Diferencia:</span><span>' + ((a.diferencia >= 0 ? '+' : '') + App.formatearMoneda(a.diferencia)) + '</span></div>' +
+          '<div class="sep"></div>' +
+          '<div class="center">Firma: _______________</div>' +
+          '</body></html>'
+        );
+        ventana.document.close();
+        ventana.focus();
+        setTimeout(function () { ventana.print(); }, 500);
+      };
+
+      /* ═══════════════════════════════════════════════════════ */
       /* CAJA — CERRAR                                          */
       /* ═══════════════════════════════════════════════════════ */
       Caja.abrirModalCierre = async function () {
@@ -8090,6 +8940,10 @@
           });
         }
 
+        // CAMBIO A.8: listener del botón "Imprimir Arqueo".
+        const btnImprimirArqueo = document.getElementById('p05-btn-imprimir-arqueo');
+        if (btnImprimirArqueo) btnImprimirArqueo.addEventListener('click', Caja.imprimirArqueo);
+
         const btnCerrar = document.getElementById('p05-btn-cerrar');
         if (btnCerrar) btnCerrar.addEventListener('click', Caja.abrirModalCierre);
 
@@ -8118,10 +8972,11 @@
       window.Caja = Caja;
     })();
   </script>
-  <script>
+<script>
     /* ═══════════════════════════════════════════════════════════ */
     /* BLOQUE 14 — JS STOCK                                       */
     /* Productos, lotes, vencimientos, recepción, redondeo        */
+    /* VERSIÓN CORREGIDA — Bugfix A.8, B.4/B.5, B.6               */
     /* ═══════════════════════════════════════════════════════════ */
     (function () {
       'use strict';
@@ -8139,11 +8994,35 @@
       let _camaraScanner = null;
       let _campoDestinoCamara = null;
 
+      // CAMBIO B.4/B.5: guard para no registrar listeners más de
+      // una vez por panel.
+      let _stockInitialized = false;
+
       const Stock = {};
+
+      /* ═══════════════════════════════════════════════════════ */
+      /* HELPERS                                                */
+      /* ═══════════════════════════════════════════════════════ */
+      function _setText(id, txt) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = txt;
+      }
+
+      // CAMBIO: parser robusto para el formato es-AR ($1.234,56).
+      function _parsearPrecioDeTexto(texto) {
+        const limpio = String(texto || '').replace(/[^\d,.-]/g, '');
+        if (!limpio) return 0;
+        if (limpio.indexOf(',') > -1) {
+          // Tiene coma: los puntos son separadores de miles.
+          return parseFloat(limpio.replace(/\./g, '').replace(',', '.')) || 0;
+        }
+        return parseFloat(limpio) || 0;
+      }
 
       /* ═══════════════════════════════════════════════════════ */
       /* INICIALIZACIÓN                                         */
       /* ═══════════════════════════════════════════════════════ */
+      // CAMBIO B.4/B.5: init idempotente.
       Stock.init = async function () {
         _metodoDescuento = localStorage.getItem('metodo_descuento_v1') || 'FIFO';
         await Stock.cargarProductos();
@@ -8152,14 +9031,19 @@
         Stock.renderLista();
         Stock.renderVencimientos();
         Stock.renderHistorico();
-        _configurarListenersStock();
 
-        if (window.Data && Data.onSnapshot) {
-          Data.onSnapshot('productos', function (items) {
-            _productos = items;
-            Stock.renderLista();
-            Stock.renderVencimientos();
-          });
+        if (!_stockInitialized) {
+          _configurarListenersStock();
+
+          if (window.Data && Data.onSnapshot) {
+            Data.onSnapshot('productos', function (items) {
+              _productos = items;
+              Stock.renderLista();
+              Stock.renderVencimientos();
+            });
+          }
+
+          _stockInitialized = true;
         }
       };
 
@@ -8234,8 +9118,13 @@
 
       Stock.eliminar = async function (id) {
         if (!await App.confirmar('¿Eliminar este producto?')) return;
-        await Data.delete('productos', id);
-        App.toast('Producto eliminado', 'info');
+        try {
+          await Data.delete('productos', id);
+          App.toast('Producto eliminado', 'info');
+        } catch (e) {
+          console.error('[Stock] Error al eliminar producto:', e);
+          App.toast('Error al eliminar', 'error');
+        }
       };
 
       /* ═══════════════════════════════════════════════════════ */
@@ -8274,39 +9163,47 @@
         });
       };
 
+      // CAMBIO B.6: nunca relanza. La venta ya está guardada en
+      // Firestore, no podemos deshacerla. Si falla el descuento
+      // de algún producto, se loguea y se sigue con el resto.
       Stock.descontarStockPorVenta = async function (items) {
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
-          const prod = Stock.obtenerProducto(item.productoId);
-          if (!prod) continue;
+          try {
+            const prod = Stock.obtenerProducto(item.productoId);
+            if (!prod) continue;
 
-          let restante = item.cantidad;
-          const lotes = (prod.lotes || []).slice();
+            let restante = item.cantidad;
+            const lotes = (prod.lotes || []).slice();
 
-          if (_metodoDescuento === 'FIFO') {
-            lotes.sort(function (a, b) {
-              return new Date(a.fecha_vencimiento || 0) - new Date(b.fecha_vencimiento || 0);
+            if (_metodoDescuento === 'FIFO') {
+              lotes.sort(function (a, b) {
+                return new Date(a.fecha_vencimiento || 0) - new Date(b.fecha_vencimiento || 0);
+              });
+            } else if (_metodoDescuento === 'LIFO') {
+              lotes.sort(function (a, b) {
+                return new Date(b.fecha_vencimiento || 0) - new Date(a.fecha_vencimiento || 0);
+              });
+            }
+
+            for (let j = 0; j < lotes.length; j++) {
+              if (restante <= 0) break;
+              const descontar = Math.min(lotes[j].cantidad, restante);
+              lotes[j].cantidad -= descontar;
+              restante -= descontar;
+            }
+
+            prod.lotes = lotes.filter(function (l) { return l.cantidad > 0; });
+            prod.stock_total = prod.lotes.reduce(function (s, l) { return s + l.cantidad; }, 0);
+
+            await Data.update('productos', prod.id, {
+              lotes: prod.lotes,
+              stock_total: prod.stock_total
             });
-          } else if (_metodoDescuento === 'LIFO') {
-            lotes.sort(function (a, b) {
-              return new Date(b.fecha_vencimiento || 0) - new Date(a.fecha_vencimiento || 0);
-            });
+          } catch (e) {
+            console.warn('[Stock] Error al descontar stock de ' + item.productoId + ':', e);
+            // No rethrow.
           }
-
-          for (let j = 0; j < lotes.length; j++) {
-            if (restante <= 0) break;
-            const descontar = Math.min(lotes[j].cantidad, restante);
-            lotes[j].cantidad -= descontar;
-            restante -= descontar;
-          }
-
-          prod.lotes = lotes.filter(function (l) { return l.cantidad > 0; });
-          prod.stock_total = prod.lotes.reduce(function (s, l) { return s + l.cantidad; }, 0);
-
-          await Data.update('productos', prod.id, {
-            lotes: prod.lotes,
-            stock_total: prod.stock_total
-          });
         }
       };
 
@@ -8553,7 +9450,6 @@
       /* MODAL — PRODUCTO                                       */
       /* ═══════════════════════════════════════════════════════ */
       Stock.abrirModalProducto = function (productoId) {
-        const modal = document.getElementById('modal-p04-producto');
         const titulo = document.getElementById('p04-modal-producto-titulo');
 
         if (productoId) {
@@ -8600,56 +9496,62 @@
         _setText('p04-ganancia-total', App.formatearMoneda(gananciaTotal));
       };
 
+      // CAMBIO B.6: try/catch + toast de error.
       Stock.guardarDesdeModal = async function () {
-        const id = document.getElementById('p04-producto-id').value || null;
-        const nombre = document.getElementById('p04-prod-nombre').value.trim();
-        const codigo = document.getElementById('p04-prod-codigo').value.trim();
-        const precioCompra = parseFloat(document.getElementById('p04-prod-precio-compra').value) || 0;
-        const precioVenta = parseFloat(document.getElementById('p04-prod-precio-venta').value) || 0;
-        const stockInicial = parseInt(document.getElementById('p04-prod-stock').value, 10) || 0;
-        const unidadesBulto = parseInt(document.getElementById('p04-prod-unidades-bulto').value, 10) || 1;
-        const proveedorId = document.getElementById('p04-prod-proveedor').value || null;
-        const fechaVencimiento = document.getElementById('p04-prod-vencimiento').value;
+        try {
+          const id = document.getElementById('p04-producto-id').value || null;
+          const nombre = document.getElementById('p04-prod-nombre').value.trim();
+          const codigo = document.getElementById('p04-prod-codigo').value.trim();
+          const precioCompra = parseFloat(document.getElementById('p04-prod-precio-compra').value) || 0;
+          const precioVenta = parseFloat(document.getElementById('p04-prod-precio-venta').value) || 0;
+          const stockInicial = parseInt(document.getElementById('p04-prod-stock').value, 10) || 0;
+          const unidadesBulto = parseInt(document.getElementById('p04-prod-unidades-bulto').value, 10) || 1;
+          const proveedorId = document.getElementById('p04-prod-proveedor').value || null;
+          const fechaVencimiento = document.getElementById('p04-prod-vencimiento').value;
 
-        if (!nombre || !codigo) {
-          App.toast('Completá nombre y código', 'error');
-          return;
-        }
+          if (!nombre || !codigo) {
+            App.toast('Completá nombre y código', 'error');
+            return;
+          }
 
-        const prodExistente = id ? Stock.obtenerProducto(id) : null;
-        const producto = {
-          id: id,
-          nombre: nombre,
-          codigo_barras: codigo,
-          precio_compra: precioCompra,
-          precio_venta: precioVenta,
-          unidades_por_bulto: unidadesBulto,
-          proveedor_id: proveedorId,
-          es_pesable: prodExistente ? prodExistente.es_pesable : false,
-          precio_por_kilo: prodExistente ? prodExistente.precio_por_kilo : null,
-          lotes: prodExistente ? prodExistente.lotes || [] : []
-        };
-
-        if (!id && stockInicial > 0 && fechaVencimiento) {
-          const gananciaPesos = precioVenta - precioCompra;
-          const gananciaPorcentaje = precioCompra > 0 ? (gananciaPesos / precioCompra) * 100 : 0;
-          producto.lotes.push({
-            id: App.generarId('lote'),
-            cantidad: stockInicial,
-            fecha_vencimiento: fechaVencimiento,
+          const prodExistente = id ? Stock.obtenerProducto(id) : null;
+          const producto = {
+            id: id,
+            nombre: nombre,
+            codigo_barras: codigo,
             precio_compra: precioCompra,
-            fecha_ingreso: Date.now(),
-            ganancia_pesos: gananciaPesos,
-            ganancia_porcentaje: gananciaPorcentaje
-          });
-        }
+            precio_venta: precioVenta,
+            unidades_por_bulto: unidadesBulto,
+            proveedor_id: proveedorId,
+            es_pesable: prodExistente ? prodExistente.es_pesable : false,
+            precio_por_kilo: prodExistente ? prodExistente.precio_por_kilo : null,
+            lotes: prodExistente ? prodExistente.lotes || [] : []
+          };
 
-        await Stock.guardar(producto);
-        App.cerrarModal('modal-p04-producto');
-        App.toast('Producto guardado', 'success');
-        await Stock.cargarProductos();
-        Stock.renderLista();
-        Stock.renderVencimientos();
+          if (!id && stockInicial > 0 && fechaVencimiento) {
+            const gananciaPesos = precioVenta - precioCompra;
+            const gananciaPorcentaje = precioCompra > 0 ? (gananciaPesos / precioCompra) * 100 : 0;
+            producto.lotes.push({
+              id: App.generarId('lote'),
+              cantidad: stockInicial,
+              fecha_vencimiento: fechaVencimiento,
+              precio_compra: precioCompra,
+              fecha_ingreso: Date.now(),
+              ganancia_pesos: gananciaPesos,
+              ganancia_porcentaje: gananciaPorcentaje
+            });
+          }
+
+          await Stock.guardar(producto);
+          App.cerrarModal('modal-p04-producto');
+          App.toast('Producto guardado', 'success');
+          await Stock.cargarProductos();
+          Stock.renderLista();
+          Stock.renderVencimientos();
+        } catch (e) {
+          console.error('[Stock] Error al guardar producto:', e);
+          App.toast('Error al guardar: ' + (e.message || 'desconocido'), 'error');
+        }
       };
 
       /* ═══════════════════════════════════════════════════════ */
@@ -8665,49 +9567,55 @@
         App.abrirModal('modal-p04-pesable');
       };
 
+      // CAMBIO B.6: try/catch + toast de error.
       Stock.generarEtiquetaPesable = async function () {
-        const nombre = document.getElementById('p04-pesable-nombre').value.trim();
-        const precioKilo = parseFloat(document.getElementById('p04-pesable-precio-kilo').value);
-        const gramos = parseInt(document.getElementById('p04-pesable-gramos').value, 10);
+        try {
+          const nombre = document.getElementById('p04-pesable-nombre').value.trim();
+          const precioKilo = parseFloat(document.getElementById('p04-pesable-precio-kilo').value);
+          const gramos = parseInt(document.getElementById('p04-pesable-gramos').value, 10);
 
-        if (!nombre || isNaN(precioKilo) || isNaN(gramos)) {
-          App.toast('Completá todos los campos', 'error');
-          return;
-        }
+          if (!nombre || isNaN(precioKilo) || isNaN(gramos)) {
+            App.toast('Completá todos los campos', 'error');
+            return;
+          }
 
-        const id = App.generarId('prod');
-        const codigo = Stock.generarCodigoPesable(id, gramos);
-        const precioCalculado = Stock.calcularPrecioPesable(precioKilo, gramos);
+          const id = App.generarId('prod');
+          const codigo = Stock.generarCodigoPesable(id, gramos);
+          const precioCalculado = Stock.calcularPrecioPesable(precioKilo, gramos);
 
-        _setText('p04-pesable-codigo', codigo);
-        _setText('p04-pesable-precio', App.formatearMoneda(precioCalculado));
+          _setText('p04-pesable-codigo', codigo);
+          _setText('p04-pesable-precio', App.formatearMoneda(precioCalculado));
 
-        const producto = {
-          id: id,
-          nombre: nombre,
-          codigo_barras: codigo,
-          precio_venta: precioCalculado,
-          precio_compra: precioCalculado * 0.6,
-          es_pesable: true,
-          precio_por_kilo: precioKilo,
-          unidades_por_bulto: 1,
-          proveedor_id: null,
-          lotes: [{
-            id: App.generarId('lote'),
-            cantidad: 1,
-            fecha_vencimiento: App.formatearFechaISO(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          const producto = {
+            id: id,
+            nombre: nombre,
+            codigo_barras: codigo,
+            precio_venta: precioCalculado,
             precio_compra: precioCalculado * 0.6,
-            fecha_ingreso: Date.now(),
-            ganancia_pesos: precioCalculado * 0.4,
-            ganancia_porcentaje: 66.67
-          }]
-        };
+            es_pesable: true,
+            precio_por_kilo: precioKilo,
+            unidades_por_bulto: 1,
+            proveedor_id: null,
+            lotes: [{
+              id: App.generarId('lote'),
+              cantidad: 1,
+              fecha_vencimiento: App.formatearFechaISO(Date.now() + 7 * 24 * 60 * 60 * 1000),
+              precio_compra: precioCalculado * 0.6,
+              fecha_ingreso: Date.now(),
+              ganancia_pesos: precioCalculado * 0.4,
+              ganancia_porcentaje: 66.67
+            }]
+          };
 
-        await Stock.guardar(producto);
-        App.cerrarModal('modal-p04-pesable');
-        App.toast('Producto pesable creado', 'success');
-        await Stock.cargarProductos();
-        Stock.renderLista();
+          await Stock.guardar(producto);
+          App.cerrarModal('modal-p04-pesable');
+          App.toast('Producto pesable creado', 'success');
+          await Stock.cargarProductos();
+          Stock.renderLista();
+        } catch (e) {
+          console.error('[Stock] Error al generar pesable:', e);
+          App.toast('Error al generar etiqueta', 'error');
+        }
       };
 
       /* ═══════════════════════════════════════════════════════ */
@@ -8760,34 +9668,40 @@
         }
       };
 
+      // CAMBIO B.6: try/catch + toast de error.
       Stock.confirmarAgregarStock = async function () {
-        const productoId = document.getElementById('p04-stock-producto').value;
-        const cantidad = parseInt(document.getElementById('p04-stock-cantidad').value, 10);
-        const actualizarPrecio = document.getElementById('p04-stock-actualizar-precio').checked;
-        const nuevoPrecio = parseFloat(document.getElementById('p04-stock-nuevo-precio').value);
-        const fechaVenc = document.getElementById('p04-stock-vencimiento').value;
-        const esBulto = document.getElementById('p04-stock-es-bulto').checked;
-        const bultos = parseInt(document.getElementById('p04-stock-bultos').value, 10) || 0;
+        try {
+          const productoId = document.getElementById('p04-stock-producto').value;
+          const cantidad = parseInt(document.getElementById('p04-stock-cantidad').value, 10);
+          const actualizarPrecio = document.getElementById('p04-stock-actualizar-precio').checked;
+          const nuevoPrecio = parseFloat(document.getElementById('p04-stock-nuevo-precio').value);
+          const fechaVenc = document.getElementById('p04-stock-vencimiento').value;
+          const esBulto = document.getElementById('p04-stock-es-bulto').checked;
+          const bultos = parseInt(document.getElementById('p04-stock-bultos').value, 10) || 0;
 
-        if (!productoId || (!cantidad && !bultos) || !fechaVenc) {
-          App.toast('Completá todos los campos', 'error');
-          return;
+          if (!productoId || (!cantidad && !bultos) || !fechaVenc) {
+            App.toast('Completá todos los campos', 'error');
+            return;
+          }
+
+          const prod = Stock.obtenerProducto(productoId);
+          if (!prod) return;
+
+          const cantidadTotal = esBulto ? bultos * (prod.unidades_por_bulto || 1) : cantidad;
+          const precioCompra = actualizarPrecio && !isNaN(nuevoPrecio)
+            ? nuevoPrecio
+            : (prod.precio_compra || 0);
+
+          await Stock.agregarStock(productoId, cantidadTotal, fechaVenc, precioCompra);
+          App.cerrarModal('modal-p04-agregar-stock');
+          App.toast('Stock agregado: ' + cantidadTotal + ' unidades', 'success');
+          await Stock.cargarProductos();
+          Stock.renderLista();
+          Stock.renderVencimientos();
+        } catch (e) {
+          console.error('[Stock] Error al agregar stock:', e);
+          App.toast('Error al agregar stock', 'error');
         }
-
-        const prod = Stock.obtenerProducto(productoId);
-        if (!prod) return;
-
-        const cantidadTotal = esBulto ? bultos * (prod.unidades_por_bulto || 1) : cantidad;
-        const precioCompra = actualizarPrecio && !isNaN(nuevoPrecio)
-          ? nuevoPrecio
-          : (prod.precio_compra || 0);
-
-        await Stock.agregarStock(productoId, cantidadTotal, fechaVenc, precioCompra);
-        App.cerrarModal('modal-p04-agregar-stock');
-        App.toast('Stock agregado: ' + cantidadTotal + ' unidades', 'success');
-        await Stock.cargarProductos();
-        Stock.renderLista();
-        Stock.renderVencimientos();
       };
 
       /* ═══════════════════════════════════════════════════════ */
@@ -8842,14 +9756,20 @@
         if (id) Stock.abrirModalProducto(id);
       };
 
+      // CAMBIO B.6: try/catch + toast de error.
       Stock.eliminarDesdeDetalle = async function () {
-        const id = document.getElementById('modal-p04-detalle').dataset.productoId;
-        if (!id) return;
-        App.cerrarModal('modal-p04-detalle');
-        await Stock.eliminar(id);
-        await Stock.cargarProductos();
-        Stock.renderLista();
-        Stock.renderVencimientos();
+        try {
+          const id = document.getElementById('modal-p04-detalle').dataset.productoId;
+          if (!id) return;
+          App.cerrarModal('modal-p04-detalle');
+          await Stock.eliminar(id);
+          await Stock.cargarProductos();
+          Stock.renderLista();
+          Stock.renderVencimientos();
+        } catch (e) {
+          console.error('[Stock] Error al eliminar desde detalle:', e);
+          App.toast('Error al eliminar', 'error');
+        }
       };
 
       /* ═══════════════════════════════════════════════════════ */
@@ -8915,7 +9835,14 @@
         document.getElementById('p04-recepcion-cantidad').value = '';
         document.getElementById('p04-recepcion-precio-compra').value = '';
         document.getElementById('p04-recepcion-fecha-vencimiento').value = '';
-        _setText('p04-recepcion-precio-sugerido', '$0,00');
+
+        // CAMBIO: limpiar el dataset de precio editado al escanear
+        // un producto nuevo.
+        const spanPrecio = document.getElementById('p04-recepcion-precio-sugerido');
+        if (spanPrecio) {
+          delete spanPrecio.dataset.precioEditado;
+          spanPrecio.textContent = '$0,00';
+        }
         _setText('p04-recepcion-redondeo', '0');
 
         panel.style.display = 'block';
@@ -8935,7 +9862,14 @@
         const precioBase = precioCompra * (1 + margen / 100);
         const redondeado = Stock.calcularRedondeo(precioBase);
 
-        _setText('p04-recepcion-precio-sugerido', App.formatearMoneda(redondeado));
+        const spanPrecio = document.getElementById('p04-recepcion-precio-sugerido');
+        if (spanPrecio) {
+          // Si el usuario ya había editado el precio, no lo pisamos.
+          // Pero al cambiar el precio de compra, reseteamos la edición
+          // porque el sugerido cambió.
+          delete spanPrecio.dataset.precioEditado;
+          spanPrecio.textContent = App.formatearMoneda(redondeado);
+        }
         _setText('p04-recepcion-redondeo', String(redondeado));
       };
 
@@ -8947,9 +9881,14 @@
         const cantidad = parseFloat(document.getElementById('p04-recepcion-cantidad').value);
         const precioCompra = parseFloat(document.getElementById('p04-recepcion-precio-compra').value);
         const fechaVenc = document.getElementById('p04-recepcion-fecha-vencimiento').value;
-        const precioSugerido = parseFloat(
-          document.getElementById('p04-recepcion-precio-sugerido').textContent.replace(/[^0-9,.-]/g, '').replace(',', '.')
-        ) || 0;
+
+        // CAMBIO: si el usuario editó el precio manualmente, usamos
+        // ese valor. Si no, parseamos el sugerido del span.
+        const spanPrecio = document.getElementById('p04-recepcion-precio-sugerido');
+        const precioEditado = parseFloat(spanPrecio && spanPrecio.dataset.precioEditado);
+        const precioSugerido = precioEditado > 0
+          ? precioEditado
+          : (spanPrecio ? _parsearPrecioDeTexto(spanPrecio.textContent) : 0);
 
         if (isNaN(cantidad) || cantidad <= 0 || isNaN(precioCompra) || !fechaVenc) {
           App.toast('Completá cantidad, precio y vencimiento', 'error');
@@ -9005,6 +9944,9 @@
         });
       };
 
+      // CAMBIO B.6: try/catch + toast de error. Además, la lógica
+      // original hacía varios await sin red, un fallo en el medio
+      // dejaba los items a medio procesar. Ahora se loguea y sigue.
       Stock.confirmarRecepcion = async function () {
         if (_recepcionItems.length === 0) {
           App.toast('Sin items para confirmar', 'warning');
@@ -9013,55 +9955,68 @@
 
         if (!await App.confirmar('¿Confirmar recepción de ' + _recepcionItems.length + ' items?')) return;
 
+        let procesados = 0;
+        let errores = 0;
+
         for (let i = 0; i < _recepcionItems.length; i++) {
           const it = _recepcionItems[i];
-
-          if (it.esNuevo) {
-            const nuevo = {
-              id: App.generarId('prod'),
-              nombre: it.nombre,
-              codigo_barras: it.codigo,
-              precio_compra: it.precio_compra,
-              precio_venta: it.precio_venta || it.precio_compra * 1.3,
-              unidades_por_bulto: 1,
-              proveedor_id: null,
-              es_pesable: false,
-              precio_por_kilo: null,
-              lotes: [{
-                id: App.generarId('lote'),
+          try {
+            if (it.esNuevo) {
+              const nuevo = {
+                id: App.generarId('prod'),
+                nombre: it.nombre,
+                codigo_barras: it.codigo,
+                precio_compra: it.precio_compra,
+                precio_venta: it.precio_venta || it.precio_compra * 1.3,
+                unidades_por_bulto: 1,
+                proveedor_id: null,
+                es_pesable: false,
+                precio_por_kilo: null,
+                lotes: [{
+                  id: App.generarId('lote'),
+                  cantidad: it.cantidad,
+                  fecha_vencimiento: it.fecha_vencimiento,
+                  precio_compra: it.precio_compra,
+                  fecha_ingreso: Date.now(),
+                  ganancia_pesos: (it.precio_venta || 0) - it.precio_compra,
+                  ganancia_porcentaje: it.precio_compra > 0
+                    ? (((it.precio_venta || 0) - it.precio_compra) / it.precio_compra) * 100
+                    : 0
+                }]
+              };
+              await Stock.guardar(nuevo);
+            } else if (it.productoId) {
+              await Stock.agregarLote(it.productoId, {
                 cantidad: it.cantidad,
                 fecha_vencimiento: it.fecha_vencimiento,
-                precio_compra: it.precio_compra,
-                fecha_ingreso: Date.now(),
-                ganancia_pesos: (it.precio_venta || 0) - it.precio_compra,
-                ganancia_porcentaje: it.precio_compra > 0
-                  ? (((it.precio_venta || 0) - it.precio_compra) / it.precio_compra) * 100
-                  : 0
-              }]
-            };
-            await Stock.guardar(nuevo);
-          } else if (it.productoId) {
-            await Stock.agregarLote(it.productoId, {
-              cantidad: it.cantidad,
-              fecha_vencimiento: it.fecha_vencimiento,
-              precio_compra: it.precio_compra
-            });
+                precio_compra: it.precio_compra
+              });
+            }
+            procesados++;
+          } catch (e) {
+            console.error('[Stock] Error al procesar item de recepción:', e);
+            errores++;
           }
         }
 
-        // Registrar en histórico de compras
-        const totalRecepcion = _recepcionItems.reduce(function (s, it) {
-          return s + it.cantidad * it.precio_compra;
-        }, 0);
+        // Registrar en histórico de compras (aunque haya errores,
+        // guardamos lo que se procesó para que quede traza).
+        try {
+          const totalRecepcion = _recepcionItems.reduce(function (s, it) {
+            return s + it.cantidad * it.precio_compra;
+          }, 0);
 
-        const registro = {
-          id: App.generarId('compra'),
-          fecha: Date.now(),
-          proveedor_id: null,
-          items: _recepcionItems.slice(),
-          total: totalRecepcion
-        };
-        await Data.set('historico_compras', registro.id, registro);
+          const registro = {
+            id: App.generarId('compra'),
+            fecha: Date.now(),
+            proveedor_id: null,
+            items: _recepcionItems.slice(),
+            total: totalRecepcion
+          };
+          await Data.set('historico_compras', registro.id, registro);
+        } catch (e) {
+          console.warn('[Stock] Error al registrar histórico de compras:', e);
+        }
 
         _recepcionItems = [];
         Stock.renderRecepcionLista();
@@ -9070,7 +10025,12 @@
         Stock.renderVencimientos();
         await Stock.cargarHistorico();
         Stock.renderHistorico();
-        App.toast('Recepción confirmada', 'success');
+
+        if (errores === 0) {
+          App.toast('Recepción confirmada: ' + procesados + ' items', 'success');
+        } else {
+          App.toast('Recepción con ' + errores + ' errores, ' + procesados + ' ok', 'warning', 5000);
+        }
       };
 
       /* ═══════════════════════════════════════════════════════ */
@@ -9212,19 +10172,76 @@
         });
         document.getElementById('p04-btn-recepcion-confirmar')?.addEventListener('click', Stock.confirmarRecepcion);
 
+        // CAMBIO A.8: listener para "Editar precio" del flujo de
+        // recepción. Muestra un prompt y guarda el valor editado
+        // en el dataset del span.
+        const btnEditarPrecioRecepcion = document.getElementById('p04-btn-recepcion-editar-precio');
+        if (btnEditarPrecioRecepcion) {
+          btnEditarPrecioRecepcion.addEventListener('click', function () {
+            const span = document.getElementById('p04-recepcion-precio-sugerido');
+            if (!span) return;
+            const actual = _parsearPrecioDeTexto(span.textContent);
+            const respuesta = window.prompt('Ingresá el precio de venta final:', actual.toFixed(2));
+            if (respuesta === null) return; // canceló
+            const nuevo = parseFloat(respuesta);
+            if (isNaN(nuevo) || nuevo < 0) {
+              App.toast('Precio inválido', 'error');
+              return;
+            }
+            span.textContent = App.formatearMoneda(nuevo);
+            span.dataset.precioEditado = String(nuevo);
+            App.toast('Precio actualizado', 'success');
+          });
+        }
+
         // Histórico
         document.getElementById('p04-btn-exportar-historico')?.addEventListener('click', function () {
-          const data = JSON.stringify(_historicoCompras, null, 2);
-          App.descargarArchivo(data, 'historico_compras_' + Date.now() + '.json', 'application/json');
+          try {
+            const data = JSON.stringify(_historicoCompras, null, 2);
+            App.descargarArchivo(data, 'historico_compras_' + Date.now() + '.json', 'application/json');
+          } catch (e) {
+            console.error('[Stock] Error al exportar histórico:', e);
+            App.toast('Error al exportar', 'error');
+          }
         });
-      }
 
-      /* ═══════════════════════════════════════════════════════ */
-      /* HELPERS                                                */
-      /* ═══════════════════════════════════════════════════════ */
-      function _setText(id, txt) {
-        const el = document.getElementById(id);
-        if (el) el.textContent = txt;
+        // CAMBIO A.8: listener para "Limpiar >12 meses" del histórico.
+        // Borra los registros con más de un año de antigüedad.
+        const btnLimpiarHistorico = document.getElementById('p04-btn-limpiar-historico');
+        if (btnLimpiarHistorico) {
+          btnLimpiarHistorico.addEventListener('click', async function () {
+            try {
+              const limite = Date.now() - (365 * 24 * 60 * 60 * 1000);
+              const aBorrar = _historicoCompras.filter(function (h) {
+                return (h.fecha || 0) < limite;
+              });
+
+              if (aBorrar.length === 0) {
+                App.toast('No hay registros de más de 12 meses', 'info');
+                return;
+              }
+
+              if (!await App.confirmar('¿Eliminar ' + aBorrar.length + ' registros de más de 12 meses?')) return;
+
+              let borrados = 0;
+              for (let i = 0; i < aBorrar.length; i++) {
+                try {
+                  await Data.delete('historico_compras', aBorrar[i].id);
+                  borrados++;
+                } catch (e) {
+                  console.warn('[Stock] Error al borrar registro viejo:', e);
+                }
+              }
+
+              await Stock.cargarHistorico();
+              Stock.renderHistorico();
+              App.toast(borrados + ' registros eliminados', 'success');
+            } catch (e) {
+              console.error('[Stock] Error al limpiar histórico:', e);
+              App.toast('Error al limpiar', 'error');
+            }
+          });
+        }
       }
 
       /* ═══════════════════════════════════════════════════════ */
@@ -9237,6 +10254,7 @@
     /* ═══════════════════════════════════════════════════════════ */
     /* BLOQUE 15 — JS PROVEEDORES + RECEPCIÓN + PREVISIÓN         */
     /* CRUD proveedores, pedidos, histórico, previsión            */
+    /* VERSIÓN CORREGIDA — Bugfix B.4/B.5, B.6                    */
     /* ═══════════════════════════════════════════════════════════ */
     (function () {
       'use strict';
@@ -9251,13 +10269,26 @@
       let _ventas = [];
       let _pedidoActual = { items: [], proveedorId: null };
 
+      // CAMBIO B.4/B.5: guard para no registrar listeners más de
+      // una vez por panel.
+      let _proveedoresInitialized = false;
+
       const Proveedores = {};
       const Pedidos = {};
       const Prevision = {};
 
       /* ═══════════════════════════════════════════════════════ */
+      /* HELPERS                                                */
+      /* ═══════════════════════════════════════════════════════ */
+      function _setText(id, txt) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = txt;
+      }
+
+      /* ═══════════════════════════════════════════════════════ */
       /* INICIALIZACIÓN                                         */
       /* ═══════════════════════════════════════════════════════ */
+      // CAMBIO B.4/B.5: init idempotente.
       Proveedores.init = async function () {
         await Promise.all([
           _cargarProveedores(),
@@ -9271,14 +10302,19 @@
         _actualizarStats();
         Pedidos.renderLista();
         Proveedores.renderHistorico();
-        _configurarListenersProveedores();
 
-        if (window.Data && Data.onSnapshot) {
-          Data.onSnapshot('proveedores', function (items) {
-            _proveedores = items;
-            Proveedores.renderLista();
-            _actualizarStats();
-          });
+        if (!_proveedoresInitialized) {
+          _configurarListenersProveedores();
+
+          if (window.Data && Data.onSnapshot) {
+            Data.onSnapshot('proveedores', function (items) {
+              _proveedores = items;
+              Proveedores.renderLista();
+              _actualizarStats();
+            });
+          }
+
+          _proveedoresInitialized = true;
         }
       };
 
@@ -9313,6 +10349,9 @@
         return _proveedores.slice();
       };
 
+      // CAMBIO B.6: Firestore envuelto en try/catch. Los errores
+      // de validación siguen lanzándose porque el caller (el modal)
+      // los muestra como toast.
       Proveedores.crear = async function (data) {
         if (!data.nombre || !data.cuit) {
           throw new Error('Nombre y CUIT son obligatorios');
@@ -9335,11 +10374,18 @@
           activo: true
         };
 
-        await Data.set('proveedores', nuevo.id, nuevo);
+        try {
+          await Data.set('proveedores', nuevo.id, nuevo);
+        } catch (e) {
+          console.error('[Proveedores] Error al crear:', e);
+          throw new Error('No se pudo guardar el proveedor');
+        }
+
         _proveedores.push(nuevo);
         return nuevo.id;
       };
 
+      // CAMBIO B.6: Firestore envuelto en try/catch.
       Proveedores.actualizar = async function (id, data) {
         const prov = Proveedores.obtener(id);
         if (!prov) throw new Error('Proveedor no encontrado');
@@ -9350,21 +10396,41 @@
         const cambios = Object.assign({}, data);
         if (cambios.cuit) cambios.cuit = App.formatearCUIT(cambios.cuit);
 
-        await Data.update('proveedores', id, cambios);
+        try {
+          await Data.update('proveedores', id, cambios);
+        } catch (e) {
+          console.error('[Proveedores] Error al actualizar:', e);
+          throw new Error('No se pudo actualizar el proveedor');
+        }
+
         Object.assign(prov, cambios);
       };
 
+      // CAMBIO B.6: cada update va con try/catch. Si uno falla,
+      // se loguea y sigue. Evita que un solo fallo rompa toda la
+      // desvinculación.
       Proveedores.eliminar = async function (id) {
         if (!await App.confirmar('¿Eliminar este proveedor? Los productos quedarán sin proveedor.')) return;
 
         for (let i = 0; i < _productos.length; i++) {
           if (_productos[i].proveedor_id === id) {
-            await Data.update('productos', _productos[i].id, { proveedor_id: null });
-            _productos[i].proveedor_id = null;
+            try {
+              await Data.update('productos', _productos[i].id, { proveedor_id: null });
+              _productos[i].proveedor_id = null;
+            } catch (e) {
+              console.warn('[Proveedores] No se pudo desvincular producto ' + _productos[i].id + ':', e);
+            }
           }
         }
 
-        await Data.delete('proveedores', id);
+        try {
+          await Data.delete('proveedores', id);
+        } catch (e) {
+          console.error('[Proveedores] Error al eliminar:', e);
+          App.toast('Error al eliminar proveedor', 'error');
+          return;
+        }
+
         _proveedores = _proveedores.filter(function (p) { return p.id !== id; });
         Proveedores.renderLista();
         _actualizarStats();
@@ -9556,7 +10622,8 @@
           Proveedores.renderLista();
           _actualizarStats();
         } catch (e) {
-          App.toast(e.message, 'error');
+          console.error('[Proveedores] Error al guardar:', e);
+          App.toast(e.message || 'Error al guardar', 'error');
         }
       };
 
@@ -9588,6 +10655,9 @@
         return true;
       }
 
+      // CAMBIO: ahora limpia todo lo no numérico antes de formatear,
+      // así si pegan "20-12345678-9" con espacios o guiones raros,
+      // igual queda "20-12345678-9".
       Proveedores.formatearCUITEnVivo = function (input) {
         let valor = input.value.replace(/[^0-9]/g, '');
         if (valor.length > 11) valor = valor.substring(0, 11);
@@ -9693,6 +10763,8 @@
       /* ═══════════════════════════════════════════════════════ */
       /* PEDIDOS                                                */
       /* ═══════════════════════════════════════════════════════ */
+      // CAMBIO B.6: Firestore envuelto en try/catch. Los errores
+      // de validación se propagan.
       Pedidos.crear = async function (proveedorId, items) {
         if (!proveedorId) throw new Error('Seleccioná un proveedor');
         if (!items || items.length === 0) throw new Error('Agregá al menos un producto');
@@ -9708,24 +10780,36 @@
           notas: ''
         };
 
-        await Data.set('pedidos', pedido.id, pedido);
+        try {
+          await Data.set('pedidos', pedido.id, pedido);
+        } catch (e) {
+          console.error('[Pedidos] Error al crear:', e);
+          throw new Error('No se pudo guardar el pedido');
+        }
+
         _pedidos.unshift(pedido);
         Pedidos.renderLista();
         App.toast('Pedido guardado', 'success');
         return pedido.id;
       };
 
+      // CAMBIO B.6: try/catch + toast de error.
       Pedidos.marcarRecibido = async function (id) {
         const pedido = _pedidos.find(function (p) { return p.id === id; });
         if (!pedido) return;
         pedido.estado = 'recibido';
         pedido.fecha_recepcion = Date.now();
-        await Data.update('pedidos', id, {
-          estado: 'recibido',
-          fecha_recepcion: pedido.fecha_recepcion
-        });
-        Pedidos.renderLista();
-        App.toast('Pedido marcado como recibido', 'success');
+        try {
+          await Data.update('pedidos', id, {
+            estado: 'recibido',
+            fecha_recepcion: pedido.fecha_recepcion
+          });
+          Pedidos.renderLista();
+          App.toast('Pedido marcado como recibido', 'success');
+        } catch (e) {
+          console.error('[Pedidos] Error al marcar recibido:', e);
+          App.toast('Error al marcar como recibido', 'error');
+        }
       };
 
       Pedidos.renderLista = function () {
@@ -9785,7 +10869,14 @@
         });
       };
 
-      Pedidos.abrirModalNuevo = function () {
+      // CAMBIO: al abrir el modal de nuevo pedido, recargamos la
+      // lista de proveedores desde el estado local y, si está vacía,
+      // intentamos cargar de Firestore antes de poblar el select.
+      Pedidos.abrirModalNuevo = async function () {
+        if (_proveedores.length === 0) {
+          await _cargarProveedores();
+        }
+
         if (_proveedores.length === 0) {
           App.toast('Primero creá un proveedor', 'error');
           return;
@@ -9909,6 +11000,7 @@
         _setText('p07-total-pedido', App.formatearMoneda(total));
       }
 
+      // CAMBIO B.6: try/catch + toast de error.
       Pedidos.guardarDesdeModal = async function () {
         const provId = document.getElementById('p07-pedido-proveedor').value;
         if (!provId) {
@@ -9948,11 +11040,16 @@
           notas: document.getElementById('p07-pedido-notas').value.trim()
         };
 
-        await Data.set('pedidos', pedido.id, pedido);
-        _pedidos.unshift(pedido);
-        Pedidos.renderLista();
-        App.cerrarModal('modal-p07-pedido');
-        App.toast('Pedido guardado', 'success');
+        try {
+          await Data.set('pedidos', pedido.id, pedido);
+          _pedidos.unshift(pedido);
+          Pedidos.renderLista();
+          App.cerrarModal('modal-p07-pedido');
+          App.toast('Pedido guardado', 'success');
+        } catch (e) {
+          console.error('[Pedidos] Error al guardar:', e);
+          App.toast('Error al guardar el pedido', 'error');
+        }
       };
 
       Pedidos.imprimir = function (id) {
@@ -10044,23 +11141,33 @@
       };
 
       Proveedores.exportarJSON = function () {
-        const data = JSON.stringify(_historico, null, 2);
-        App.descargarArchivo(data, 'historico_compras_' + Date.now() + '.json', 'application/json');
-        App.toast('JSON exportado', 'success');
+        try {
+          const data = JSON.stringify(_historico, null, 2);
+          App.descargarArchivo(data, 'historico_compras_' + Date.now() + '.json', 'application/json');
+          App.toast('JSON exportado', 'success');
+        } catch (e) {
+          console.error('[Proveedores] Error al exportar JSON:', e);
+          App.toast('Error al exportar', 'error');
+        }
       };
 
       Proveedores.exportarCSV = function () {
-        let csv = 'Fecha,Proveedor,CUIT,Items,Total\n';
-        _historico.forEach(function (h) {
-          const prov = Proveedores.obtener(h.proveedor_id);
-          csv += '"' + App.formatearFechaHora(h.fecha) + '","' +
-            (prov ? prov.nombre : '') + '","' +
-            (prov ? prov.cuit : '') + '",' +
-            (h.items || []).length + ',' +
-            (h.total || 0) + '\n';
-        });
-        App.descargarArchivo(csv, 'historico_compras_' + Date.now() + '.csv', 'text/csv');
-        App.toast('CSV exportado', 'success');
+        try {
+          let csv = 'Fecha,Proveedor,CUIT,Items,Total\n';
+          _historico.forEach(function (h) {
+            const prov = Proveedores.obtener(h.proveedor_id);
+            csv += '"' + App.formatearFechaHora(h.fecha) + '","' +
+              (prov ? prov.nombre : '') + '","' +
+              (prov ? prov.cuit : '') + '",' +
+              (h.items || []).length + ',' +
+              (h.total || 0) + '\n';
+          });
+          App.descargarArchivo(csv, 'historico_compras_' + Date.now() + '.csv', 'text/csv');
+          App.toast('CSV exportado', 'success');
+        } catch (e) {
+          console.error('[Proveedores] Error al exportar CSV:', e);
+          App.toast('Error al exportar', 'error');
+        }
       };
 
       /* ═══════════════════════════════════════════════════════ */
@@ -10265,14 +11372,6 @@
       }
 
       /* ═══════════════════════════════════════════════════════ */
-      /* HELPERS                                                */
-      /* ═══════════════════════════════════════════════════════ */
-      function _setText(id, txt) {
-        const el = document.getElementById(id);
-        if (el) el.textContent = txt;
-      }
-
-      /* ═══════════════════════════════════════════════════════ */
       /* EXPOSICIÓN GLOBAL                                      */
       /* ═══════════════════════════════════════════════════════ */
       window.Proveedores = Proveedores;
@@ -10280,13 +11379,47 @@
       window.Prevision = Prevision;
     })();
   </script>
-  <script>
+<script>
     /* ═══════════════════════════════════════════════════════════ */
     /* BLOQUE 16 — JS IMPRESORA + IMPUESTOS + CUENTA + ARCA       */
     /* + Arranque final de paneles secundarios                    */
+    /* VERSIÓN CORREGIDA v2 — Bugfix A.8 + guards ARCA + _setText */
+    /* + guard comercioId + idempotencia de paneles               */
     /* ═══════════════════════════════════════════════════════════ */
     (function () {
       'use strict';
+
+      /* ═══════════════════════════════════════════════════════ */
+      /* HELPERS GLOBALES DEL BLOQUE                            */
+      /* ═══════════════════════════════════════════════════════ */
+      // CAMBIO: _setText faltaba. Estaba siendo usado en
+      // _aplicarConfigAFormularios, Impuestos.renderResumen,
+      // Impuestos.renderLibros, Cuenta.* y Arca.* — pero nunca
+      // se definió. Ese era el ReferenceError.
+      function _setText(id, txt) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = txt;
+      }
+
+      function _setVal(id, val) {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+      }
+
+      function _setChecked(id, val) {
+        const el = document.getElementById(id);
+        if (el) el.checked = !!val;
+      }
+
+      function _valorInput(id, fallback) {
+        const el = document.getElementById(id);
+        return el ? el.value : fallback;
+      }
+
+      function _checkedInput(id, fallback) {
+        const el = document.getElementById(id);
+        return el ? el.checked : fallback;
+      }
 
       /* ═══════════════════════════════════════════════════════ */
       /* IMPRESORA — PANEL-08                                   */
@@ -10313,17 +11446,32 @@
 
       let _dragState = { activo: false, elemento: null, offsetX: 0, offsetY: 0 };
 
+      // CAMBIO: flag para no registrar listeners múltiples veces.
+      let _impresoraInitialized = false;
+
       const Impresora = {
         config: Object.assign({}, _defaultsImpresora)
       };
 
       Impresora.init = async function () {
+        // CAMBIO: guard comercioId. Si todavía no hay sesión, no
+        // inicializamos. Se vuelve a llamar cuando el usuario entra
+        // al panel desde el menú.
+        if (!window.Data || !Data.getComercioId || !Data.getComercioId()) {
+          console.info('[Impresora] Sin comercioId, se inicializará al entrar al panel');
+          return;
+        }
+
         await Impresora.cargarConfig();
         _aplicarConfigAFormularios();
         _renderLogoPreview();
         _inicializarHorarios();
         _renderHorarios();
-        _configurarListenersImpresora();
+
+        if (!_impresoraInitialized) {
+          _configurarListenersImpresora();
+          _impresoraInitialized = true;
+        }
       };
 
       Impresora.cargarConfig = async function () {
@@ -10345,7 +11493,6 @@
       Impresora.guardarConfig = async function (config) {
         Impresora.config = Object.assign({}, Impresora.config, config || {});
 
-        // Persistir campos del formulario
         const c = Impresora.config;
         c.tamano_papel = _valorInput('p08-tamano-papel', c.tamano_papel);
         c.nombre_negocio = _valorInput('p08-nombre-negocio', c.nombre_negocio);
@@ -10371,16 +11518,6 @@
         }
       };
 
-      function _valorInput(id, fallback) {
-        const el = document.getElementById(id);
-        return el ? el.value : fallback;
-      }
-
-      function _checkedInput(id, fallback) {
-        const el = document.getElementById(id);
-        return el ? el.checked : fallback;
-      }
-
       function _aplicarConfigAFormularios() {
         const c = Impresora.config;
         _setVal('p08-tamano-papel', c.tamano_papel);
@@ -10395,16 +11532,6 @@
         _setVal('p08-tamano-letra', c.tamano_letra);
         _setText('p08-tamano-valor', String(c.tamano_letra));
         _setChecked('p08-negritas', c.negritas);
-      }
-
-      function _setVal(id, val) {
-        const el = document.getElementById(id);
-        if (el) el.value = val;
-      }
-
-      function _setChecked(id, val) {
-        const el = document.getElementById(id);
-        if (el) el.checked = !!val;
       }
 
       Impresora.subirLogo = function (file) {
@@ -10850,11 +11977,20 @@
         precios_con_iva: false
       };
 
+      // CAMBIO: flag para no registrar listeners múltiples veces.
+      let _impuestosInitialized = false;
+
       const Impuestos = {
         config: Object.assign({}, _defaultsImpuestos)
       };
 
       Impuestos.init = async function () {
+        // CAMBIO: guard comercioId.
+        if (!window.Data || !Data.getComercioId || !Data.getComercioId()) {
+          console.info('[Impuestos] Sin comercioId, se inicializará al entrar al panel');
+          return;
+        }
+
         try {
           const raw = localStorage.getItem('config_impuestos_v1');
           Impuestos.config = raw
@@ -10865,7 +12001,12 @@
         }
 
         _aplicarConfigImpuestosAFormulario();
-        _configurarListenersImpuestos();
+
+        if (!_impuestosInitialized) {
+          _configurarListenersImpuestos();
+          _impuestosInitialized = true;
+        }
+
         Impuestos.renderResumen();
       };
 
@@ -10907,6 +12048,10 @@
       };
 
       Impuestos.renderResumen = async function () {
+        // CAMBIO: guard extra. Aunque init ya chequea, renderResumen
+        // podría ser llamado por otros flujos.
+        if (!window.Data || !Data.getComercioId || !Data.getComercioId()) return;
+
         const ahora = new Date();
         const desde = new Date(ahora.getFullYear(), ahora.getMonth(), 1).getTime();
         const hasta = Date.now();
@@ -10944,6 +12089,8 @@
       };
 
       Impuestos.renderLibros = async function () {
+        if (!window.Data || !Data.getComercioId || !Data.getComercioId()) return;
+
         const periodo = _valorInput('p09-libro-periodo', 'mes_actual');
         const rango = _obtenerRangoPeriodo(periodo);
 
@@ -11034,6 +12181,8 @@
       }
 
       Impuestos.exportarReporte = async function (formato) {
+        if (!window.Data || !Data.getComercioId || !Data.getComercioId()) return;
+
         const periodo = _valorInput('p09-reporte-periodo', 'mes_actual');
         const tipo = _valorInput('p09-reporte-tipo', 'resumen');
         const rango = _obtenerRangoPeriodo(periodo);
@@ -11165,9 +12314,18 @@
       /* ═══════════════════════════════════════════════════════ */
       /* CUENTA — PANEL-10                                      */
       /* ═══════════════════════════════════════════════════════ */
+      // CAMBIO: flag para no registrar listeners múltiples veces.
+      let _cuentaInitialized = false;
+
       const Cuenta = {};
 
       Cuenta.init = async function () {
+        // CAMBIO: guard comercioId.
+        if (!window.Data || !Data.getComercioId || !Data.getComercioId()) {
+          console.info('[Cuenta] Sin comercioId, se inicializará al entrar al panel');
+          return;
+        }
+
         const user = _getUser();
         const seccionesAdmin = document.getElementById('p10-secciones-admin');
         if (seccionesAdmin) {
@@ -11185,7 +12343,10 @@
           Cuenta.actualizarInfo();
         }
 
-        _configurarListenersCuenta();
+        if (!_cuentaInitialized) {
+          _configurarListenersCuenta();
+          _cuentaInitialized = true;
+        }
       };
 
       function _getUser() {
@@ -11553,6 +12714,11 @@
           });
         }
 
+        const btnDesvincularArca = document.getElementById('p10-btn-desvincular-arca');
+        if (btnDesvincularArca) {
+          btnDesvincularArca.addEventListener('click', Arca.desvincular);
+        }
+
         const certInput = document.getElementById('p10-arca-cert');
         if (certInput) {
           certInput.addEventListener('change', function () {
@@ -11567,6 +12733,20 @@
       /* ARCA                                                   */
       /* ═══════════════════════════════════════════════════════ */
       const Arca = {};
+
+      function _arcaDisponible() {
+        try {
+          if (typeof firebase === 'undefined' || !firebase.functions) return false;
+          const fn = App.getFunctions ? App.getFunctions() : null;
+          return !!fn;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function _arcaNoDisponibleToast() {
+        App.toast('Facturación con ARCA: Próximamente', 'info', 4000);
+      }
 
       Arca.tutorial = function () {
         _irAPasoArca(1);
@@ -11615,11 +12795,15 @@
       };
 
       Arca.probarConexion = async function () {
+        if (!_arcaDisponible()) {
+          _arcaNoDisponibleToast();
+          return;
+        }
+
         const entorno = _getRadioArca();
         const user = _getUser();
 
         try {
-          if (!App.getFunctions()) throw new Error('Firebase Functions no disponible');
           const fn = App.getFunctions().httpsCallable('arcaProbarConexion');
           const res = await fn({ comercioId: user.comercioId, entorno: entorno });
           App.toast(res.data && res.data.ok ? 'Conexión exitosa' : 'Error: ' + (res.data && res.data.error), res.data && res.data.ok ? 'success' : 'error');
@@ -11630,6 +12814,10 @@
       };
 
       Arca.vincular = async function () {
+        if (!_arcaDisponible()) {
+          throw new Error('Próximamente: la vinculación con ARCA estará disponible cuando actives el plan de pago');
+        }
+
         const entorno = _getRadioArca();
         const certInput = document.getElementById('p10-arca-cert');
         const keyInput = document.getElementById('p10-arca-key');
@@ -11647,7 +12835,6 @@
         const keyB64 = key ? await _leerArchivoB64(key) : null;
 
         try {
-          if (!App.getFunctions()) throw new Error('Firebase Functions no disponible');
           const fn = App.getFunctions().httpsCallable('arcaConectar');
           const res = await fn({
             comercioId: user.comercioId,
@@ -11693,29 +12880,43 @@
       };
 
       Arca.emitirFactura = async function (venta) {
-        const user = _getUser();
-        if (!App.getFunctions()) throw new Error('Firebase Functions no disponible');
-
-        const fn = App.getFunctions().httpsCallable('arcaEmitirFactura');
-        const res = await fn({
-          comercioId: user.comercioId,
-          ventaId: venta.id
-        });
-
-        if (res.data && res.data.ok) {
-          if (venta.id) {
-            await Data.update('ventas', venta.id, {
-              cae: res.data.cae,
-              cae_vencimiento: res.data.cae_vencimiento,
-              numero_comprobante: res.data.numero_comprobante,
-              estado: 'facturado'
-            });
-          }
-        } else if (venta.id) {
-          await Data.update('ventas', venta.id, { estado: 'error_facturacion' });
+        if (!_arcaDisponible()) {
+          _arcaNoDisponibleToast();
+          return { ok: false, motivo: 'proximamente' };
         }
 
-        return res.data;
+        const user = _getUser();
+
+        try {
+          const fn = App.getFunctions().httpsCallable('arcaEmitirFactura');
+          const res = await fn({
+            comercioId: user.comercioId,
+            ventaId: venta.id
+          });
+
+          if (res.data && res.data.ok) {
+            if (venta.id) {
+              await Data.update('ventas', venta.id, {
+                cae: res.data.cae,
+                cae_vencimiento: res.data.cae_vencimiento,
+                numero_comprobante: res.data.numero_comprobante,
+                estado: 'facturado'
+              });
+            }
+          } else if (venta.id) {
+            await Data.update('ventas', venta.id, { estado: 'error_facturacion' });
+          }
+
+          return res.data;
+        } catch (e) {
+          console.error('[Arca] Error al emitir factura:', e);
+          if (venta.id) {
+            try {
+              await Data.update('ventas', venta.id, { estado: 'error_facturacion' });
+            } catch (e2) {}
+          }
+          throw e;
+        }
       };
 
       async function _renderEstadoArca() {
@@ -11842,15 +13043,20 @@
       /* ═══════════════════════════════════════════════════════ */
       /* ARRANQUE FINAL                                         */
       /* ═══════════════════════════════════════════════════════ */
+      // CAMBIO: dejamos de inicializar los 3 paneles al arrancar.
+      // Se inicializan cuando el usuario entra al panel desde el
+      // menú (vía _configurarNavegacionPaneles). Esto evita los
+      // errores "comercioId no configurado" al cargar la página
+      // sin sesión activa.
       function _arrancarFinal() {
         if (!window.App || !App.getAuth) {
           setTimeout(_arrancarFinal, 100);
           return;
         }
         _configurarNavegacionPaneles();
-        _initPanelImpresora();
-        _initPanelImpuestos();
-        _initPanelCuenta();
+        // NOTA: _initPanelImpresora, _initPanelImpuestos y
+        // _initPanelCuenta YA NO se llaman acá. Se llaman al hacer
+        // click en el menú.
       }
 
       if (document.readyState === 'loading') {
