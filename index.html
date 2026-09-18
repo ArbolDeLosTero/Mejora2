@@ -6722,7 +6722,11 @@
 <script>
     /* ═══════════════════════════════════════════════════════════ */
     /* BLOQUE 12 — JS AUTH + LICENCIA                             */
-    /* v2 — Modelo de asientos (seat-based) + device binding      */
+    /* v2.1 — Modelo de asientos + device binding                 */
+    /* Fixes aplicados:                                           */
+    /*  - FIX 1: WhatsApp con número del admin hardcodeado        */
+    /*  - FIX 2: Permitir activar si device_id cambió (confirmar) */
+    /*  - FIX 3: Sincronizar device_id a Firestore en vista lic.  */
     /* ═══════════════════════════════════════════════════════════ */
     (function () {
       'use strict';
@@ -6732,6 +6736,11 @@
       /* ─────────────────────────────────────────────────────── */
       const MAX_INTENTOS = 5;
       const BLOQUEO_MINUTOS = 5;
+
+      // FIX 1: número de WhatsApp del administrador que recibe
+      // los Device ID. Formato internacional sin "+", sin espacios,
+      // sin guiones. +54 9 11 2581-6992 → 5491125816992
+      const ADMIN_WHATSAPP = '5491125816992';
 
       /* ─────────────────────────────────────────────────────── */
       /* ESTADO INTERNO                                         */
@@ -7169,6 +7178,8 @@
 
       /* ═══════════════════════════════════════════════════════ */
       /* LICENCIA — ACTIVAR CON JWT (DUEÑO)                     */
+      /* FIX 2: permite activar si el device_id del token       */
+      /* no coincide con el actual, con confirmación del user.  */
       /* ═══════════════════════════════════════════════════════ */
       Licencia.activar = async function (jwt) {
         if (!jwt) throw new Error('Ingresá una clave de licencia');
@@ -7178,9 +7189,25 @@
 
         const deviceId = App.getDeviceId();
 
-        // Compatibilidad: si el JWT tiene device_id, debe coincidir
+        // FIX 2: si el token trae device_id y no coincide con el
+        // actual, pedimos confirmación en vez de bloquear. Esto
+        // cubre el caso de localStorage limpio, cambio de navegador
+        // o modo incógnito.
+        let _deviceIdCambiado = false;
         if (payload.device_id && payload.device_id !== deviceId) {
-          throw new Error('Esta licencia no corresponde a este dispositivo');
+          console.warn(
+            '[Licencia] Device ID del token (' + payload.device_id +
+            ') ≠ device actual (' + deviceId + ').'
+          );
+          const continuar = await App.confirmar(
+            'Esta licencia fue generada para el dispositivo "' + payload.device_id +
+            '",\npero estás usando "' + deviceId + '".\n\n' +
+            '¿Querés activarla igual en este dispositivo?'
+          );
+          if (!continuar) {
+            throw new Error('Esta licencia no corresponde a este dispositivo');
+          }
+          _deviceIdCambiado = true;
         }
 
         if (payload.fecha_expiracion) {
@@ -7241,8 +7268,12 @@
           empleado_contacto: null
         };
 
+        // FIX 2: al filtrar, sacamos también el device viejo del
+        // token si el usuario confirmó la reactivación.
         const dispositivos = (userData.dispositivos || []).filter(function (d) {
-          return d.device_id !== deviceId;
+          if (d.device_id === deviceId) return false;
+          if (_deviceIdCambiado && d.device_id === payload.device_id) return false;
+          return true;
         });
         dispositivos.push(nuevoDevice);
 
@@ -7444,10 +7475,24 @@
 
       /* ═══════════════════════════════════════════════════════ */
       /* DEVICE ID DISPLAY                                      */
+      /* FIX 3: además de mostrarlo, sincroniza el device_id    */
+      /* actual con Firestore para que el panel admin lo vea.   */
       /* ═══════════════════════════════════════════════════════ */
       function _actualizarDeviceIdDisplay() {
         const el = document.getElementById('device-id-display');
-        if (el) el.textContent = App.getDeviceId();
+        const deviceId = App.getDeviceId();
+        if (el) el.textContent = deviceId;
+
+        // FIX 3: sincronizar el device_id vigente con Firestore.
+        // Solo si hay sesión activa.
+        const user = App.getAuth().currentUser;
+        if (user && user.uid) {
+          App.getDb().collection('usuarios').doc(user.uid)
+            .update({ device_id: deviceId })
+            .catch(function (e) {
+              console.warn('[Licencia] No se pudo sincronizar device_id:', e);
+            });
+        }
       }
 
       /* ═══════════════════════════════════════════════════════ */
@@ -7661,11 +7706,17 @@
           });
         }
 
+        // FIX 1: WhatsApp con número del admin hardcodeado.
         const btnWhatsapp = document.getElementById('btn-whatsapp');
         if (btnWhatsapp) {
           btnWhatsapp.addEventListener('click', function () {
-            const mensaje = 'Mi Device ID para Mejora 2 es: ' + App.getDeviceId();
-            window.open('https://wa.me/?text=' + encodeURIComponent(mensaje), '_blank');
+            const mensaje =
+              'Hola! Quiero activar mi licencia de Mejora 2.\n\n' +
+              'Mi Device ID es: ' + App.getDeviceId();
+            window.open(
+              'https://wa.me/' + ADMIN_WHATSAPP + '?text=' + encodeURIComponent(mensaje),
+              '_blank'
+            );
           });
         }
 
@@ -7693,7 +7744,7 @@
           btnIrMenu.addEventListener('click', function () { App.navegar('menu'); });
         }
 
-        // NUEVO: Cerrar sesión desde la vista de licencia
+        // Cerrar sesión desde la vista de licencia
         const btnCerrarSesionLicencia = document.getElementById('btn-cerrar-sesion-licencia');
         if (btnCerrarSesionLicencia) {
           btnCerrarSesionLicencia.addEventListener('click', async function () {
