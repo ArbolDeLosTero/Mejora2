@@ -3914,6 +3914,7 @@
   </style>
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!-- BLOQUE 05 — HTML AUTH + LICENCIA                           -->
+<!-- v2 — Modelo de asientos + botón cerrar sesión              -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 
 <!-- VISTA LOGIN -->
@@ -3952,6 +3953,11 @@
     </form>
 
     <p id="auth-login-error" class="auth-error"></p>
+
+    <!-- Aviso para cajeros -->
+    <div class="verify-message mt-md" style="text-align:left;font-size:12px;">
+      <strong>¿Sos cajero?</strong> Pedile a tu jefe el email completo (con el sufijo <code>+cajero</code>) y la contraseña que te asignó.
+    </div>
   </div>
 </div>
 
@@ -4075,35 +4081,46 @@
 <div id="vista-licencia" class="vista">
   <div class="licencia-container">
     <h1>🔑 Activar Licencia</h1>
-    <p class="auth-subtitle">Vinculá tu dispositivo para usar Mejora 2</p>
+    <p class="auth-subtitle">Vinculá este dispositivo para usar Mejora 2</p>
 
+    <!-- SECCIÓN 1: Device ID -->
     <div class="licencia-section">
       <h3>📱 Device ID de este dispositivo</h3>
       <div class="device-id-box">
         <span id="device-id-display" class="device-id-text">Generando...</span>
         <button id="btn-copiar-device-id" class="btn-icon" title="Copiar Device ID">📋</button>
       </div>
-      <p class="licencia-info">Enviá este código por WhatsApp para recibir tu clave de licencia</p>
+      <p class="licencia-info">Este es el identificador único de este dispositivo. Lo vas a necesitar para activar tu licencia.</p>
       <button id="btn-whatsapp" class="btn btn-success">💬 Enviar por WhatsApp</button>
     </div>
 
+    <!-- SECCIÓN 2: Clave de Licencia (Dueño) -->
     <div class="licencia-section">
-      <h3>🔑 Clave de Licencia</h3>
+      <h3>🔑 Soy el dueño del comercio</h3>
+      <p class="licencia-info">Pegá la clave de licencia que recibiste al comprar.</p>
       <div class="input-group">
         <textarea id="txt-clave-licencia" class="input-licencia" placeholder="Pegá aquí tu clave de licencia..." rows="4"></textarea>
       </div>
       <button id="btn-activar-licencia" class="btn btn-primary mt-md">Activar Licencia</button>
     </div>
 
+    <!-- SECCIÓN 3: Código de Cajero -->
     <div class="licencia-section">
-      <h3>🔗 Vincular con Código de Invitación</h3>
-      <p class="licencia-info">Si un administrador te invitó, ingresá el código de 6 dígitos.</p>
+      <h3>🔗 Soy cajero</h3>
+      <p class="licencia-info">Si tu jefe te dio un código de 6 dígitos, ingresalo acá para vincular este dispositivo como caja.</p>
       <div class="input-group">
         <input type="text" id="txt-codigo-invitacion" class="input-licencia" placeholder="000000" maxlength="6" pattern="[0-9]*" inputmode="numeric">
       </div>
-      <button id="btn-vincular-codigo" class="btn btn-primary mt-md">Vincular con Código</button>
+      <button id="btn-vincular-codigo" class="btn btn-primary mt-md">Vincular como Cajero</button>
     </div>
 
+    <!-- SECCIÓN 4: Cerrar sesión -->
+    <div class="licencia-section" style="text-align:center;">
+      <p class="licencia-info">¿Querés usar otra cuenta?</p>
+      <button id="btn-cerrar-sesion-licencia" class="btn btn-secondary">🚪 Cerrar Sesión</button>
+    </div>
+
+    <!-- PANEL INFORMATIVO DE LICENCIA ACTIVA -->
     <div id="licencia-info-panel" class="licencia-section" style="display:none;">
       <h3>✅ Licencia Activa</h3>
       <div class="licencia-detalles">
@@ -4117,7 +4134,7 @@
         </div>
         <div class="detalle-item">
           <span class="detalle-label">Expiración:</span>
-          <span id="lic-expiración" class="detalle-valor">-</span>
+          <span id="lic-expiracion" class="detalle-valor">-</span>
         </div>
         <div class="detalle-item">
           <span class="detalle-label">Días offline:</span>
@@ -6705,9 +6722,7 @@
 <script>
     /* ═══════════════════════════════════════════════════════════ */
     /* BLOQUE 12 — JS AUTH + LICENCIA                             */
-    /* Login, registro, verificación, recuperación, licencia,     */
-    /* vinculación de cajeros, rate limiting.                     */
-    /* VERSIÓN CORREGIDA — Bugfix B.4/B.5, B.6 + rate limit       */
+    /* v2 — Modelo de asientos (seat-based) + device binding      */
     /* ═══════════════════════════════════════════════════════════ */
     (function () {
       'use strict';
@@ -6723,21 +6738,35 @@
       /* ─────────────────────────────────────────────────────── */
       let _unsubscribeLicencia = null;
       let _authInitialized = false;
+      let _deviceActual = null;
 
-      /* ─────────────────────────────────────────────────────── */
-      /* OBJETOS                                                */
-      /* ─────────────────────────────────────────────────────── */
       const Auth = {};
       const Licencia = {};
 
       /* ═══════════════════════════════════════════════════════ */
+      /* HELPERS                                                */
+      /* ═══════════════════════════════════════════════════════ */
+      function _getUserLocal() {
+        try {
+          return JSON.parse(localStorage.getItem('usuario_actual_v1') || '{}');
+        } catch (e) {
+          return {};
+        }
+      }
+
+      function _fechaATimestampMs(valor) {
+        if (!valor) return null;
+        if (typeof valor.toMillis === 'function') return valor.toMillis();
+        const ms = new Date(valor).getTime();
+        return isNaN(ms) ? null : ms;
+      }
+
+      /* ═══════════════════════════════════════════════════════ */
       /* AUTH — INICIALIZACIÓN                                  */
       /* ═══════════════════════════════════════════════════════ */
-      // CAMBIO B.4/B.5: init idempotente. La segunda llamada
-      // ya no registra listeners duplicados.
       Auth.init = function () {
         if (_authInitialized) {
-          console.info('[Auth] Ya inicializado, ignorando segunda llamada');
+          console.info('[Auth] Ya inicializado');
           return;
         }
         _authInitialized = true;
@@ -6786,18 +6815,11 @@
         _limpiarIntentos(email);
 
         if (!user.emailVerified) {
-          // CAMBIO B.6: signOut con try/catch por si falla.
-          try {
-            await App.getAuth().signOut();
-          } catch (e) {
-            console.warn('[Auth] Error al cerrar sesión tras verificación pendiente:', e);
-          }
+          try { await App.getAuth().signOut(); } catch (e) {}
           App.navegar('verify');
           return null;
         }
 
-        // CAMBIO B.6: _verificarEstadoUsuario puede lanzar. Lo
-        // dejamos propagar para que el handler muestre el error.
         await _verificarEstadoUsuario(user);
         return user;
       };
@@ -6806,12 +6828,7 @@
       /* AUTH — REGISTRO                                        */
       /* ═══════════════════════════════════════════════════════ */
       Auth.registrar = async function (datos) {
-        const nombre = datos.nombre;
-        const apellido = datos.apellido;
-        const negocio = datos.negocio;
-        const email = datos.email;
-        const password = datos.password;
-        const passwordConfirm = datos.passwordConfirm;
+        const { nombre, apellido, negocio, email, password, passwordConfirm } = datos;
 
         if (!nombre || !apellido || !negocio || !email || !password) {
           throw new Error('Todos los campos son obligatorios');
@@ -6832,8 +6849,6 @@
 
         const user = cred.user;
 
-        // CAMBIO B.6: si falla la creación del doc en Firestore,
-        // borramos el usuario de Auth para no dejar cuentas colgadas.
         try {
           await App.getDb().collection('usuarios').doc(user.uid).set({
             email: email,
@@ -6842,34 +6857,27 @@
             negocio: negocio,
             rol: null,
             comercioId: null,
+            dispositivos: [],              // NUEVO: array de asientos
             licencia_activa: false,
             licencia_tipo: null,
             fecha_expiracion: null,
             device_id: null,
+            pagador_uid: null,             // NUEVO: para cajeros, apunta al dueño
             fecha_registro: firebase.firestore.FieldValue.serverTimestamp(),
             ultimo_login: null,
             terminos_version: 'v1.0',
             terminos_aceptados: firebase.firestore.FieldValue.serverTimestamp()
           });
         } catch (e) {
-          console.error('[Auth] Error al crear doc de usuario, borrando cuenta de Auth:', e);
-          try { await user.delete(); } catch (e2) {
-            console.error('[Auth] No se pudo borrar la cuenta de Auth:', e2);
-          }
+          console.error('[Auth] Error al crear doc, borrando cuenta:', e);
+          try { await user.delete(); } catch (e2) {}
           throw new Error('No se pudo crear la cuenta. Intentá nuevamente.');
         }
 
-        try {
-          await user.sendEmailVerification();
-        } catch (e) {
-          console.warn('[Auth] No se pudo enviar email de verificación:', e);
+        try { await user.sendEmailVerification(); } catch (e) {
+          console.warn('[Auth] No se pudo enviar email:', e);
         }
-
-        try {
-          await App.getAuth().signOut();
-        } catch (e) {
-          console.warn('[Auth] Error al cerrar sesión post-registro:', e);
-        }
+        try { await App.getAuth().signOut(); } catch (e) {}
 
         App.navegar('verify');
         return user.uid;
@@ -6913,7 +6921,7 @@
           if (window.Data && Data.cancelarTodosLosSnapshots) {
             Data.cancelarTodosLosSnapshots();
           }
-
+          _deviceActual = null;
           await App.getAuth().signOut();
           _limpiarSesionLocal();
           App.navegar('login');
@@ -6927,8 +6935,6 @@
       /* AUTH — VALIDAR PASSWORD EN VIVO                        */
       /* ═══════════════════════════════════════════════════════ */
       Auth.validarPasswordEnVivo = function (password) {
-        // CAMBIO: si no estamos en la vista de registro (no hay
-        // ningún elemento req-*), no hacemos nada.
         const primerReq = document.getElementById('req-length');
         if (!primerReq) return false;
 
@@ -6941,31 +6947,25 @@
         };
         Object.keys(checks).forEach(function (k) {
           const el = document.getElementById('req-' + k);
-          if (el) {
-            el.className = 'requirement ' + (checks[k] ? 'valid' : 'invalid');
-          }
+          if (el) el.className = 'requirement ' + (checks[k] ? 'valid' : 'invalid');
         });
         return Object.keys(checks).every(function (k) { return checks[k]; });
       };
 
       /* ═══════════════════════════════════════════════════════ */
-      /* AUTH — VERIFICAR ESTADO DEL USUARIO                    */
+      /* AUTH — VERIFICAR ESTADO DEL USUARIO (NUEVO MODELO)     */
       /* ═══════════════════════════════════════════════════════ */
       async function _verificarEstadoUsuario(user) {
-        let docRef;
-        let doc;
-
+        let docRef, doc;
         try {
           docRef = App.getDb().collection('usuarios').doc(user.uid);
           doc = await docRef.get();
         } catch (e) {
-          console.error('[Auth] Error al leer doc del usuario:', e);
+          console.error('[Auth] Error al leer doc:', e);
           throw new Error('No se pudo verificar tu cuenta. Revisá tu conexión.');
         }
 
         if (!doc.exists) {
-          // CAMBIO: usuario sin doc en Firestore. Cerramos sesión
-          // de forma controlada.
           try { await App.getAuth().signOut(); } catch (e) {}
           _limpiarSesionLocal();
           App.navegar('login');
@@ -6973,37 +6973,77 @@
         }
 
         const data = doc.data();
+        const deviceId = App.getDeviceId();
 
+        // Guardar datos básicos
         localStorage.setItem('usuario_actual_v1', JSON.stringify({
           uid: user.uid,
           email: data.email,
           nombre: data.nombre,
           apellido: data.apellido,
           negocio: data.negocio,
-          rol: data.rol,
-          comercioId: data.comercioId
+          comercioId: data.comercioId || null
         }));
         localStorage.setItem('sesion_activa_v1', 'true');
         localStorage.setItem('ultimo_login_v1', String(Date.now()));
 
-        // Fire and forget con catch interno.
         docRef.update({
           ultimo_login: firebase.firestore.FieldValue.serverTimestamp()
-        }).catch(function (e) {
-          console.warn('[Auth] No se pudo actualizar ultimo_login:', e);
+        }).catch(function (e) {});
+
+        // BUSCAR EL DEVICE ACTUAL EN dispositivos[]
+        const devices = data.dispositivos || [];
+        const deviceInfo = devices.find(function (d) { return d.device_id === deviceId; });
+
+        // CASO 1: Device no autorizado → ir a licencia
+        if (!deviceInfo) {
+          _deviceActual = null;
+          localStorage.setItem('rol_actual_v1', 'pendiente');
+          localStorage.removeItem('licencia_v1');
+          _actualizarMenuUsuario({ rol: 'pendiente' });
+          console.info('[Auth] Device no autorizado, yendo a licencia');
+          App.navegar('licencia');
+          return;
+        }
+
+        // CASO 2: Device desactivado
+        if (deviceInfo.activa === false) {
+          App.toast('Este dispositivo fue desactivado por el administrador', 'error', 6000);
+          try { await App.getAuth().signOut(); } catch (e) {}
+          return;
+        }
+
+        // CASO 3: Device vencido
+        const expMs = _fechaATimestampMs(deviceInfo.fecha_expiracion);
+        if (expMs && expMs < Date.now()) {
+          App.toast('La licencia de este dispositivo venció', 'error', 6000);
+          localStorage.setItem('rol_actual_v1', 'pendiente');
+          App.navegar('licencia');
+          return;
+        }
+
+        // CASO 4: Todo OK
+        _deviceActual = deviceInfo;
+        localStorage.setItem('rol_actual_v1', deviceInfo.rol);
+        localStorage.setItem('licencia_v1', JSON.stringify({
+          activa: true,
+          rol: deviceInfo.rol,
+          device_id: deviceInfo.device_id,
+          fecha_expiracion: expMs
+        }));
+
+        if (data.comercioId) {
+          if (window.Data && Data.init) Data.init(data.comercioId);
+        }
+        _iniciarValidacionLicencia(user.uid);
+
+        _actualizarMenuUsuario({
+          nombre: data.nombre,
+          apellido: data.apellido,
+          rol: deviceInfo.rol
         });
 
-        _actualizarMenuUsuario(data);
-
-        if (data.licencia_activa && data.comercioId) {
-          if (window.Data && Data.init) {
-            Data.init(data.comercioId);
-          }
-          _iniciarValidacionLicencia(user.uid);
-          App.navegar('menu');
-        } else {
-          App.navegar('licencia');
-        }
+        App.navegar('menu');
       }
 
       /* ═══════════════════════════════════════════════════════ */
@@ -7014,28 +7054,20 @@
       }
 
       function _leerIntentos(email) {
-        // CAMBIO: localStorage como fuente primaria; sessionStorage
-        // como backup para que limpiar localStorage no resetee el
-        // bloqueo dentro de la misma sesión del navegador.
-        let local = null;
-        let sesion = null;
-
+        let local = null, sesion = null;
         try {
           const raw = localStorage.getItem(_keyIntentos(email));
           if (raw) local = JSON.parse(raw);
-        } catch (e) { local = null; }
-
+        } catch (e) {}
         try {
           const rawS = sessionStorage.getItem(_keyIntentos(email));
           if (rawS) sesion = JSON.parse(rawS);
-        } catch (e) { sesion = null; }
+        } catch (e) {}
 
-        // Nos quedamos con el más restrictivo (mayor bloqueadoHasta).
         const base = { intentos: 0, ultimoIntento: 0, bloqueadoHasta: 0 };
         if (!local && !sesion) return base;
         if (!local) return sesion;
         if (!sesion) return local;
-
         return {
           intentos: Math.max(local.intentos || 0, sesion.intentos || 0),
           ultimoIntento: Math.max(local.ultimoIntento || 0, sesion.ultimoIntento || 0),
@@ -7044,18 +7076,13 @@
       }
 
       function _guardarIntentos(email, data) {
-        try {
-          localStorage.setItem(_keyIntentos(email), JSON.stringify(data));
-        } catch (e) {}
-        try {
-          sessionStorage.setItem(_keyIntentos(email), JSON.stringify(data));
-        } catch (e) {}
+        try { localStorage.setItem(_keyIntentos(email), JSON.stringify(data)); } catch (e) {}
+        try { sessionStorage.setItem(_keyIntentos(email), JSON.stringify(data)); } catch (e) {}
       }
 
       function _verificarRateLimit(email) {
         const data = _leerIntentos(email);
         const ahora = Date.now();
-
         if (data.bloqueadoHasta && data.bloqueadoHasta > ahora) {
           const ms = data.bloqueadoHasta - ahora;
           return { bloqueado: true, minutosRestantes: Math.ceil(ms / 60000) };
@@ -7067,7 +7094,6 @@
         const data = _leerIntentos(email);
         data.intentos = (data.intentos || 0) + 1;
         data.ultimoIntento = Date.now();
-
         if (data.intentos >= MAX_INTENTOS) {
           data.bloqueadoHasta = Date.now() + (BLOQUEO_MINUTOS * 60000);
           App.toast('Bloqueado por ' + BLOQUEO_MINUTOS + ' minutos', 'error');
@@ -7102,59 +7128,47 @@
         return new Error(mensaje);
       }
 
-      /* ═══════════════════════════════════════════════════════ */
-      /* AUTH — VALIDAR PASSWORD                                */
-      /* ═══════════════════════════════════════════════════════ */
       function _validarPassword(password) {
-        return (
-          password.length >= 8 &&
-          /[A-Z]/.test(password) &&
-          /[a-z]/.test(password) &&
-          /[0-9]/.test(password) &&
-          /[@$!%*?&]/.test(password)
-        );
+        return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) &&
+               /[0-9]/.test(password) && /[@$!%*?&]/.test(password);
       }
 
       /* ═══════════════════════════════════════════════════════ */
-      /* AUTH — LIMPIAR SESIÓN                                  */
+      /* LIMPIAR SESIÓN LOCAL                                   */
       /* ═══════════════════════════════════════════════════════ */
       function _limpiarSesionLocal() {
         const claves = [
-          'usuario_actual_v1',
-          'sesion_activa_v1',
-          'licencia_v1',
-          'ticket_actual_v1',
-          'turno_activo_v1'
+          'usuario_actual_v1', 'sesion_activa_v1', 'licencia_v1',
+          'rol_actual_v1', 'ticket_actual_v1', 'turno_activo_v1'
         ];
         claves.forEach(function (k) {
           try { localStorage.removeItem(k); } catch (e) {}
         });
+        _deviceActual = null;
       }
 
       /* ═══════════════════════════════════════════════════════ */
-      /* AUTH — ACTUALIZAR MENÚ                                 */
+      /* ACTUALIZAR MENÚ                                        */
       /* ═══════════════════════════════════════════════════════ */
       function _actualizarMenuUsuario(data) {
         const nameEl = document.getElementById('menu-user-name');
         const roleEl = document.getElementById('menu-user-role');
-        if (nameEl) {
-          nameEl.textContent = (data.nombre || '') + ' ' + (data.apellido || '');
-        }
+        if (nameEl) nameEl.textContent = (data.nombre || '') + ' ' + (data.apellido || '');
         if (roleEl) {
-          roleEl.textContent = data.rol === 'admin' ? 'Administrador' : (data.rol === 'cajero' ? 'Cajero' : 'Sin rol');
+          const r = data.rol;
+          roleEl.textContent = r === 'admin' ? 'Administrador' :
+                               r === 'cajero' ? 'Cajero' :
+                               r === 'pendiente' ? 'Sin licencia' : 'Sin rol';
         }
 
+        const esAdmin = data.rol === 'admin';
         document.querySelectorAll('[data-solo-admin="true"]').forEach(function (el) {
-          if (data.rol !== 'admin') {
-            el.style.display = 'none';
-          } else {
-            el.style.display = '';
-          }
+          el.style.display = esAdmin ? '' : 'none';
         });
       }
 
       /* ═══════════════════════════════════════════════════════ */
-      /* LICENCIA — ACTIVAR CON JWT                             */
+      /* LICENCIA — ACTIVAR CON JWT (DUEÑO)                     */
       /* ═══════════════════════════════════════════════════════ */
       Licencia.activar = async function (jwt) {
         if (!jwt) throw new Error('Ingresá una clave de licencia');
@@ -7163,39 +7177,33 @@
         if (!payload) throw new Error('Clave de licencia inválida');
 
         const deviceId = App.getDeviceId();
+
+        // Compatibilidad: si el JWT tiene device_id, debe coincidir
         if (payload.device_id && payload.device_id !== deviceId) {
           throw new Error('Esta licencia no corresponde a este dispositivo');
         }
 
         if (payload.fecha_expiracion) {
           const exp = new Date(payload.fecha_expiracion).getTime();
-          if (!isNaN(exp) && exp < Date.now()) {
-            throw new Error('La licencia ha expirado');
-          }
+          if (!isNaN(exp) && exp < Date.now()) throw new Error('La licencia ha expirado');
         }
 
         const user = App.getAuth().currentUser;
         if (!user) throw new Error('No hay sesión activa');
 
-        // CAMBIO B.6: lectura del doc con try/catch.
         let userData;
         try {
           const userDoc = await App.getDb().collection('usuarios').doc(user.uid).get();
           userData = userDoc.data();
         } catch (e) {
-          console.error('[Licencia] Error al leer doc de usuario:', e);
           throw new Error('No se pudo verificar tu cuenta. Revisá tu conexión.');
         }
 
-        let comercioId = payload.comercio_id || userData.comercioId;
+        let comercioId = userData.comercioId;
 
-        // CAMBIO B.6: escrituras envueltas en try/catch. Si falla
-        // la creación del comercio, no seguimos.
-        if (!userData.comercioId) {
-          if (!comercioId) {
-            comercioId = App.generarId('comercio');
-          }
-
+        // Si es la primera vez, crear el comercio
+        if (!comercioId) {
+          comercioId = App.generarId('comercio');
           try {
             await App.getDb().collection('comercios').doc(comercioId).set({
               nombre_comercio: userData.negocio || 'Mi Comercio',
@@ -7204,73 +7212,73 @@
               modo_fiscal: 'particular',
               arca_config: null,
               config_impuestos: {
-                condicion: 'responsable',
-                aliqGral: 21,
-                aliqRed: 10.5,
-                aliqDif: 27,
-                preciosConIva: false
+                condicion: 'responsable', aliqGral: 21, aliqRed: 10.5, aliqDif: 27, preciosConIva: false
               },
               config_ticket: {},
               datos_cuenta: {
                 nombre: userData.negocio || '',
                 propietario: (userData.nombre || '') + ' ' + (userData.apellido || ''),
-                cuit: '',
-                direccion: '',
-                telefono: '',
-                email: userData.email || ''
+                cuit: '', direccion: '', telefono: '', email: userData.email || ''
               },
               fecha_creacion: firebase.firestore.FieldValue.serverTimestamp(),
               fecha_actualizacion: firebase.firestore.FieldValue.serverTimestamp()
             });
           } catch (e) {
-            console.error('[Licencia] Error al crear comercio:', e);
             throw new Error('No se pudo crear el comercio. Intentá nuevamente.');
-          }
-
-          try {
-            await App.getDb().collection('usuarios').doc(user.uid).update({
-              comercioId: comercioId,
-              rol: 'admin',
-              licencia_activa: true,
-              licencia_tipo: 'admin',
-              device_id: deviceId,
-              fecha_expiracion: payload.fecha_expiracion ? new Date(payload.fecha_expiracion) : null,
-              dias_offline: payload.dias_offline || 7
-            });
-          } catch (e) {
-            console.error('[Licencia] Error al actualizar usuario:', e);
-            throw new Error('No se pudo activar la licencia. Intentá nuevamente.');
           }
         }
 
-        localStorage.setItem('licencia_v1', JSON.stringify({
+        // Agregar/actualizar este device en dispositivos[]
+        const fechaExpMs = payload.fecha_expiracion ? new Date(payload.fecha_expiracion).getTime() : null;
+        const nuevoDevice = {
+          device_id: deviceId,
+          rol: 'admin',
+          nombre: 'Dispositivo del dueño',
           activa: true,
-          tipo: payload.tipo || 'admin',
-          fecha_expiracion: payload.fecha_expiracion || null,
-          dias_offline: payload.dias_offline || 7,
-          comercioId: comercioId
-        }));
+          fecha_activacion: Date.now(),
+          fecha_expiracion: fechaExpMs ? firebase.firestore.Timestamp.fromMillis(fechaExpMs) : null,
+          empleado_nombre: null,
+          empleado_contacto: null
+        };
 
-        const userActualizado = Object.assign({}, userData, {
-          comercioId: comercioId,
-          rol: userData.rol || 'admin'
+        const dispositivos = (userData.dispositivos || []).filter(function (d) {
+          return d.device_id !== deviceId;
         });
+        dispositivos.push(nuevoDevice);
+
+        try {
+          await App.getDb().collection('usuarios').doc(user.uid).update({
+            comercioId: comercioId,
+            rol: 'admin',
+            dispositivos: dispositivos,
+            licencia_activa: true,
+            licencia_tipo: 'admin',
+            device_id: deviceId,
+            fecha_expiracion: nuevoDevice.fecha_expiracion
+          });
+        } catch (e) {
+          throw new Error('No se pudo activar la licencia. Intentá nuevamente.');
+        }
+
+        // Estado local
+        _deviceActual = nuevoDevice;
+        localStorage.setItem('rol_actual_v1', 'admin');
+        localStorage.setItem('licencia_v1', JSON.stringify({
+          activa: true, rol: 'admin', device_id: deviceId, fecha_expiracion: fechaExpMs
+        }));
         localStorage.setItem('usuario_actual_v1', JSON.stringify({
           uid: user.uid,
           email: userData.email,
           nombre: userData.nombre,
           apellido: userData.apellido,
           negocio: userData.negocio,
-          rol: userActualizado.rol,
           comercioId: comercioId
         }));
 
-        if (window.Data && Data.init) {
-          Data.init(comercioId);
-        }
+        if (window.Data && Data.init) Data.init(comercioId);
         _iniciarValidacionLicencia(user.uid);
+        _actualizarMenuUsuario({ nombre: userData.nombre, apellido: userData.apellido, rol: 'admin' });
 
-        _actualizarMenuUsuario(userActualizado);
         App.navegar('menu');
         App.toast('Licencia activada correctamente', 'success');
       };
@@ -7282,8 +7290,7 @@
         try {
           const partes = String(jwt).trim().split('.');
           if (partes.length !== 3) throw new Error('Formato inválido');
-          const payload = JSON.parse(atob(partes[1]));
-          return payload;
+          return JSON.parse(atob(partes[1]));
         } catch (e) {
           console.error('[Licencia] Error al decodificar JWT:', e);
           return null;
@@ -7291,7 +7298,7 @@
       }
 
       /* ═══════════════════════════════════════════════════════ */
-      /* LICENCIA — VINCULAR CON CÓDIGO                         */
+      /* LICENCIA — VINCULAR COMO CAJERO                        */
       /* ═══════════════════════════════════════════════════════ */
       Licencia.vincularConCodigo = async function (codigo) {
         if (!codigo || codigo.length !== 6) {
@@ -7309,7 +7316,6 @@
             .limit(1)
             .get();
         } catch (e) {
-          console.error('[Licencia] Error al buscar invitación:', e);
           throw new Error('No se pudo verificar el código. Revisá tu conexión.');
         }
 
@@ -7318,105 +7324,130 @@
         const invitacion = snap.docs[0];
         const data = invitacion.data();
 
-        if (data.fecha_expiracion && typeof data.fecha_expiracion.toMillis === 'function') {
-          if (data.fecha_expiracion.toMillis() < Date.now()) {
-            throw new Error('El código ha expirado');
-          }
+        const expInvitacion = _fechaATimestampMs(data.fecha_expiracion);
+        if (expInvitacion && expInvitacion < Date.now()) {
+          throw new Error('El código ha expirado');
         }
 
-        // CAMBIO: comparación case-insensitive de email.
         const emailInvitacion = String(data.email_cajero || '').toLowerCase().trim();
         const emailUsuario = String(user.email || '').toLowerCase().trim();
-        if (emailInvitacion !== emailUsuario) {
-          throw new Error('Este código fue generado para otro email. Verificá que estés logueado con la cuenta correcta.');
+        if (emailInvitacion && emailInvitacion !== emailUsuario) {
+          throw new Error('Este código fue generado para otra cuenta. Verificá que estés logueado con el email correcto.');
         }
 
-        // CAMBIO B.6: actualización del usuario envuelta.
+        const deviceId = App.getDeviceId();
+        const fechaExpMs = _fechaATimestampMs(data.fecha_expiracion);
+
+        // Agregar device como cajero
+        let userData;
+        try {
+          const userDoc = await App.getDb().collection('usuarios').doc(user.uid).get();
+          userData = userDoc.data();
+        } catch (e) {
+          throw new Error('No se pudo verificar tu cuenta.');
+        }
+
+        const nuevoDevice = {
+          device_id: deviceId,
+          rol: 'cajero',
+          nombre: 'Dispositivo cajero',
+          activa: true,
+          fecha_activacion: Date.now(),
+          fecha_expiracion: fechaExpMs ? firebase.firestore.Timestamp.fromMillis(fechaExpMs) : null,
+          empleado_nombre: data.empleado_nombre || null,
+          empleado_contacto: data.empleado_contacto || null
+        };
+
+        const dispositivos = (userData.dispositivos || []).filter(function (d) {
+          return d.device_id !== deviceId;
+        });
+        dispositivos.push(nuevoDevice);
+
         try {
           await App.getDb().collection('usuarios').doc(user.uid).update({
             comercioId: data.comercioId,
             rol: 'cajero',
+            dispositivos: dispositivos,
             licencia_activa: true,
             licencia_tipo: 'cajero',
-            device_id: App.getDeviceId(),
-            fecha_expiracion: data.fecha_expiracion || null,
-            dias_offline: 7
+            pagador_uid: data.emisor_uid || null,
+            device_id: deviceId,
+            fecha_expiracion: nuevoDevice.fecha_expiracion
           });
         } catch (e) {
-          console.error('[Licencia] Error al actualizar usuario:', e);
           throw new Error('No se pudo vincular. Intentá nuevamente.');
         }
 
-        // CAMBIO B.6: agregar al comercio envuelto.
+        // Marcar invitación como usada
         try {
-          await App.getDb().collection('comercios').doc(data.comercioId).update({
-            cajeros: firebase.firestore.FieldValue.arrayUnion(user.uid)
-          });
+          await invitacion.ref.update({ usada: true, fecha_uso: Date.now() });
         } catch (e) {
-          console.error('[Licencia] Error al agregar cajero al comercio:', e);
-          // No relanzamos: el usuario ya está vinculado, el array
-          // se puede reparar después. Logueamos.
+          console.warn('[Licencia] No se pudo marcar la invitación:', e);
         }
 
-        // CAMBIO B.6: marcar invitación como usada envuelto.
-        try {
-          await invitacion.ref.update({ usada: true });
-        } catch (e) {
-          console.error('[Licencia] Error al marcar invitación como usada:', e);
-          // No relanzamos: si falla, la invitación queda reutilizable
-          // pero el usuario ya está vinculado.
-        }
-
+        // Estado local
+        _deviceActual = nuevoDevice;
+        localStorage.setItem('rol_actual_v1', 'cajero');
         localStorage.setItem('licencia_v1', JSON.stringify({
-          activa: true,
-          tipo: 'cajero',
-          fecha_expiracion: data.fecha_expiracion || null,
-          dias_offline: 7,
-          comercioId: data.comercioId
+          activa: true, rol: 'cajero', device_id: deviceId, fecha_expiracion: fechaExpMs
         }));
-
-        const userActual = JSON.parse(localStorage.getItem('usuario_actual_v1') || '{}');
+        const userActual = _getUserLocal();
         userActual.comercioId = data.comercioId;
-        userActual.rol = 'cajero';
         localStorage.setItem('usuario_actual_v1', JSON.stringify(userActual));
 
-        if (window.Data && Data.init) {
-          Data.init(data.comercioId);
-        }
+        if (window.Data && Data.init) Data.init(data.comercioId);
         _iniciarValidacionLicencia(user.uid);
+        _actualizarMenuUsuario({ nombre: userActual.nombre, apellido: userActual.apellido, rol: 'cajero' });
 
-        _actualizarMenuUsuario(userActual);
         App.navegar('menu');
-        App.toast('Vinculado correctamente', 'success');
+        App.toast('Vinculado como cajero correctamente', 'success');
       };
 
       /* ═══════════════════════════════════════════════════════ */
-      /* LICENCIA — VALIDACIÓN EN TIEMPO REAL                   */
+      /* VALIDACIÓN DE LICENCIA EN TIEMPO REAL                  */
       /* ═══════════════════════════════════════════════════════ */
       function _iniciarValidacionLicencia(uid) {
         if (_unsubscribeLicencia) _unsubscribeLicencia();
-
         if (!window.Data || !Data.iniciarValidacionLicencia) return;
+
+        const deviceId = App.getDeviceId();
 
         _unsubscribeLicencia = Data.iniciarValidacionLicencia(uid, function (resultado) {
           if (!resultado.valida) {
             console.warn('[Licencia] Revocada:', resultado.motivo);
             App.toast('Licencia desactivada: ' + resultado.motivo, 'error', 6000);
-            setTimeout(function () {
-              Auth.cerrarSesion();
-            }, 3000);
+            setTimeout(function () { Auth.cerrarSesion(); }, 3000);
+            return;
+          }
+
+          const data = resultado.data || {};
+          const devices = data.dispositivos || [];
+          const deviceInfo = devices.find(function (d) { return d.device_id === deviceId; });
+
+          if (!deviceInfo) {
+            App.toast('Este dispositivo fue desvinculado', 'error', 6000);
+            setTimeout(function () { Auth.cerrarSesion(); }, 3000);
+            return;
+          }
+          if (deviceInfo.activa === false) {
+            App.toast('Este dispositivo fue desactivado', 'error', 6000);
+            setTimeout(function () { Auth.cerrarSesion(); }, 3000);
+            return;
+          }
+          const expMs = _fechaATimestampMs(deviceInfo.fecha_expiracion);
+          if (expMs && expMs < Date.now()) {
+            App.toast('La licencia de este dispositivo venció', 'error', 6000);
+            setTimeout(function () { Auth.cerrarSesion(); }, 3000);
           }
         });
       }
 
       /* ═══════════════════════════════════════════════════════ */
-      /* LICENCIA — ACTUALIZAR DISPLAY DEVICE ID                */
+      /* DEVICE ID DISPLAY                                      */
       /* ═══════════════════════════════════════════════════════ */
       function _actualizarDeviceIdDisplay() {
         const el = document.getElementById('device-id-display');
-        if (el) {
-          el.textContent = App.getDeviceId();
-        }
+        if (el) el.textContent = App.getDeviceId();
       }
 
       /* ═══════════════════════════════════════════════════════ */
@@ -7439,7 +7470,6 @@
 
             btn.disabled = true;
             btn.textContent = 'Ingresando...';
-
             try {
               await Auth.iniciarSesion(email, password);
             } catch (error) {
@@ -7465,7 +7495,6 @@
               passwordConfirm: document.getElementById('register-password-confirm').value
             };
             const terms = document.getElementById('register-terms').checked;
-
             if (!terms) {
               document.getElementById('auth-register-error').textContent = 'Debés aceptar los Términos.';
               return;
@@ -7473,7 +7502,6 @@
 
             btn.disabled = true;
             btn.textContent = 'Creando cuenta...';
-
             try {
               await Auth.registrar(datos);
               const successEl = document.getElementById('auth-register-success');
@@ -7501,9 +7529,7 @@
             const email = document.getElementById('forgot-email').value.trim();
             const errorEl = document.getElementById('auth-forgot-error');
             const successEl = document.getElementById('auth-forgot-success');
-            errorEl.textContent = '';
-            successEl.textContent = '';
-
+            errorEl.textContent = ''; successEl.textContent = '';
             try {
               await Auth.recuperarPassword(email);
               successEl.textContent = 'Te enviamos un enlace para restablecer tu contraseña.';
@@ -7518,9 +7544,7 @@
           btnResend.addEventListener('click', async function () {
             const errorEl = document.getElementById('auth-verify-error');
             const successEl = document.getElementById('auth-verify-success');
-            errorEl.textContent = '';
-            successEl.textContent = '';
-
+            errorEl.textContent = ''; successEl.textContent = '';
             try {
               await Auth.reenviarVerificacion();
               successEl.textContent = 'Email reenviado.';
@@ -7553,9 +7577,7 @@
         const btnCerrarSesion = document.getElementById('btn-cerrar-sesion');
         if (btnCerrarSesion) {
           btnCerrarSesion.addEventListener('click', async function () {
-            if (await App.confirmar('¿Cerrar sesión?')) {
-              await Auth.cerrarSesion();
-            }
+            if (await App.confirmar('¿Cerrar sesión?')) await Auth.cerrarSesion();
           });
         }
 
@@ -7572,16 +7594,11 @@
 
       function _bindLink(id, fn) {
         const el = document.getElementById(id);
-        if (el) {
-          el.addEventListener('click', function (e) {
-            e.preventDefault();
-            fn();
-          });
-        }
+        if (el) el.addEventListener('click', function (e) { e.preventDefault(); fn(); });
       }
 
       /* ═══════════════════════════════════════════════════════ */
-      /* CARGAR DOCUMENTO LEGAL                                 */
+      /* DOCUMENTO LEGAL                                        */
       /* ═══════════════════════════════════════════════════════ */
       async function _cargarDocumentoLegal(tipo) {
         const modalId = tipo === 'terms' ? 'modal-terms' : 'modal-privacy';
@@ -7590,20 +7607,17 @@
 
         const cont = document.getElementById(contentId);
         if (!cont) return;
-
         cont.innerHTML = '<div class="loading"><span class="spinner spinner-primary"></span> Cargando...</div>';
 
         try {
           const doc = await App.getDb().collection('configuracion').doc('documentos_legales').get();
           if (doc.exists) {
             const data = doc.data();
-            const html = tipo === 'terms' ? data.terminos_html : data.privacidad_html;
-            cont.innerHTML = html || '<p>Documento no disponible.</p>';
+            cont.innerHTML = (tipo === 'terms' ? data.terminos_html : data.privacidad_html) || '<p>Documento no disponible.</p>';
           } else {
-            cont.innerHTML = '<p>Documento no disponible. Contactá al administrador.</p>';
+            cont.innerHTML = '<p>Documento no disponible.</p>';
           }
         } catch (e) {
-          console.error('[Auth] Error al cargar documento legal:', e);
           cont.innerHTML = '<p>Error al cargar el documento.</p>';
         }
       }
@@ -7618,12 +7632,9 @@
             const jwt = document.getElementById('txt-clave-licencia').value.trim();
             const errorEl = document.getElementById('licencia-error');
             const successEl = document.getElementById('licencia-success');
-            errorEl.textContent = '';
-            successEl.textContent = '';
-
+            errorEl.textContent = ''; successEl.textContent = '';
             btnActivar.disabled = true;
             btnActivar.textContent = 'Activando...';
-
             try {
               await Licencia.activar(jwt);
               successEl.textContent = '¡Licencia activada!';
@@ -7664,25 +7675,29 @@
             const codigo = document.getElementById('txt-codigo-invitacion').value.trim();
             const errorEl = document.getElementById('licencia-error');
             errorEl.textContent = '';
-
             btnVincular.disabled = true;
             btnVincular.textContent = 'Vinculando...';
-
             try {
               await Licencia.vincularConCodigo(codigo);
             } catch (error) {
               errorEl.textContent = error.message;
             } finally {
               btnVincular.disabled = false;
-              btnVincular.textContent = 'Vincular con Código';
+              btnVincular.textContent = 'Vincular como Cajero';
             }
           });
         }
 
         const btnIrMenu = document.getElementById('btn-ir-menu');
         if (btnIrMenu) {
-          btnIrMenu.addEventListener('click', function () {
-            App.navegar('menu');
+          btnIrMenu.addEventListener('click', function () { App.navegar('menu'); });
+        }
+
+        // NUEVO: Cerrar sesión desde la vista de licencia
+        const btnCerrarSesionLicencia = document.getElementById('btn-cerrar-sesion-licencia');
+        if (btnCerrarSesionLicencia) {
+          btnCerrarSesionLicencia.addEventListener('click', async function () {
+            if (await App.confirmar('¿Cerrar sesión?')) await Auth.cerrarSesion();
           });
         }
       }
