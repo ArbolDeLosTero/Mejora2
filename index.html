@@ -769,11 +769,13 @@
       }
     }
   </style>
-  <style>
+   <style>
     /* ═══════════════════════════════════════════════════════════ */
     /* BLOQUE 02 — CSS AUTH + LICENCIA                            */
     /* Estilos de login, registro, verificación, recuperación,    */
     /* licencia y modales de T&C / Privacidad                     */
+    /* v3 — Eliminado CSS de "código de invitación" (flujo cajero */
+    /*      ahora usa login normal con email +cajeroN)            */
     /* ═══════════════════════════════════════════════════════════ */
 
     /* ─────────────────────────────────────────────────────────── */
@@ -1088,18 +1090,6 @@
     }
 
     /* ─────────────────────────────────────────────────────────── */
-    /* LICENCIA — CÓDIGO DE INVITACIÓN                            */
-    /* ─────────────────────────────────────────────────────────── */
-    #txt-codigo-invitacion {
-      font-family: var(--m2-font-mono);
-      font-size: 22px;
-      text-align: center;
-      letter-spacing: 8px;
-      font-weight: 700;
-      padding: 16px;
-    }
-
-    /* ─────────────────────────────────────────────────────────── */
     /* LICENCIA — ESTADO CONECTADO                                */
     /* ─────────────────────────────────────────────────────────── */
     .licencia-estado-conectado {
@@ -1169,12 +1159,6 @@
       .device-id-text {
         font-size: 16px;
         letter-spacing: 1px;
-      }
-
-      #txt-codigo-invitacion {
-        font-size: 18px;
-        letter-spacing: 6px;
-        padding: 14px;
       }
     }
   </style>
@@ -3914,7 +3898,8 @@
   </style>
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!-- BLOQUE 05 — HTML AUTH + LICENCIA                           -->
-<!-- v2 — Modelo de asientos + botón cerrar sesión              -->
+<!-- v3 — Modelo de asientos + botón cerrar sesión              -->
+<!-- Sin flujo "Soy cajero" (login directo con email +cajeroN)  -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 
 <!-- VISTA LOGIN -->
@@ -4104,17 +4089,7 @@
       <button id="btn-activar-licencia" class="btn btn-primary mt-md">Activar Licencia</button>
     </div>
 
-    <!-- SECCIÓN 3: Código de Cajero -->
-    <div class="licencia-section">
-      <h3>🔗 Soy cajero</h3>
-      <p class="licencia-info">Si tu jefe te dio un código de 6 dígitos, ingresalo acá para vincular este dispositivo como caja.</p>
-      <div class="input-group">
-        <input type="text" id="txt-codigo-invitacion" class="input-licencia" placeholder="000000" maxlength="6" pattern="[0-9]*" inputmode="numeric">
-      </div>
-      <button id="btn-vincular-codigo" class="btn btn-primary mt-md">Vincular como Cajero</button>
-    </div>
-
-    <!-- SECCIÓN 4: Cerrar sesión -->
+    <!-- SECCIÓN 3: Cerrar sesión -->
     <div class="licencia-section" style="text-align:center;">
       <p class="licencia-info">¿Querés usar otra cuenta?</p>
       <button id="btn-cerrar-sesion-licencia" class="btn btn-secondary">🚪 Cerrar Sesión</button>
@@ -6722,11 +6697,12 @@
 <script>
     /* ═══════════════════════════════════════════════════════════ */
     /* BLOQUE 12 — JS AUTH + LICENCIA                             */
-    /* v2.1 — Modelo de asientos + device binding                 */
+    /* v2.2 — Modelo de asientos + device binding                 */
     /* Fixes aplicados:                                           */
     /*  - FIX 1: WhatsApp con número del admin hardcodeado        */
     /*  - FIX 2: Permitir activar si device_id cambió (confirmar) */
     /*  - FIX 3: Sincronizar device_id a Firestore en vista lic.  */
+    /*  - FIX 4: Eliminado flujo "Soy cajero" con código 6 díg.   */
     /* ═══════════════════════════════════════════════════════════ */
     (function () {
       'use strict';
@@ -6866,12 +6842,12 @@
             negocio: negocio,
             rol: null,
             comercioId: null,
-            dispositivos: [],              // NUEVO: array de asientos
+            dispositivos: [],
             licencia_activa: false,
             licencia_tipo: null,
             fecha_expiracion: null,
             device_id: null,
-            pagador_uid: null,             // NUEVO: para cajeros, apunta al dueño
+            pagador_uid: null,
             fecha_registro: firebase.firestore.FieldValue.serverTimestamp(),
             ultimo_login: null,
             terminos_version: 'v1.0',
@@ -7190,9 +7166,7 @@
         const deviceId = App.getDeviceId();
 
         // FIX 2: si el token trae device_id y no coincide con el
-        // actual, pedimos confirmación en vez de bloquear. Esto
-        // cubre el caso de localStorage limpio, cambio de navegador
-        // o modo incógnito.
+        // actual, pedimos confirmación en vez de bloquear.
         let _deviceIdCambiado = false;
         if (payload.device_id && payload.device_id !== deviceId) {
           console.warn(
@@ -7268,8 +7242,6 @@
           empleado_contacto: null
         };
 
-        // FIX 2: al filtrar, sacamos también el device viejo del
-        // token si el usuario confirmó la reactivación.
         const dispositivos = (userData.dispositivos || []).filter(function (d) {
           if (d.device_id === deviceId) return false;
           if (_deviceIdCambiado && d.device_id === payload.device_id) return false;
@@ -7329,112 +7301,6 @@
       }
 
       /* ═══════════════════════════════════════════════════════ */
-      /* LICENCIA — VINCULAR COMO CAJERO                        */
-      /* ═══════════════════════════════════════════════════════ */
-      Licencia.vincularConCodigo = async function (codigo) {
-        if (!codigo || codigo.length !== 6) {
-          throw new Error('El código debe tener 6 dígitos');
-        }
-
-        const user = App.getAuth().currentUser;
-        if (!user) throw new Error('No hay sesión activa');
-
-        let snap;
-        try {
-          snap = await App.getDb().collection('invitaciones')
-            .where('codigo', '==', codigo)
-            .where('usada', '==', false)
-            .limit(1)
-            .get();
-        } catch (e) {
-          throw new Error('No se pudo verificar el código. Revisá tu conexión.');
-        }
-
-        if (snap.empty) throw new Error('Código inválido o ya usado');
-
-        const invitacion = snap.docs[0];
-        const data = invitacion.data();
-
-        const expInvitacion = _fechaATimestampMs(data.fecha_expiracion);
-        if (expInvitacion && expInvitacion < Date.now()) {
-          throw new Error('El código ha expirado');
-        }
-
-        const emailInvitacion = String(data.email_cajero || '').toLowerCase().trim();
-        const emailUsuario = String(user.email || '').toLowerCase().trim();
-        if (emailInvitacion && emailInvitacion !== emailUsuario) {
-          throw new Error('Este código fue generado para otra cuenta. Verificá que estés logueado con el email correcto.');
-        }
-
-        const deviceId = App.getDeviceId();
-        const fechaExpMs = _fechaATimestampMs(data.fecha_expiracion);
-
-        // Agregar device como cajero
-        let userData;
-        try {
-          const userDoc = await App.getDb().collection('usuarios').doc(user.uid).get();
-          userData = userDoc.data();
-        } catch (e) {
-          throw new Error('No se pudo verificar tu cuenta.');
-        }
-
-        const nuevoDevice = {
-          device_id: deviceId,
-          rol: 'cajero',
-          nombre: 'Dispositivo cajero',
-          activa: true,
-          fecha_activacion: Date.now(),
-          fecha_expiracion: fechaExpMs ? firebase.firestore.Timestamp.fromMillis(fechaExpMs) : null,
-          empleado_nombre: data.empleado_nombre || null,
-          empleado_contacto: data.empleado_contacto || null
-        };
-
-        const dispositivos = (userData.dispositivos || []).filter(function (d) {
-          return d.device_id !== deviceId;
-        });
-        dispositivos.push(nuevoDevice);
-
-        try {
-          await App.getDb().collection('usuarios').doc(user.uid).update({
-            comercioId: data.comercioId,
-            rol: 'cajero',
-            dispositivos: dispositivos,
-            licencia_activa: true,
-            licencia_tipo: 'cajero',
-            pagador_uid: data.emisor_uid || null,
-            device_id: deviceId,
-            fecha_expiracion: nuevoDevice.fecha_expiracion
-          });
-        } catch (e) {
-          throw new Error('No se pudo vincular. Intentá nuevamente.');
-        }
-
-        // Marcar invitación como usada
-        try {
-          await invitacion.ref.update({ usada: true, fecha_uso: Date.now() });
-        } catch (e) {
-          console.warn('[Licencia] No se pudo marcar la invitación:', e);
-        }
-
-        // Estado local
-        _deviceActual = nuevoDevice;
-        localStorage.setItem('rol_actual_v1', 'cajero');
-        localStorage.setItem('licencia_v1', JSON.stringify({
-          activa: true, rol: 'cajero', device_id: deviceId, fecha_expiracion: fechaExpMs
-        }));
-        const userActual = _getUserLocal();
-        userActual.comercioId = data.comercioId;
-        localStorage.setItem('usuario_actual_v1', JSON.stringify(userActual));
-
-        if (window.Data && Data.init) Data.init(data.comercioId);
-        _iniciarValidacionLicencia(user.uid);
-        _actualizarMenuUsuario({ nombre: userActual.nombre, apellido: userActual.apellido, rol: 'cajero' });
-
-        App.navegar('menu');
-        App.toast('Vinculado como cajero correctamente', 'success');
-      };
-
-      /* ═══════════════════════════════════════════════════════ */
       /* VALIDACIÓN DE LICENCIA EN TIEMPO REAL                  */
       /* ═══════════════════════════════════════════════════════ */
       function _iniciarValidacionLicencia(uid) {
@@ -7483,8 +7349,6 @@
         const deviceId = App.getDeviceId();
         if (el) el.textContent = deviceId;
 
-        // FIX 3: sincronizar el device_id vigente con Firestore.
-        // Solo si hay sesión activa.
         const user = App.getAuth().currentUser;
         if (user && user.uid) {
           App.getDb().collection('usuarios').doc(user.uid)
@@ -7669,6 +7533,8 @@
 
       /* ═══════════════════════════════════════════════════════ */
       /* LISTENERS LICENCIA                                     */
+      /* FIX 4: eliminados listeners del flujo "Soy cajero"     */
+      /* (btn-vincular-codigo y txt-codigo-invitacion).         */
       /* ═══════════════════════════════════════════════════════ */
       function _configurarListenersLicencia() {
         const btnActivar = document.getElementById('btn-activar-licencia');
@@ -7717,25 +7583,6 @@
               'https://wa.me/' + ADMIN_WHATSAPP + '?text=' + encodeURIComponent(mensaje),
               '_blank'
             );
-          });
-        }
-
-        const btnVincular = document.getElementById('btn-vincular-codigo');
-        if (btnVincular) {
-          btnVincular.addEventListener('click', async function () {
-            const codigo = document.getElementById('txt-codigo-invitacion').value.trim();
-            const errorEl = document.getElementById('licencia-error');
-            errorEl.textContent = '';
-            btnVincular.disabled = true;
-            btnVincular.textContent = 'Vinculando...';
-            try {
-              await Licencia.vincularConCodigo(codigo);
-            } catch (error) {
-              errorEl.textContent = error.message;
-            } finally {
-              btnVincular.disabled = false;
-              btnVincular.textContent = 'Vincular como Cajero';
-            }
           });
         }
 
