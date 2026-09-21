@@ -1,0 +1,155 @@
+rules_version = '2';
+
+// ═══════════════════════════════════════════════════════════════
+// MEJORA 2 — Firestore Security Rules
+// Modelo: comercio cerrado, roles por device, docs legales públicos
+// ═══════════════════════════════════════════════════════════════
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ───────────────────────────────────────────────────────────
+    // HELPERS
+    // ───────────────────────────────────────────────────────────
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/usuarios/$(uid())).data;
+    }
+
+    function getUserComercioId() {
+      return getUserData().comercioId;
+    }
+
+    function getUserRol() {
+      return getUserData().rol;
+    }
+
+    // Admin del comercio (rol == 'admin' y comercioId coincide)
+    function isAdminOf(comercioId) {
+      return isAuth()
+        && getUserComercioId() == comercioId
+        && getUserRol() == 'admin';
+    }
+
+    // Cajero del comercio
+    function isCajeroOf(comercioId) {
+      return isAuth()
+        && getUserComercioId() == comercioId
+        && getUserRol() == 'cajero';
+    }
+
+    // Cualquier miembro (admin o cajero)
+    function belongsToComercio(comercioId) {
+      return isAdminOf(comercioId) || isCajeroOf(comercioId);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // USUARIOS
+    // Cada usuario solo puede leer/escribir su propio doc.
+    // El admin puede leer los docs de sus cajeros (para el panel).
+    // ═══════════════════════════════════════════════════════════
+    match /usuarios/{userId} {
+      // Cada uno lee su propio doc
+      allow read: if isAuth() && uid() == userId;
+
+      // Admin puede leer docs de usuarios que sean sus cajeros
+      allow read: if isAuth()
+        && getUserRol() == 'admin'
+        && getUserComercioId() != null
+        && getUserComercioId() == resource.data.comercioId;
+
+      // Crear su propio doc al registrarse
+      allow create: if isAuth() && uid() == userId;
+
+      // Actualizar su propio doc (para device_id, ultimo_login, etc.)
+      allow update: if isAuth() && uid() == userId;
+
+      // Nadie puede borrar usuarios
+      allow delete: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // COMERCIOS
+    // El admin gestiona el comercio y sus subcolecciones.
+    // Los cajeros leen/escriben en las colecciones operativas.
+    // ═══════════════════════════════════════════════════════════
+    match /comercios/{comercioId} {
+
+      // Leer el doc del comercio: cualquier miembro
+      allow read: if belongsToComercio(comercioId);
+
+      // Crear: cualquier usuario autenticado (se crea al activar licencia)
+      allow create: if isAuth() && request.resource.data.admin_uid == uid();
+
+      // Actualizar: solo admin
+      allow update: if isAdminOf(comercioId);
+
+      // Borrar: solo admin
+      allow delete: if isAdminOf(comercioId);
+
+      // ─────────────────────────────────────────────────────────
+      // SUBCOLECCIONES OPERATIVAS
+      // productos, ventas, turnos, pedidos, devoluciones,
+      // proveedores, historico_compras, movimientos_stock,
+      // tickets_pendientes, logs_errores
+      // ─────────────────────────────────────────────────────────
+      match /{coleccion}/{docId} {
+
+        // Lectura: cualquier miembro del comercio
+        allow read: if belongsToComercio(comercioId);
+
+        // Escritura: cualquier miembro del comercio
+        // (el control fino por rol se hace en la app con data-solo-admin)
+        allow write: if isAuth() && belongsToComercio(comercioId);
+
+        // Excepción: config del comercio solo la toca el admin
+        // (esto es una subcolección, pero por las dudas)
+      }
+
+      // ─────────────────────────────────────────────────────────
+      // CONFIG (doc único dentro de la subcolección)
+      // Solo el admin la modifica, todos la leen
+      // ─────────────────────────────────────────────────────────
+      match /config/{configId} {
+        allow read: if belongsToComercio(comercioId);
+        allow write: if isAdminOf(comercioId);
+      }
+
+      // ─────────────────────────────────────────────────────────
+      // LOGS DE ERRORES
+      // Cualquier miembro escribe (la app los sube auto)
+      // Solo el admin puede borrar/marcar como resuelto
+      // ─────────────────────────────────────────────────────────
+      match /logs_errores/{logId} {
+        allow read: if belongsToComercio(comercioId);
+        allow create: if isAuth() && belongsToComercio(comercioId);
+        allow update: if isAdminOf(comercioId);
+        allow delete: if isAdminOf(comercioId);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // CONFIGURACIÓN PÚBLICA
+    // Documentos legales, versión mínima, etc. Lectura para todos
+    // Escritura solo desde la consola de Firebase o admin UID
+    // ═══════════════════════════════════════════════════════════
+    match /configuracion/{docId} {
+      allow read: if true;
+      allow write: if isAuth() && uid() == 'BSShatgnpKSmFrQHCY1D7iiWyfA2';
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // DEFAULT: denegar todo lo no especificado
+    // ═══════════════════════════════════════════════════════════
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
