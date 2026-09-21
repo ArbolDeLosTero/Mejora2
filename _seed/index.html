@@ -1,1 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seed — Mejora 2</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 20px;
+      background: #f0f2f5;
+      max-width: 900px;
+      margin: 0 auto;
+      color: #333;
+    }
+    h1 { font-size: 22px; margin-bottom: 8px; }
+    h2 { font-size: 16px; margin: 20px 0 10px; color: #667eea; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      margin-bottom: 16px;
+    }
+    .status { padding: 8px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; font-weight: 600; }
+    .status.info { background: #e3f2fd; color: #1565c0; }
+    .status.ok { background: #d4edda; color: #155724; }
+    .status.err { background: #f8d7da; color: #721c24; }
+    .status.warn { background: #fff3cd; color: #856404; }
+    button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      background: #667eea;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      margin-right: 8px;
+      margin-top: 8px;
+    }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    button.secondary { background: #e9ecef; color: #333; }
+    .log {
+      background: #1e1e24;
+      color: #e8e8ec;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 12px;
+      white-space: pre-wrap;
+    }
+    code { background: #f0f0f2; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+  </style>
+</head>
+<body>
 
+<h1>🌱 Seed — Mejora 2</h1>
+<p style="color:#666;font-size:13px;margin-bottom:16px;">
+  Cargá los documentos legales a Firestore. Solo el admin puede correr esto.
+  Después de usarlo, borrá esta carpeta.
+</p>
+
+<div class="card">
+  <h2>1. Estado</h2>
+  <div id="auth-status" class="status info">Verificando sesión...</div>
+</div>
+
+<div class="card">
+  <h2>2. Cargar documentos</h2>
+  <p style="font-size:13px;color:#666;margin-bottom:12px;">
+    Escribe <code>configuracion/documentos_legales</code> con los T&C y la Política de Privacidad.
+    Si ya existe, lo sobreescribe.
+  </p>
+  <button id="btn-seed-legal">📝 Cargar documentos legales</button>
+  <button id="btn-verify" class="secondary">🔍 Verificar</button>
+  <div id="log" class="log" style="display:none;"></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBKqZH1mF983q04o8_XtuE7waF3tlBeXnI",
+    authDomain: "mejora2-9eec7.firebaseapp.com",
+    projectId: "mejora2-9eec7",
+    storageBucket: "mejora2-9eec7.firebasestorage.app",
+    messagingSenderId: "892721742749",
+    appId: "1:892721742749:web:f37fa5364d2bc190736574"
+  };
+
+  const ADMIN_UID = 'BSShatgnpKSmFrQHCY1D7iiWyfA2';
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const statusEl = document.getElementById('auth-status');
+  const logEl = document.getElementById('log');
+  const btnSeed = document.getElementById('btn-seed-legal');
+  const btnVerify = document.getElementById('btn-verify');
+
+  function log(msg) {
+    logEl.style.display = 'block';
+    logEl.textContent += msg + '\n';
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function setStatus(tipo, texto) {
+    statusEl.className = 'status ' + tipo;
+    statusEl.textContent = texto;
+  }
+
+  const TERMINOS_HTML = `
+    <h3>1. Aceptación</h3>
+    <p>Al crear una cuenta y usar Mejora 2, aceptás estos Términos y Condiciones en su totalidad. Si no estás de acuerdo, no uses la aplicación.</p>
+
+    <h3>2. Descripción del servicio</h3>
+    <p>Mejora 2 es una aplicación para gestión de comercios minoristas (kioscos, almacenes, etc.) que permite administrar stock, caja, ventas, proveedores e impuestos. Se ofrece "tal cual está", sin garantías de disponibilidad ininterrumpida.</p>
+
+    <h3>3. Licencia de uso</h3>
+    <p>La licencia es personal, intransferible y limitada al número de dispositivos (asientos) contratados. Cada dispositivo requiere su propia activación. La licencia se renueva según el plan contratado con soporte.</p>
+
+    <h3>4. Cuenta y contraseña</h3>
+    <p>Sos responsable de mantener la confidencialidad de tu contraseña y de toda actividad realizada con tu cuenta. Notificá inmediatamente cualquier uso no autorizado.</p>
+
+    <h3>5. Datos del comercio</h3>
+    <p>Los datos que cargues (productos, ventas, clientes, proveedores) son de tu propiedad. Mejora 2 los almacena en servidores de Google Firebase. Podés exportarlos en cualquier momento desde "Mi Cuenta → Respaldo de Datos".</p>
+
+    <h3>6. Uso aceptable</h3>
+    <p>No podés: usar la app para actividades ilegales, intentar vulnerar la seguridad, revender la licencia, ni hacer ingeniería inversa del software.</p>
+
+    <h3>7. Limitación de responsabilidad</h3>
+    <p>Mejora 2 no se responsabiliza por pérdidas económicas, errores en la carga de datos, ni por la información fiscal que se emita desde la app. La facturación electrónica (ARCA) es responsabilidad del usuario.</p>
+
+    <h3>8. Modificaciones</h3>
+    <p>Nos reservamos el derecho de modificar estos términos. Los cambios importantes se notificarán dentro de la app. El uso continuado implica aceptación.</p>
+
+    <h3>9. Ley aplicable</h3>
+    <p>Estos términos se rigen por las leyes de la República Argentina. Cualquier conflicto se resolverá en los tribunales ordinarios de la Ciudad Autónoma de Buenos Aires.</p>
+
+    <h3>10. Contacto</h3>
+    <p>Para consultas: WhatsApp +54 9 11 2581-6992.</p>
+  `;
+
+  const PRIVACIDAD_HTML = `
+    <h3>1. Datos que recolectamos</h3>
+    <ul>
+      <li><strong>Datos de cuenta:</strong> nombre, apellido, email, nombre del comercio, contraseña (encriptada).</li>
+      <li><strong>Datos operativos:</strong> productos, ventas, turnos de caja, proveedores, compras.</li>
+      <li><strong>Datos técnicos:</strong> Device ID, navegador, sistema operativo, versión de la app.</li>
+      <li><strong>Logs de errores:</strong> cuando ocurre un error, se registra el código, el contexto y el stack para diagnóstico.</li>
+    </ul>
+
+    <h3>2. Cómo usamos los datos</h3>
+    <p>Usamos los datos exclusivamente para operar la aplicación: mostrar tu stock, gestionar ventas, emitir tickets, darte soporte técnico y mantener la seguridad de tu cuenta.</p>
+
+    <h3>3. Con quién compartimos</h3>
+    <p>No vendemos ni compartimos tus datos con terceros, salvo:</p>
+    <ul>
+      <li><strong>Google Firebase:</strong> proveedor de infraestructura (autenticación y base de datos).</li>
+      <li><strong>ARCA (opcional):</strong> si activás facturación electrónica, los datos fiscales se envían a los servidores de ARCA.</li>
+      <li><strong>Obligaciones legales:</strong> si un juez o autoridad competente lo requiere.</li>
+    </ul>
+
+    <h3>4. Seguridad</h3>
+    <p>Usamos encriptación HTTPS para todas las comunicaciones, contraseñas hasheadas con bcrypt, y reglas de seguridad estrictas en Firestore. Solo vos y tus cajeros autorizados acceden a los datos de tu comercio.</p>
+
+    <h3>5. Tus derechos (Ley 25.326)</h3>
+    <p>Tenés derecho a:</p>
+    <ul>
+      <li>Acceder a tus datos personales.</li>
+      <li>Rectificar datos incorrectos.</li>
+      <li>Solicitar la eliminación de tu cuenta y datos.</li>
+      <li>Oponerte al tratamiento de tus datos.</li>
+    </ul>
+    <p>Para ejercerlos, contactate por WhatsApp al +54 9 11 2581-6992.</p>
+
+    <h3>6. Retención de datos</h3>
+    <p>Conservamos tus datos mientras tu cuenta esté activa. Si la eliminás, borramos todo en un plazo de 30 días, salvo obligación legal de conservarlos.</p>
+
+    <h3>7. Cookies y almacenamiento local</h3>
+    <p>Usamos localStorage del navegador para guardar tu sesión, preferencias (modo oscuro) y caché offline. No usamos cookies de terceros ni trackers publicitarios.</p>
+
+    <h3>8. Menores</h3>
+    <p>Mejora 2 no está destinada a menores de 18 años. No recolectamos datos de menores conscientemente.</p>
+
+    <h3>9. Cambios a esta política</h3>
+    <p>Si modificamos esta política, te avisamos dentro de la app. El uso continuado implica aceptación.</p>
+
+    <h3>10. Autoridad de control</h3>
+    <p>En Argentina, la autoridad de control es la Agencia de Acceso a la Información Pública (AAIP).</p>
+  `;
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      setStatus('err', '❌ No hay sesión activa. Iniciá sesión primero en la app principal (login), después volvé a esta página.');
+      btnSeed.disabled = true;
+      btnVerify.disabled = true;
+      return;
+    }
+    if (user.uid !== ADMIN_UID) {
+      setStatus('warn', '⚠️ Sesión iniciada como ' + user.email + ', pero no sos el admin autorizado. No vas a poder escribir.');
+      btnSeed.disabled = true;
+      btnVerify.disabled = true;
+      return;
+    }
+    setStatus('ok', '✅ Sesión activa como admin (' + user.email + ')');
+    btnSeed.disabled = false;
+    btnVerify.disabled = false;
+  });
+
+  btnSeed.addEventListener('click', async () => {
+    if (!confirm('¿Escribir/sobreescribir configuracion/documentos_legales?')) return;
+    btnSeed.disabled = true;
+    logEl.textContent = '';
+    log('⏳ Escribiendo...');
+
+    try {
+      await setDoc(doc(db, 'configuracion', 'documentos_legales'), {
+        terminos_html: TERMINOS_HTML.trim(),
+        privacidad_html: PRIVACIDAD_HTML.trim(),
+        version: 'v1.0',
+        fecha_actualizacion: serverTimestamp()
+      });
+      log('✅ Documento escrito correctamente.');
+      log('   - terminos_html: ' + TERMINOS_HTML.length + ' caracteres');
+      log('   - privacidad_html: ' + PRIVACIDAD_HTML.length + ' caracteres');
+      setStatus('ok', '✅ Documentos cargados. Ya podés usar los modales en la app.');
+    } catch (e) {
+      log('❌ Error: ' + e.message);
+      log('   Code: ' + e.code);
+      setStatus('err', '❌ Error al escribir. Revisá las reglas de Firestore y que seas el admin.');
+    } finally {
+      btnSeed.disabled = false;
+    }
+  });
+
+  btnVerify.addEventListener('click', async () => {
+    logEl.textContent = '';
+    log('🔍 Leyendo configuracion/documentos_legales...');
+    try {
+      const snap = await getDoc(doc(db, 'configuracion', 'documentos_legales'));
+      if (!snap.exists()) {
+        log('⚠️ El documento NO existe todavía.');
+        setStatus('warn', '⚠️ Documento no encontrado. Corré el seed.');
+        return;
+      }
+      const d = snap.data();
+      log('✅ Existe. Versión: ' + (d.version || '(sin versión)'));
+      log('   - terminos_html: ' + ((d.terminos_html || '').length) + ' chars');
+      log('   - privacidad_html: ' + ((d.privacidad_html || '').length) + ' chars');
+      setStatus('ok', '✅ Documento OK.');
+    } catch (e) {
+      log('❌ Error: ' + e.message);
+      setStatus('err', '❌ Error al leer.');
+    }
+  });
+</script>
+
+</body>
+</html>
