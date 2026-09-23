@@ -1,28 +1,19 @@
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!-- BLOQUE 00 — APERTURA HTML + SDK FIREBASE                   -->
-<!-- v3 — 23/09/2026                                            -->
-<!-- CAMBIO: Firebase SDK vía jsDelivr (gstatic no cargaba)     -->
+<!-- v4 — 23/09/2026                                            -->
+<!-- CAMBIO: Scripts movidos al final del <body> con defer      -->
 <!-- Va al INICIO del index.html, antes del BLOQUE 01           -->
 <!-- Carga los SDK de Firebase y abre <html> y <head>          -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#667eea">
-  <meta name="description" content="Mejora 2 — Gestión de kioscos, almacenes y comercios minoristas">
-  <title>Mejora 2 — Gestión de Comercios</title>
-
-  <!-- ═══ SDK de Firebase (API compat v9) — vía jsDelivr ═══ -->
-  <!-- IMPORTANTE: deben cargarse ANTES que cualquier script      -->
-  <!-- que use firebase.* (o sea, antes del BLOQUE 10)            -->
-  <!-- Nota: se cambió de gstatic a jsDelivr porque gstatic       -->
-  <!-- no estaba cargando en algunas redes.                       -->
-  <script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-app-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-functions-compat.js"></script>
+<!-- ═══ SDK Firebase (API compat v9) — gstatic oficial ═══ -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js" defer></script>
+</head>
   <style>
     /* ═══════════════════════════════════════════════════════════ */
     /* BLOQUE 01 — HEAD + CSS BASE                                */
@@ -8381,9 +8372,14 @@
       /* ═══════════════════════════════════════════════════════ */
       /* INIT                                                   */
       /* ═══════════════════════════════════════════════════════ */
-      App.init = function () {
-        try {
-          firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+App.init = function () {
+  if (typeof firebase === 'undefined') {
+    console.warn('[App] Firebase aún no cargó. Reintentando en 150ms...');
+    setTimeout(App.init, 150);
+    return;
+  }
+  try {
+    firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
           firebaseAuth = firebase.auth();
           firebaseDb = firebase.firestore();
           firebaseFunctions = firebase.functions ? firebase.functions() : null;
@@ -9526,7 +9522,8 @@
 <script>
     /* ═══════════════════════════════════════════════════════════ */
     /* BLOQUE 12 — JS AUTH + LICENCIA                             */
-    /* v2.3 — Cableado App.error() con códigos E-AUTH-* y E-LIC-* */
+    /* v2.4 — Cableado App.error() con códigos E-AUTH-* y E-LIC-* */
+    /*        + GUARD: espera a que Firebase/App estén listos     */
     /* ═══════════════════════════════════════════════════════════ */
     (function () {
       'use strict';
@@ -9534,6 +9531,11 @@
       const MAX_INTENTOS = 5;
       const BLOQUEO_MINUTOS = 5;
       const ADMIN_WHATSAPP = '5491125816992';
+
+      // Guard: reintentos hasta que Firebase esté disponible
+      const AUTH_MAX_RETRIES = 40;   // ~6 segundos (40 × 150 ms)
+      const AUTH_RETRY_DELAY_MS = 150;
+      let _authRetries = 0;
 
       let _unsubscribeLicencia = null;
       let _authInitialized = false;
@@ -9557,7 +9559,7 @@
         return isNaN(ms) ? null : ms;
       }
 
-      /* ═══ CAMBIO: helper para reportar errores ═══ */
+      /* ═══ Helper para reportar errores ═══ */
       function _reportarError(codigo, info) {
         if (window.App && typeof App.error === 'function') {
           try { App.error(codigo, info || {}); }
@@ -9567,10 +9569,36 @@
         }
       }
 
+      /* ═══ Guard: ¿Firebase y App están listos? ═══ */
+      function _firebaseListo() {
+        if (typeof firebase === 'undefined') return false;
+        if (!window.App) return false;
+        if (typeof App.getAuth !== 'function') return false;
+        if (!App.getAuth()) return false;   // firebaseAuth aún null
+        return true;
+      }
+
       /* ═══════════════════════════════════════════════════════ */
       /* AUTH — INICIALIZACIÓN                                  */
       /* ═══════════════════════════════════════════════════════ */
       Auth.init = function () {
+        // ── GUARD: esperar a que Firebase/App estén listos ──
+        if (!_firebaseListo()) {
+          _authRetries++;
+          if (_authRetries <= AUTH_MAX_RETRIES) {
+            if (_authRetries === 1 || _authRetries % 10 === 0) {
+              console.warn('[Auth] Firebase/App aún no disponible (intento ' +
+                           _authRetries + '/' + AUTH_MAX_RETRIES + '). Reintentando...');
+            }
+            setTimeout(Auth.init, AUTH_RETRY_DELAY_MS);
+            return;
+          }
+          console.error('[Auth] Firebase no se cargó tras ' + AUTH_MAX_RETRIES +
+                        ' intentos. Abortando Auth.init().');
+          return;
+        }
+        _authRetries = 0;
+
         if (_authInitialized) { console.info('[Auth] Ya inicializado'); return; }
         _authInitialized = true;
 
@@ -9600,7 +9628,6 @@
 
         const bloqueo = _verificarRateLimit(email);
         if (bloqueo.bloqueado) {
-          /* ═══ CAMBIO: reportar E-AUTH-005 (rate limit) ═══ */
           _reportarError('E-AUTH-005', {
             detalles: { email: email, minutosRestantes: bloqueo.minutosRestantes }
           });
@@ -9612,7 +9639,6 @@
           cred = await App.getAuth().signInWithEmailAndPassword(email, password);
         } catch (error) {
           _registrarIntentoFallido(email);
-          /* ═══ CAMBIO: reportar código correcto según el error ═══ */
           const codigo = _mapearErrorAuthACodigo(error);
           _reportarError(codigo, {
             detalles: { email: email, code: error && error.code, mensaje: error && error.message }
@@ -9625,7 +9651,6 @@
 
         if (!user.emailVerified) {
           try { await App.getAuth().signOut(); } catch (e) {}
-          /* ═══ CAMBIO: reportar E-AUTH-002 (email no verificado) ═══ */
           _reportarError('E-AUTH-002', { detalles: { email: email } });
           App.navegar('verify');
           return null;
@@ -9635,7 +9660,7 @@
         return user;
       };
 
-      /* ═══ CAMBIO: mapear error de Firebase Auth a código del catálogo ═══ */
+      /* ═══ Mapear error de Firebase Auth a código del catálogo ═══ */
       function _mapearErrorAuthACodigo(error) {
         const code = error && error.code ? error.code : '';
         switch (code) {
@@ -9834,7 +9859,6 @@
           localStorage.setItem('rol_actual_v1', 'pendiente');
           localStorage.removeItem('licencia_v1');
           _actualizarMenuUsuario({ rol: 'pendiente' });
-          /* ═══ CAMBIO: reportar E-LIC-001 (device sin activar) ═══ */
           _reportarError('E-LIC-001', {
             detalles: { device_id: deviceId, comercioId: data.comercioId || null }
           });
@@ -9844,7 +9868,6 @@
 
         /* CASO 2: Device desactivado */
         if (deviceInfo.activa === false) {
-          /* ═══ CAMBIO: reportar E-LIC-006 (device desvinculado) ═══ */
           _reportarError('E-LIC-006', { detalles: { device_id: deviceId } });
           App.toast('Este dispositivo fue desactivado por el administrador', 'error', 6000);
           try { await App.getAuth().signOut(); } catch (e) {}
@@ -9854,7 +9877,6 @@
         /* CASO 3: Device vencido */
         const expMs = _fechaATimestampMs(deviceInfo.fecha_expiracion);
         if (expMs && expMs < Date.now()) {
-          /* ═══ CAMBIO: reportar E-LIC-002 (licencia vencida) ═══ */
           _reportarError('E-LIC-002', {
             detalles: { device_id: deviceId, fecha_expiracion: expMs }
           });
@@ -10156,7 +10178,6 @@
 
         _unsubscribeLicencia = Data.iniciarValidacionLicencia(uid, function (resultado) {
           if (!resultado.valida) {
-            /* ═══ CAMBIO: reportar según motivo ═══ */
             const motivo = resultado.motivo || '';
             let codigo = 'E-LIC-003';
             if (motivo.indexOf('expirada') > -1) codigo = 'E-LIC-002';
@@ -10454,7 +10475,10 @@
       /* ARRANQUE                                               */
       /* ═══════════════════════════════════════════════════════ */
       function _arrancarAuth() {
-        if (!window.App || !App.getAuth) { setTimeout(_arrancarAuth, 100); return; }
+        if (!window.App || typeof App.getAuth !== 'function') {
+          setTimeout(_arrancarAuth, 100);
+          return;
+        }
         Auth.init();
       }
 
@@ -17666,6 +17690,14 @@
     };
   })();
 </script>
+<!-- ═══ SDK de Firebase (API compat v9) — vía jsDelivr ═══ -->
+<!-- Se cargan al final con 'defer' para no bloquear el renderizado -->
+<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-app-compat.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-auth-compat.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-firestore-compat.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-functions-compat.js" defer></script>
 
+<!-- Aquí irían los demás bloques de JS (10, 11, 12, etc.) -->
+<!-- ... -->
 </body>
 </html>
