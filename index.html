@@ -1,5 +1,7 @@
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!-- BLOQUE 00 — APERTURA HTML + SDK FIREBASE                   -->
+<!-- v3 — 23/09/2026                                            -->
+<!-- CAMBIO: Firebase SDK vía jsDelivr (gstatic no cargaba)     -->
 <!-- Va al INICIO del index.html, antes del BLOQUE 01           -->
 <!-- Carga los SDK de Firebase y abre <html> y <head>          -->
 <!-- ═══════════════════════════════════════════════════════════ -->
@@ -12,13 +14,15 @@
   <meta name="description" content="Mejora 2 — Gestión de kioscos, almacenes y comercios minoristas">
   <title>Mejora 2 — Gestión de Comercios</title>
 
-  <!-- ═══ SDK de Firebase (API compat v9) ═══ -->
+  <!-- ═══ SDK de Firebase (API compat v9) — vía jsDelivr ═══ -->
   <!-- IMPORTANTE: deben cargarse ANTES que cualquier script      -->
   <!-- que use firebase.* (o sea, antes del BLOQUE 10)            -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
+  <!-- Nota: se cambió de gstatic a jsDelivr porque gstatic       -->
+  <!-- no estaba cargando en algunas redes.                       -->
+  <script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-app-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-functions-compat.js"></script>
   <style>
     /* ═══════════════════════════════════════════════════════════ */
     /* BLOQUE 01 — HEAD + CSS BASE                                */
