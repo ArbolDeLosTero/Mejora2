@@ -1,0 +1,51 @@
+name: Deploy con Cache Busting a GitHub Pages
+
+on:
+  push:
+    branches: ["main"] # O la rama que uses para publicar
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Preparar Cache Busting
+        run: |
+          # Obtener el hash corto del commit
+          SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-8)
+          echo "Hash del commit: $SHA_SHORT"
+
+          # Añadir el parámetro ?v=hash a todos los archivos .js locales en index.html
+          # Busca src="...js" y lo convierte en src="...js?v=HASH"
+          sed -i -E "s|(src=\"[^\"?]+\\.js)\"|\\1?v=${SHA_SHORT}\"|g" index.html
+
+          # Opcional: Si tienes archivos .css, también puedes hacerlo
+          # sed -i -E "s|(href=\"[^\"?]+\\.css)\"|\\1?v=${SHA_SHORT}\"|g" index.html
+
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+
+      - name: Subir artefacto
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Desplegar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
