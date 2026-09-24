@@ -9524,6 +9524,7 @@ App.init = function () {
     /* BLOQUE 12 — JS AUTH + LICENCIA                             */
     /* v2.4 — Cableado App.error() con códigos E-AUTH-* y E-LIC-* */
     /*        + GUARD: espera a que Firebase/App estén listos     */
+    /*        + FIX: Licencia.activar respeta payload.rol         */
     /* ═══════════════════════════════════════════════════════════ */
     (function () {
       'use strict';
@@ -10106,12 +10107,19 @@ App.init = function () {
         }
 
         const fechaExpMs = payload.fecha_expiracion ? new Date(payload.fecha_expiracion).getTime() : null;
+
+        /* ═══ FIX: respetar el rol del payload (admin o cajero) ═══ */
+        const rolDelToken = payload.rol || 'admin';
+
         const nuevoDevice = {
-          device_id: deviceId, rol: 'admin',
-          nombre: 'Dispositivo del dueño', activa: true,
+          device_id: deviceId,
+          rol: rolDelToken,
+          nombre: rolDelToken === 'cajero' ? 'Dispositivo del cajero' : 'Dispositivo del dueño',
+          activa: true,
           fecha_activacion: Date.now(),
           fecha_expiracion: fechaExpMs ? firebase.firestore.Timestamp.fromMillis(fechaExpMs) : null,
-          empleado_nombre: null, empleado_contacto: null
+          empleado_nombre: null,
+          empleado_contacto: null
         };
 
         const dispositivos = (userData.dispositivos || []).filter(function (d) {
@@ -10123,9 +10131,11 @@ App.init = function () {
 
         try {
           await App.getDb().collection('usuarios').doc(user.uid).update({
-            comercioId: comercioId, rol: 'admin',
+            comercioId: comercioId,
+            rol: rolDelToken,
             dispositivos: dispositivos,
-            licencia_activa: true, licencia_tipo: 'admin',
+            licencia_activa: true,
+            licencia_tipo: rolDelToken,
             device_id: deviceId,
             fecha_expiracion: nuevoDevice.fecha_expiracion
           });
@@ -10135,9 +10145,9 @@ App.init = function () {
         }
 
         _deviceActual = nuevoDevice;
-        localStorage.setItem('rol_actual_v1', 'admin');
+        localStorage.setItem('rol_actual_v1', rolDelToken);
         localStorage.setItem('licencia_v1', JSON.stringify({
-          activa: true, rol: 'admin', device_id: deviceId, fecha_expiracion: fechaExpMs
+          activa: true, rol: rolDelToken, device_id: deviceId, fecha_expiracion: fechaExpMs
         }));
         localStorage.setItem('usuario_actual_v1', JSON.stringify({
           uid: user.uid, email: userData.email, nombre: userData.nombre,
@@ -10147,7 +10157,9 @@ App.init = function () {
 
         if (window.Data && Data.init) Data.init(comercioId);
         _iniciarValidacionLicencia(user.uid);
-        _actualizarMenuUsuario({ nombre: userData.nombre, apellido: userData.apellido, rol: 'admin' });
+        _actualizarMenuUsuario({
+          nombre: userData.nombre, apellido: userData.apellido, rol: rolDelToken
+        });
 
         App.navegar('menu');
         App.toast('Licencia activada correctamente', 'success');
