@@ -7439,26 +7439,29 @@
           accionCerrar: 'login' },
 
         /* LICENCIA */
-        'E-LIC-001': { nivel: 3, emoji: '📱', categoria: 'licencia',
+        /* ═══ CAMBIO v2.3: niveles ajustados según flujo acordado ═══
+         * Nivel 1 (toast informativo): no interrumpe, el código navega
+         * Nivel 3 (pantalla completa): cuenta inhabilitada por admin */
+        'E-LIC-001': { nivel: 1, emoji: '📱', categoria: 'licencia',
           titulo: 'Este dispositivo no está activado',
-          mensaje: 'Tu cuenta está bien, solo falta activar este dispositivo. Contactate con soporte para que te generemos la licencia.',
-          accionCerrar: 'login' },
-        'E-LIC-002': { nivel: 3, emoji: '📅', categoria: 'licencia',
+          mensaje: 'Tu cuenta está bien, solo falta activar este dispositivo. Pegá el token que te enviamos.',
+          accionCerrar: 'licencia' },
+        'E-LIC-002': { nivel: 1, emoji: '📅', categoria: 'licencia',
           titulo: 'Tu licencia venció',
-          mensaje: 'Se acabó el período de tu licencia. Renovala con soporte y volvé a usar Mejora 2 sin interrupciones.',
-          accionCerrar: 'login' },
+          mensaje: 'Se acabó el período de tu licencia. Pegá el token nuevo para reactivar.',
+          accionCerrar: 'licencia' },
         'E-LIC-003': { nivel: 3, emoji: '🔒', categoria: 'licencia',
           titulo: 'Tu cuenta fue suspendida',
           mensaje: 'No te preocupes, ya nos llegó el aviso. Contactate con soporte para reactivar tu acceso.',
           accionCerrar: 'login' },
-        'E-LIC-004': { nivel: 2, emoji: '🔑', categoria: 'licencia',
+        'E-LIC-004': { nivel: 1, emoji: '🔑', categoria: 'licencia',
           titulo: 'La clave de licencia no es válida',
           mensaje: 'Puede que esté incompleta o mal copiada. Verificá y volvé a pegarla.',
-          accionCerrar: 'volver' },
-        'E-LIC-005': { nivel: 2, emoji: '📱', categoria: 'licencia',
+          accionCerrar: 'licencia' },
+        'E-LIC-005': { nivel: 1, emoji: '📱', categoria: 'licencia',
           titulo: 'La licencia no es de este dispositivo',
           mensaje: 'Esta clave fue generada para otro dispositivo. Si es tuya, contactate con soporte para regenerarla.',
-          accionCerrar: 'volver' },
+          accionCerrar: 'licencia' },
         'E-LIC-006': { nivel: 3, emoji: '🔓', categoria: 'licencia',
           titulo: 'Este dispositivo fue desvinculado',
           mensaje: 'El administrador desactivó este dispositivo. Contactate con soporte si creés que es un error.',
@@ -8217,18 +8220,21 @@
       }
 
       function _aplicarAccionCierre(accion) {
-        if (accion === 'login') {
-          try {
-            if (firebaseAuth && firebaseAuth.currentUser) {
-              firebaseAuth.signOut().catch(function () {});
-            }
-          } catch (e) {}
-          _limpiarSesionLocal();
-          App.navegar('login');
-        } else if (accion === 'menu') {
-          App.navegar('menu');
-        }
+  if (accion === 'login') {
+    try {
+      if (firebaseAuth && firebaseAuth.currentUser) {
+        firebaseAuth.signOut().catch(function () {});
       }
+    } catch (e) {}
+    _limpiarSesionLocal();
+    App.navegar('login');
+  } else if (accion === 'menu') {
+    App.navegar('menu');
+  } else if (accion === 'licencia') {
+    /* Solo navega. No cerramos sesión. */
+    App.navegar('licencia');
+  }
+}
 
       function _limpiarSesionLocal() {
         ['usuario_actual_v1', 'sesion_activa_v1', 'licencia_v1',
@@ -9522,9 +9528,12 @@ App.init = function () {
 <script>
     /* ═══════════════════════════════════════════════════════════ */
     /* BLOQUE 12 — JS AUTH + LICENCIA                             */
-    /* v2.4 — Cableado App.error() con códigos E-AUTH-* y E-LIC-* */
-    /*        + GUARD: espera a que Firebase/App estén listos     */
-    /*        + FIX: Licencia.activar respeta payload.rol         */
+    /* v2.7 — Flujo de licencia revisado:                          */
+    /*   · Login OK → menú                                         */
+    /*   · Sin device / vencida → toast + pantalla de licencia     */
+    /*   · Device desactivado → pantalla nivel 3 → login           */
+    /*   · En sesión, si vence → toast + logout → login            */
+    /*   · Extensión detectada → flag + logout → login → licencia  */
     /* ═══════════════════════════════════════════════════════════ */
     (function () {
       'use strict';
@@ -9537,6 +9546,9 @@ App.init = function () {
       const AUTH_MAX_RETRIES = 40;   // ~6 segundos (40 × 150 ms)
       const AUTH_RETRY_DELAY_MS = 150;
       let _authRetries = 0;
+
+      // Flag para forzar la pantalla de licencia en el próximo login
+      const REQUIERE_TOKEN_KEY = 'requiere_token_v1';
 
       let _unsubscribeLicencia = null;
       let _authInitialized = false;
@@ -9560,7 +9572,6 @@ App.init = function () {
         return isNaN(ms) ? null : ms;
       }
 
-      /* ═══ Helper para reportar errores ═══ */
       function _reportarError(codigo, info) {
         if (window.App && typeof App.error === 'function') {
           try { App.error(codigo, info || {}); }
@@ -9570,20 +9581,38 @@ App.init = function () {
         }
       }
 
-      /* ═══ Guard: ¿Firebase y App están listos? ═══ */
       function _firebaseListo() {
         if (typeof firebase === 'undefined') return false;
         if (!window.App) return false;
         if (typeof App.getAuth !== 'function') return false;
-        if (!App.getAuth()) return false;   // firebaseAuth aún null
+        if (!App.getAuth()) return false;
         return true;
+      }
+
+      function _initDataSiHayComercio(comercioId) {
+        if (!comercioId) return;
+        if (window.Data && typeof Data.init === 'function') {
+          try { Data.init(comercioId); }
+          catch (e) { console.warn('[Auth] Error al inicializar Data:', e); }
+        }
+      }
+
+      /* ═══ Flag: forzar pantalla de licencia en próximo login ═══ */
+      function _setRequiereToken(valor) {
+        try {
+          if (valor) localStorage.setItem(REQUIERE_TOKEN_KEY, 'true');
+          else localStorage.removeItem(REQUIERE_TOKEN_KEY);
+        } catch (e) {}
+      }
+      function _getRequiereToken() {
+        try { return localStorage.getItem(REQUIERE_TOKEN_KEY) === 'true'; }
+        catch (e) { return false; }
       }
 
       /* ═══════════════════════════════════════════════════════ */
       /* AUTH — INICIALIZACIÓN                                  */
       /* ═══════════════════════════════════════════════════════ */
       Auth.init = function () {
-        // ── GUARD: esperar a que Firebase/App estén listos ──
         if (!_firebaseListo()) {
           _authRetries++;
           if (_authRetries <= AUTH_MAX_RETRIES) {
@@ -9657,11 +9686,9 @@ App.init = function () {
           return null;
         }
 
-        await _verificarEstadoUsuario(user);
         return user;
       };
 
-      /* ═══ Mapear error de Firebase Auth a código del catálogo ═══ */
       function _mapearErrorAuthACodigo(error) {
         const code = error && error.code ? error.code : '';
         switch (code) {
@@ -9851,43 +9878,65 @@ App.init = function () {
         docRef.update({ ultimo_login: firebase.firestore.FieldValue.serverTimestamp() })
           .catch(function (e) {});
 
+        _initDataSiHayComercio(data.comercioId);
+
+        /* ═══ FLAG: si está pendiente un token nuevo, forzamos licencia ═══ */
+        if (_getRequiereToken()) {
+          console.info('[Auth] Flag requiere_token activo → pantalla de licencia');
+          App.toast('Tu licencia fue extendida. Pegá el token nuevo para activar los días.', 'info', 6000);
+          localStorage.setItem('rol_actual_v1', 'pendiente');
+          App.navegar('licencia');
+          return;
+        }
+
         const devices = data.dispositivos || [];
         const deviceInfo = devices.find(function (d) { return d.device_id === deviceId; });
 
-        /* CASO 1: Device no autorizado */
+        /* ─────────────────────────────────────────────────────── */
+        /* CASO 1: Device no autorizado (primera vez)             */
+        /* ─────────────────────────────────────────────────────── */
         if (!deviceInfo) {
           _deviceActual = null;
           localStorage.setItem('rol_actual_v1', 'pendiente');
           localStorage.removeItem('licencia_v1');
           _actualizarMenuUsuario({ rol: 'pendiente' });
+
+          /* Nivel 1 → toast informativo, sin modal */
           _reportarError('E-LIC-001', {
             detalles: { device_id: deviceId, comercioId: data.comercioId || null }
           });
+          App.toast('Este dispositivo no está activado. Pegá el token para continuar.', 'info', 6000);
           App.navegar('licencia');
           return;
         }
 
-        /* CASO 2: Device desactivado */
+        /* ─────────────────────────────────────────────────────── */
+        /* CASO 2: Device desactivado por el admin                */
+        /* ─────────────────────────────────────────────────────── */
         if (deviceInfo.activa === false) {
+          /* Nivel 3 → pantalla completa, accionCerrar: login */
           _reportarError('E-LIC-006', { detalles: { device_id: deviceId } });
-          App.toast('Este dispositivo fue desactivado por el administrador', 'error', 6000);
-          try { await App.getAuth().signOut(); } catch (e) {}
           return;
         }
 
-        /* CASO 3: Device vencido */
+        /* ─────────────────────────────────────────────────────── */
+        /* CASO 3: Device vencido                                 */
+        /* ─────────────────────────────────────────────────────── */
         const expMs = _fechaATimestampMs(deviceInfo.fecha_expiracion);
         if (expMs && expMs < Date.now()) {
+          /* Nivel 1 → toast, sin modal */
           _reportarError('E-LIC-002', {
             detalles: { device_id: deviceId, fecha_expiracion: expMs }
           });
-          App.toast('La licencia de este dispositivo venció', 'error', 6000);
+          App.toast('Tu licencia venció. Pegá el token nuevo para reactivar.', 'warning', 6000);
           localStorage.setItem('rol_actual_v1', 'pendiente');
           App.navegar('licencia');
           return;
         }
 
-        /* CASO 4: Todo OK */
+        /* ─────────────────────────────────────────────────────── */
+        /* CASO 4: Todo OK → menú directo                         */
+        /* ─────────────────────────────────────────────────────── */
         _deviceActual = deviceInfo;
         localStorage.setItem('rol_actual_v1', deviceInfo.rol);
         localStorage.setItem('licencia_v1', JSON.stringify({
@@ -9895,9 +9944,6 @@ App.init = function () {
           device_id: deviceInfo.device_id, fecha_expiracion: expMs
         }));
 
-        if (data.comercioId) {
-          if (window.Data && Data.init) Data.init(data.comercioId);
-        }
         _iniciarValidacionLicencia(user.uid);
 
         _actualizarMenuUsuario({
@@ -10107,8 +10153,6 @@ App.init = function () {
         }
 
         const fechaExpMs = payload.fecha_expiracion ? new Date(payload.fecha_expiracion).getTime() : null;
-
-        /* ═══ FIX: respetar el rol del payload (admin o cajero) ═══ */
         const rolDelToken = payload.rol || 'admin';
 
         const nuevoDevice = {
@@ -10155,7 +10199,10 @@ App.init = function () {
           comercioId: comercioId
         }));
 
-        if (window.Data && Data.init) Data.init(comercioId);
+        /* ═══ Limpiar flag de "requiere token" ═══ */
+        _setRequiereToken(false);
+
+        _initDataSiHayComercio(comercioId);
         _iniciarValidacionLicencia(user.uid);
         _actualizarMenuUsuario({
           nombre: userData.nombre, apellido: userData.apellido, rol: rolDelToken
@@ -10189,6 +10236,9 @@ App.init = function () {
         const deviceId = App.getDeviceId();
 
         _unsubscribeLicencia = Data.iniciarValidacionLicencia(uid, function (resultado) {
+          /* ────────────────────────────────────────────────── */
+          /* Caso A: la licencia del usuario ya no es válida    */
+          /* ────────────────────────────────────────────────── */
           if (!resultado.valida) {
             const motivo = resultado.motivo || '';
             let codigo = 'E-LIC-003';
@@ -10196,7 +10246,9 @@ App.init = function () {
             else if (motivo.indexOf('no encontrado') > -1) codigo = 'E-LIC-007';
             _reportarError(codigo, { detalles: { motivo: motivo } });
 
-            App.toast('Licencia desactivada: ' + motivo, 'error', 6000);
+            /* Toast + logout. Al re-loguear, el usuario verá la
+             * pantalla de licencia para pegar el token nuevo. */
+            App.toast('Tu licencia venció. Volvé a ingresar para pegar el token nuevo.', 'warning', 6000);
             setTimeout(function () { Auth.cerrarSesion(); }, 3000);
             return;
           }
@@ -10205,22 +10257,55 @@ App.init = function () {
           const devices = data.dispositivos || [];
           const deviceInfo = devices.find(function (d) { return d.device_id === deviceId; });
 
+          /* ────────────────────────────────────────────────── */
+          /* Caso B: el device fue eliminado por el admin       */
+          /* ────────────────────────────────────────────────── */
           if (!deviceInfo) {
             _reportarError('E-LIC-006', { detalles: { device_id: deviceId } });
-            App.toast('Este dispositivo fue desvinculado', 'error', 6000);
+            App.toast('Este dispositivo fue desvinculado por el administrador.', 'error', 6000);
             setTimeout(function () { Auth.cerrarSesion(); }, 3000);
             return;
           }
+
+          /* ────────────────────────────────────────────────── */
+          /* Caso C: el device fue desactivado por el admin     */
+          /* ────────────────────────────────────────────────── */
           if (deviceInfo.activa === false) {
             _reportarError('E-LIC-006', { detalles: { device_id: deviceId, activa: false } });
-            App.toast('Este dispositivo fue desactivado', 'error', 6000);
+            App.toast('Este dispositivo fue desactivado por el administrador.', 'error', 6000);
             setTimeout(function () { Auth.cerrarSesion(); }, 3000);
             return;
           }
+
           const expMs = _fechaATimestampMs(deviceInfo.fecha_expiracion);
+
+          /* ────────────────────────────────────────────────── */
+          /* Caso D: EXTENSIÓN detectada                        */
+          /* Comparamos la fecha cacheada con la de Firestore.  */
+          /* Si cambió (y sigue siendo válida), fue extendida.  */
+          /* ────────────────────────────────────────────────── */
+          let cacheExp = null;
+          try {
+            const cached = JSON.parse(localStorage.getItem('licencia_v1') || 'null');
+            if (cached && cached.fecha_expiracion) cacheExp = cached.fecha_expiracion;
+          } catch (e) {}
+
+          if (expMs && cacheExp && expMs !== cacheExp) {
+            _reportarError('E-LIC-002', {
+              detalles: { tipo: 'extension_detectada', antes: cacheExp, ahora: expMs }
+            });
+            App.toast('Tu licencia fue extendida. Reingresá para pegar el token nuevo.', 'info', 6000);
+            _setRequiereToken(true);
+            setTimeout(function () { Auth.cerrarSesion(); }, 3000);
+            return;
+          }
+
+          /* ────────────────────────────────────────────────── */
+          /* Caso E: licencia vencida durante la sesión         */
+          /* ────────────────────────────────────────────────── */
           if (expMs && expMs < Date.now()) {
             _reportarError('E-LIC-002', { detalles: { fecha_expiracion: expMs } });
-            App.toast('La licencia de este dispositivo venció', 'error', 6000);
+            App.toast('La licencia venció. Volvé a ingresar para pegar el token nuevo.', 'warning', 6000);
             setTimeout(function () { Auth.cerrarSesion(); }, 3000);
           }
         });
@@ -17702,14 +17787,151 @@ App.init = function () {
     };
   })();
 </script>
-<!-- ═══ SDK de Firebase (API compat v9) — vía jsDelivr ═══ -->
-<!-- Se cargan al final con 'defer' para no bloquear el renderizado -->
-<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-app-compat.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-auth-compat.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-firestore-compat.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-functions-compat.js" defer></script>
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- BLOQUE 18 — VERSION CHECKER                                -->
+<!-- Detecta versiones nuevas en version.json y recarga auto    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>
+  /* ═══════════════════════════════════════════════════════════ */
+  /* VERSION CHECKER                                            */
+  /* · Chequea version.json cada 5 min y al volver a la pestaña */
+  /* · Si la versión cambió → toast + recarga con cache-busting */
+  /* ═══════════════════════════════════════════════════════════ */
+  (function () {
+    'use strict';
 
-<!-- Aquí irían los demás bloques de JS (10, 11, 12, etc.) -->
-<!-- ... -->
+    const VERSION_KEY = 'app_version_v1';
+    const VERSION_URL = 'version.json';
+    const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutos
+    const DELAY_INICIAL_MS = 3000;            // 3 seg después de cargar
+
+    let _reloadEnCurso = false;
+    let _intervalId = null;
+
+    /* ─────────────────────────────────────────────────────── */
+    /* FETCH DE LA VERSIÓN REMOTA                             */
+    /* ─────────────────────────────────────────────────────── */
+    async function _fetchVersionRemota() {
+      try {
+        // Cache-busting agresivo: ni el navegador ni el CDN de GitHub
+        // cachean version.json con un query string único.
+        const url = VERSION_URL + '?t=' + Date.now();
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) {
+          console.warn('[Version] No se pudo leer version.json (status ' + res.status + ')');
+          return null;
+        }
+        const data = await res.json();
+        if (!data || !data.version) return null;
+        return String(data.version);
+      } catch (e) {
+        console.warn('[Version] Error al consultar version.json:', e);
+        return null;
+      }
+    }
+
+    /* ─────────────────────────────────────────────────────── */
+    /* VERSIÓN LOCAL (la que está corriendo ahora)            */
+    /* ─────────────────────────────────────────────────────── */
+    function _getVersionLocal() {
+      try { return localStorage.getItem(VERSION_KEY); }
+      catch (e) { return null; }
+    }
+
+    function _setVersionLocal(v) {
+      try { localStorage.setItem(VERSION_KEY, v); }
+      catch (e) {}
+    }
+
+    /* ─────────────────────────────────────────────────────── */
+    /* CHEQUEO                                                */
+    /* ─────────────────────────────────────────────────────── */
+    async function _chequearVersion(silencioso) {
+      if (_reloadEnCurso) return;
+
+      const versionRemota = await _fetchVersionRemota();
+      if (!versionRemota) return;
+
+      const versionLocal = _getVersionLocal();
+
+      /* Primera vez que corre este bloque (usuario nuevo, o primer
+       * arranque después de instalar el checker). Guardamos la
+       * versión actual y NO recargamos. */
+      if (!versionLocal) {
+        _setVersionLocal(versionRemota);
+        console.info('[Version] Versión inicial guardada: ' + versionRemota);
+        return;
+      }
+
+      /* Si la versión cambió → recargar */
+      if (versionRemota !== versionLocal) {
+        console.info('[Version] Nueva versión detectada: ' + versionRemota +
+                     ' (teníamos ' + versionLocal + ')');
+        _reloadEnCurso = true;
+        _setVersionLocal(versionRemota);
+
+        if (window.App && typeof App.toast === 'function') {
+          App.toast('Nueva versión disponible. Actualizando...', 'info', 2500);
+        }
+
+        /* Pequeño delay para que el toast se vea antes de recargar */
+        setTimeout(function () {
+          // Cache-busting en la URL para forzar HTML nuevo
+          const url = location.pathname +
+                      '?v=' + encodeURIComponent(versionRemota) +
+                      '&t=' + Date.now() +
+                      (location.hash || '');
+          location.replace(url);
+        }, 2500);
+
+        return;
+      }
+
+      if (!silencioso) {
+        console.info('[Version] Ya estamos en la última versión: ' + versionRemota);
+      }
+    }
+
+    /* ─────────────────────────────────────────────────────── */
+    /* CONFIGURAR CHEQUEOS AUTOMÁTICOS                        */
+    /* ─────────────────────────────────────────────────────── */
+    function _configurarChequeos() {
+      // Chequeo inicial (después de un delay para no competir con la carga)
+      setTimeout(function () {
+        _chequearVersion(false);
+      }, DELAY_INICIAL_MS);
+
+      // Chequeo periódico cada 5 min
+      _intervalId = setInterval(function () {
+        _chequearVersion(true);
+      }, CHECK_INTERVAL_MS);
+
+      // Chequeo al volver a la pestaña (por si estuvo en background)
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') {
+          _chequearVersion(true);
+        }
+      });
+    }
+
+    /* ─────────────────────────────────────────────────────── */
+    /* API PÚBLICA (por si querés forzar el chequeo a mano)   */
+    /* ─────────────────────────────────────────────────────── */
+    window.VersionChecker = {
+      check: _chequearVersion,
+      getVersionLocal: _getVersionLocal,
+      getVersionRemota: _fetchVersionRemota
+    };
+
+    /* ─────────────────────────────────────────────────────── */
+    /* ARRANQUE                                               */
+    /* ─────────────────────────────────────────────────────── */
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', _configurarChequeos);
+    } else {
+      _configurarChequeos();
+    }
+  })();
+</script>
 </body>
 </html>
