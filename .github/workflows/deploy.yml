@@ -1,13 +1,16 @@
-name: Deploy con Cache Busting a GitHub Pages
+name: Deploy con Auto-Versionado a GitHub Pages
 
 on:
   push:
-    branches: ["main"] # O la rama que uses para publicar
-
+    branches: ["main"]
   workflow_dispatch:
 
+# Permisos necesarios:
+# - contents: write  → para hacer commit del version.json incrementado
+# - pages: write     → para deployar a GitHub Pages
+# - id-token: write  → para autenticación OIDC de Pages
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -16,27 +19,55 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  bump-and-deploy:
+    # Salta el workflow si el commit es automático (evita loops infinitos)
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout del repo
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-      - name: Preparar Cache Busting
+      - name: Incrementar versión en version.json
         run: |
-          # Obtener el hash corto del commit
-          SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-8)
-          echo "Hash del commit: $SHA_SHORT"
+          # Leer versión actual
+          VERSION_ACTUAL=$(jq -r '.version' version.json)
+          echo "Versión actual: $VERSION_ACTUAL"
 
-          # Añadir el parámetro ?v=hash a todos los archivos .js locales en index.html
-          # Busca src="...js" y lo convierte en src="...js?v=HASH"
-          sed -i -E "s|(src=\"[^\"?]+\\.js)\"|\\1?v=${SHA_SHORT}\"|g" index.html
+          # Separar en MAYOR.MENOR.PARCHE
+          IFS='.' read -ra PARTS <<< "$VERSION_ACTUAL"
+          MAJOR="${PARTS[0]}"
+          MINOR="${PARTS[1]}"
+          PATCH="${PARTS[2]}"
 
-          # Opcional: Si tienes archivos .css, también puedes hacerlo
-          # sed -i -E "s|(href=\"[^\"?]+\\.css)\"|\\1?v=${SHA_SHORT}\"|g" index.html
+          # Incrementar solo el patch (1.0.0 → 1.0.1)
+          PATCH_NUEVO=$((PATCH + 1))
+          VERSION_NUEVA="$MAJOR.$MINOR.$PATCH_NUEVO"
+          echo "Nueva versión: $VERSION_NUEVA"
+
+          # Fecha de hoy
+          FECHA=$(date -u +%Y-%m-%d)
+
+          # Actualizar version.json preservando las notas
+          jq --arg v "$VERSION_NUEVA" --arg f "$FECHA" \
+             '.version = $v | .fecha = $f' \
+             version.json > version.json.tmp
+          mv version.json.tmp version.json
+
+          # Commit y push de vuelta a main
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add version.json
+          git commit -m "chore: bump version a $VERSION_NUEVA [skip ci]"
+          git push
+
+          # Exportar para los próximos steps
+          echo "VERSION_NUEVA=$VERSION_NUEVA" >> $GITHUB_ENV
 
       - name: Configurar Pages
         uses: actions/configure-pages@v5
@@ -46,6 +77,6 @@ jobs:
         with:
           path: '.'
 
-      - name: Desplegar en GitHub Pages
+      - name: Desplegar a GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
