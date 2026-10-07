@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
 
 # Permisos necesarios:
-# - contents: write  → para hacer commit del version.json incrementado
-# - pages: write     → para deployar a GitHub Pages
-# - id-token: write  → para autenticación OIDC de Pages
+# - contents: write → para hacer commit del version.json + index.html
+# - pages: write    → para deployar a GitHub Pages
+# - id-token: write → para autenticación OIDC de Pages
 permissions:
   contents: write
   pages: write
@@ -33,41 +33,61 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Incrementar versión en version.json
+      - name: Incrementar versión + sincronizar index.html
         run: |
-          # Leer versión actual
-          VERSION_ACTUAL=$(jq -r '.version' version.json)
+          set -euo pipefail
+
+          # 1) Validar que version.json exista y tenga formato correcto
+          test -f version.json || { echo "::error::version.json no encontrado"; exit 1; }
+          VERSION_ACTUAL=$(jq -er '.version' version.json)
           echo "Versión actual: $VERSION_ACTUAL"
 
-          # Separar en MAYOR.MENOR.PARCHE
+          [[ "$VERSION_ACTUAL" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "::error::version.json no tiene formato MAJOR.MINOR.PATCH válido: $VERSION_ACTUAL"
+            exit 1
+          }
+
+          # 2) Incrementar SOLO el patch (1.0.4 → 1.0.5)
           IFS='.' read -ra PARTS <<< "$VERSION_ACTUAL"
           MAJOR="${PARTS[0]}"
           MINOR="${PARTS[1]}"
           PATCH="${PARTS[2]}"
-
-          # Incrementar solo el patch (1.0.0 → 1.0.1)
           PATCH_NUEVO=$((PATCH + 1))
           VERSION_NUEVA="$MAJOR.$MINOR.$PATCH_NUEVO"
           echo "Nueva versión: $VERSION_NUEVA"
 
-          # Fecha de hoy
+          # 3) Fecha de hoy
           FECHA=$(date -u +%Y-%m-%d)
 
-          # Actualizar version.json preservando las notas
+          # 4) Actualizar version.json preservando las notas
           jq --arg v "$VERSION_NUEVA" --arg f "$FECHA" \
-             '.version = $v | .fecha = $f' \
-             version.json > version.json.tmp
+            '.version = $v | .fecha = $f' \
+            version.json > version.json.tmp
           mv version.json.tmp version.json
 
-          # Commit y push de vuelta a main
+          # 5) Sincronizar <meta name="app-version"> en index.html
+          #    (contrato con B00: el meta debe estar en una sola línea,
+          #     con comillas dobles, sin atributos intermedios)
+          grep -q '<meta name="app-version"' index.html || {
+            echo "::error::No se encontró <meta name=\"app-version\"> en index.html"
+            exit 1
+          }
+
+          sed -i -E "s|(<meta name=\"app-version\" content=\")[^\"]+(\">)|\1${VERSION_NUEVA}\2|" index.html
+
+          # 6) Verificar que la sustitución realmente se aplicó
+          grep -q "name=\"app-version\" content=\"${VERSION_NUEVA}\"" index.html || {
+            echo "::error::La sustitución del meta app-version falló (formato inesperado en index.html)"
+            exit 1
+          }
+          echo "✅ index.html sincronizado a $VERSION_NUEVA"
+
+          # 7) Commit de AMBOS archivos en un solo commit
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add version.json
+          git add version.json index.html
           git commit -m "chore: bump version a $VERSION_NUEVA [skip ci]"
           git push
-
-          # Exportar para los próximos steps
-          echo "VERSION_NUEVA=$VERSION_NUEVA" >> $GITHUB_ENV
 
       - name: Configurar Pages
         uses: actions/configure-pages@v5
