@@ -1,66 +1,38 @@
 # =============================================================================
-# Workflow: Validar catálogo
-# -----------------------------------------------------------------------------
-# Objetivo : validar el catálogo (esquema, IDs únicos, integridad, formato)
-#            en cada push a ramas principales y en cada Pull Request.
-# Mejoras  : manejo condicional de Node.js y Python, permisos mínimos,
-#            versiones pinneadas, concurrency, paths filtrados, timeout,
-#            anotaciones, y tolerancia a fallos por archivos faltantes.
+# Workflow: Validar catálogo (Soporte para archivos .gz)
 # =============================================================================
-
 name: Validar catálogo
 
-# -----------------------------------------------------------------------------
-# Disparadores
-# -----------------------------------------------------------------------------
 on:
   push:
-    branches:
-      - main
-      - master
-      - develop
+    branches: [ main, master, develop ]
     paths:
       - 'catalogo/**'
-      - 'data/**'
-      - 'scripts/**'
       - '.github/workflows/validar-catalogo.yml'
   pull_request:
-    branches:
-      - main
-      - master
-      - develop
+    branches: [ main, master, develop ]
     paths:
       - 'catalogo/**'
-      - 'data/**'
-      - 'scripts/**'
       - '.github/workflows/validar-catalogo.yml'
-  workflow_dispatch: {}   # Permite ejecución manual desde la pestaña Actions
+  workflow_dispatch: {}
 
-# -----------------------------------------------------------------------------
-# Permisos mínimos (principio de menor privilegio)
-# -----------------------------------------------------------------------------
 permissions:
   contents: read
 
-# -----------------------------------------------------------------------------
-# Concurrency: cancela runs previos de la misma ref si llega uno nuevo
-# -----------------------------------------------------------------------------
 concurrency:
   group: validar-catalogo-${{ github.ref }}
   cancel-in-progress: true
 
-# -----------------------------------------------------------------------------
-# Variables de entorno globales
-# -----------------------------------------------------------------------------
 env:
   NODE_VERSION: '20'
   PYTHON_VERSION: '3.12'
-  CATALOG_PATH: 'catalogo/catalogo.json'
+  # IMPORTANTE: Apuntamos a tu archivo real .gz
+  CATALOG_PATH: 'catalogo/catalogo_productos.json.gz'
   SCHEMA_PATH: 'catalogo/schema.json'
 
 jobs:
   # ===========================================================================
-  # JOB 1 · Validación con Python (JSON Schema) - El más importante
+  # JOB 1 · Validación con Python (JSON Schema) - Descomprime .gz
   # ===========================================================================
   validar-esquema:
     name: Validar esquema JSON (Python)
@@ -75,16 +47,12 @@ jobs:
 
       - name: Validar sintaxis del workflow con actionlint
         uses: raven-actions/actionlint@v2
-        continue-on-error: true # No bloquea el workflow si hay un warning en el YAML
+        continue-on-error: true
 
-      # -----------------------------------------------------------------------
-      # Setup Python (Caché condicional para evitar el error si no hay requirements.txt)
-      # -----------------------------------------------------------------------
       - name: Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          # Solo usar caché si existe requirements.txt o pyproject.toml
           cache: ${{ hashFiles('**/requirements.txt', '**/pyproject.toml') != '' && 'pip' || '' }}
 
       - name: Instalar jsonschema
@@ -93,20 +61,26 @@ jobs:
       - name: Validar catálogo contra esquema
         run: |
           python - <<'PY'
-          import json, sys, pathlib
+          import json, sys, pathlib, gzip
           from jsonschema import Draft202012Validator
 
           catalog = pathlib.Path("${{ env.CATALOG_PATH }}")
           schema  = pathlib.Path("${{ env.SCHEMA_PATH }}")
 
           if not catalog.exists():
-              print(f"::error file={catalog}::Catálogo no encontrado. Asegúrate de crear el archivo {catalog}")
+              print(f"::error file={catalog}::Catálogo no encontrado. Verifica la ruta {catalog}")
               sys.exit(1)
           if not schema.exists():
-              print(f"::error file={schema}::Esquema no encontrado. Asegúrate de crear el archivo {schema}")
+              print(f"::error file={schema}::Esquema no encontrado. Debes crear el archivo {schema}")
               sys.exit(1)
 
-          data   = json.loads(catalog.read_text(encoding="utf-8"))
+          # Lógica para leer el archivo (soporta .gz y .json normal)
+          if catalog.suffix == '.gz':
+              with gzip.open(catalog, 'rt', encoding='utf-8') as f:
+                  data = json.load(f)
+          else:
+              data = json.loads(catalog.read_text(encoding="utf-8"))
+
           schema_doc = json.loads(schema.read_text(encoding="utf-8"))
 
           validator = Draft202012Validator(schema_doc)
@@ -122,36 +96,28 @@ jobs:
           PY
 
   # ===========================================================================
-  # JOB 2 · Validación con Node.js (Condicional a package.json)
+  # JOB 2 · Validación con Node.js (Se mantiene igual, condicional)
   # ===========================================================================
   validar-node:
     name: Validar catálogo (Node.js)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      # -----------------------------------------------------------------------
-      # Verificar si existe package.json antes de configurar Node
-      # -----------------------------------------------------------------------
       - name: Verificar existencia de package.json
         id: check_pkg
         run: |
           if [ -f "package.json" ]; then
             echo "existe=true" >> $GITHUB_OUTPUT
-            echo "✅ package.json encontrado."
           else
             echo "existe=false" >> $GITHUB_OUTPUT
             echo "::warning::No se encontró package.json. Omitiendo validación con Node.js."
           fi
 
-      # -----------------------------------------------------------------------
-      # Setup Node.js (Solo si existe package.json)
-      # -----------------------------------------------------------------------
       - name: Setup Node.js ${{ env.NODE_VERSION }}
         if: steps.check_pkg.outputs.existe == 'true'
         uses: actions/setup-node@v4
@@ -159,23 +125,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: ${{ hashFiles('**/package-lock.json') != '' && 'npm' || '' }}
 
-      # -----------------------------------------------------------------------
-      # Instalar dependencias (Solo si existe package.json)
-      # -----------------------------------------------------------------------
       - name: Instalar dependencias
         if: steps.check_pkg.outputs.existe == 'true'
         run: npm ci --no-audit --no-fund
 
-      # -----------------------------------------------------------------------
-      # Ejecutar la validación del catálogo (Solo si existe package.json)
-      # -----------------------------------------------------------------------
       - name: Validar catálogo (Node)
         if: steps.check_pkg.outputs.existe == 'true'
         run: npm run validar:catalogo -- --path "${{ env.CATALOG_PATH }}"
 
-      # -----------------------------------------------------------------------
-      # Subir reporte como artefacto (útil en debugging y auditoría)
-      # -----------------------------------------------------------------------
       - name: Subir reporte de validación
         if: always() && steps.check_pkg.outputs.existe == 'true'
         uses: actions/upload-artifact@v4
