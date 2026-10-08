@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Catálogo de Productos Mejora 2",
-  "description": "Esquema de validación para el catálogo de productos con códigos de barras EAN-13.",
+  "description": "Esquema de validación para el catálogo de productos con códigos de barras de distintos formatos (EAN-8, UPC-12, EAN-13, ITF-14).",
   "type": "object",
   "properties": {
     "meta": {
@@ -17,8 +17,8 @@
         "properties": {
           "ean": {
             "type": "string",
-            "description": "Código de barras EAN-13. Debe contener exactamente 13 dígitos numéricos.",
-            "pattern": "^[0-9]{13}$"
+            "description": "Código de barras. Acepta entre 8 y 14 dígitos (EAN-8, UPC-12, EAN-13, ITF-14).",
+            "pattern": "^[0-9]{8,14}$"
           },
           "descripcion": {
             "type": "string",
@@ -38,16 +38,11 @@
             "description": "Días estimados de caducidad."
           }
         },
-        "required": [
-          "ean",
-          "descripcion"
-        ],
+        "required": ["ean", "descripcion"],
         "additionalProperties": true
       }
     }
   },
-  "required": [
-    "productos"
-  ],
+  "required": ["productos"],
   "additionalProperties": true
 }
