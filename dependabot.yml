@@ -1,0 +1,104 @@
+# ═══════════════════════════════════════════════════════════════════
+# .github/dependabot.yml
+# Configuración de Dependabot para el repo ArbolDeLosTero/Mejora2
+# ═══════════════════════════════════════════════════════════════════
+#
+# Este archivo le indica a Dependabot que:
+#   · Revise semanalmente el package.json de functions/ (ecosistema npm).
+#   · Revise semanalmente los workflows de .github/workflows/ (actions).
+#   · Agrupe las actualizaciones para no generar decenas de PRs sueltos.
+#   · Etiquete cada PR con labels útiles para filtrar.
+#
+# PREREQUISITOS OPERATIVOS (hacer ANTES del push):
+#   1. Crear la label "security" (color #b60205) en Settings → Labels.
+#   2. Crear la label "github-actions" (color #0075ca) en Settings → Labels.
+#   3. Verificar que "dependencies" existe (GitHub la crea por defecto).
+#
+# Si las labels no existen, Dependabot NO falla: simplemente no las
+# aplica, y los PRs quedan sin categoría.
+#
+# Referencia: https://docs.github.com/en/code-security/dependabot
+# ═══════════════════════════════════════════════════════════════════
+
+version: 2
+updates:
+
+  # ─────────────────────────────────────────────────────────────────
+  # Ecosistema 1: npm — functions/package.json
+  # ─────────────────────────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/functions"
+    target-branch: "main"
+
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Argentina/Buenos_Aires"
+
+    open-pull-requests-limit: 5
+    rebase-strategy: "auto"
+
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+
+    labels:
+      - "dependencies"
+      - "security"
+
+    groups:
+      # Paquetes de Firebase (firebase-* y @firebase/*).
+      # Solo minor/patch: majors quedan como PR individual para revisión.
+      firebase:
+        patterns:
+          - "firebase-*"
+          - "@firebase/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # DevDependencies (eslint, firebase-functions-test, etc.).
+      # Solo minor/patch: majors suelen requerir cambios de config.
+      dev-deps:
+        patterns:
+          - "*"
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ─────────────────────────────────────────────────────────────────
+  # Ecosistema 2: github-actions — .github/workflows/
+  # ─────────────────────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "main"
+
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Argentina/Buenos_Aires"
+
+    open-pull-requests-limit: 5
+    rebase-strategy: "auto"
+
+    commit-message:
+      prefix: "chore(actions)"
+      include: "scope"
+
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+    groups:
+      # Todas las actions en un solo PR (minor/patch).
+      # Un major (ej: checkout v4 → v5) llega como PR individual.
+      actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
