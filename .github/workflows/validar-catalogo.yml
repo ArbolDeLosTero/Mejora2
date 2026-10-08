@@ -1,0 +1,191 @@
+# =============================================================================
+# Workflow: Validar catálogo
+# -----------------------------------------------------------------------------
+# Objetivo : validar el catálogo (esquema, IDs únicos, integridad, formato)
+#            en cada push a ramas principales y en cada Pull Request.
+# Mejoras  : permisos mínimos, versiones pinneadas, caché, concurrency,
+#            paths filtrados, timeout, anotaciones de error, fail-fast.
+# =============================================================================
+
+name: Validar catálogo
+
+# -----------------------------------------------------------------------------
+# Disparadores
+# -----------------------------------------------------------------------------
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+    paths:
+      - 'catalogo/**'
+      - 'data/**'
+      - 'scripts/**'
+      - '.github/workflows/validar-catalogo.yml'
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+    paths:
+      - 'catalogo/**'
+      - 'data/**'
+      - 'scripts/**'
+      - '.github/workflows/validar-catalogo.yml'
+  workflow_dispatch: {}   # permite ejecución manual desde la pestaña Actions
+
+# -----------------------------------------------------------------------------
+# Permisos mínimos (principio de menor privilegio)
+# -----------------------------------------------------------------------------
+permissions:
+  contents: read
+
+# -----------------------------------------------------------------------------
+# Concurrency: cancela runs previos de la misma ref si llega uno nuevo
+# -----------------------------------------------------------------------------
+concurrency:
+  group: validar-catalogo-${{ github.ref }}
+  cancel-in-progress: true
+
+# -----------------------------------------------------------------------------
+# Variables de entorno globales
+# -----------------------------------------------------------------------------
+env:
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.12'
+  CATALOG_PATH: 'catalogo/catalogo.json'
+
+jobs:
+  # ===========================================================================
+  # JOB 1 · Validación principal
+  # ===========================================================================
+  validar:
+    name: Validar catálogo (${{ matrix.os }} · Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        node: ['20']
+
+    steps:
+      # ---------------------------------------------------------------------
+      # 1) Checkout del repositorio
+      # ---------------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # ---------------------------------------------------------------------
+      # 2) Setup Node.js con caché de dependencias
+      # ---------------------------------------------------------------------
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      # ---------------------------------------------------------------------
+      # 3) Instalación reproducible de dependencias
+      # ---------------------------------------------------------------------
+      - name: Instalar dependencias
+        run: npm ci --no-audit --no-fund
+
+      # ---------------------------------------------------------------------
+      # 4) Lint del propio workflow (opcional pero recomendado)
+      # ---------------------------------------------------------------------
+      - name: Validar sintaxis del workflow con actionlint
+        uses: raven-actions/actionlint@v2
+        continue-on-error: false
+
+      # ---------------------------------------------------------------------
+      # 5) Verificar que el catálogo existe antes de validar
+      # ---------------------------------------------------------------------
+      - name: Verificar existencia del catálogo
+        run: |
+          if [ ! -f "$CATALOG_PATH" ]; then
+            echo "::error file=$CATALOG_PATH::No se encontró el catálogo en $CATALOG_PATH"
+            exit 1
+          fi
+          echo "Catálogo encontrado: $CATALOG_PATH"
+
+      # ---------------------------------------------------------------------
+      # 6) Ejecutar la validación del catálogo
+      #    Ajusta el comando al script real de tu repo
+      # ---------------------------------------------------------------------
+      - name: Validar catálogo
+        run: npm run validar:catalogo -- --path "$CATALOG_PATH"
+
+      # ---------------------------------------------------------------------
+      # 7) Subir reporte como artefacto (útil en debugging y auditoría)
+      # ---------------------------------------------------------------------
+      - name: Subir reporte de validación
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-catalogo-${{ github.run_id }}
+          path: |
+            reports/
+            *.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ===========================================================================
+  # JOB 2 · Verificación de esquema JSON con Python (opcional, redundante a propósito)
+  # ===========================================================================
+  validar-esquema:
+    name: Validar esquema JSON
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: validar   # sólo corre si la validación principal pasa
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Instalar jsonschema
+        run: pip install --disable-pip-version-check jsonschema
+
+      - name: Validar catálogo contra esquema
+        run: |
+          python - <<'PY'
+          import json, sys, pathlib
+          from jsonschema import Draft202012Validator
+
+          catalog = pathlib.Path("catalogo/catalogo.json")
+          schema  = pathlib.Path("catalogo/schema.json")
+
+          if not catalog.exists():
+              print(f"::error file={catalog}::Catálogo no encontrado")
+              sys.exit(1)
+          if not schema.exists():
+              print(f"::error file={schema}::Esquema no encontrado")
+              sys.exit(1)
+
+          data   = json.loads(catalog.read_text(encoding="utf-8"))
+          schema_doc = json.loads(schema.read_text(encoding="utf-8"))
+
+          validator = Draft202012Validator(schema_doc)
+          errores = sorted(validator.iter_errors(data), key=lambda e: e.path)
+
+          if errores:
+              for e in errores:
+                  ruta = "/".join(str(p) for p in e.path) or "<raíz>"
+                  print(f"::error file={catalog}::{ruta}: {e.message}")
+              sys.exit(1)
+
+          print("✅ Catálogo válido contra el esquema.")
+          PY
