@@ -3,8 +3,9 @@
 # -----------------------------------------------------------------------------
 # Objetivo : validar el catálogo (esquema, IDs únicos, integridad, formato)
 #            en cada push a ramas principales y en cada Pull Request.
-# Mejoras  : manejo condicional de Node.js, permisos mínimos, versiones
-#            pinneadas, concurrency, paths filtrados, timeout, anotaciones.
+# Mejoras  : manejo condicional de Node.js y Python, permisos mínimos,
+#            versiones pinneadas, concurrency, paths filtrados, timeout,
+#            anotaciones, y tolerancia a fallos por archivos faltantes.
 # =============================================================================
 
 name: Validar catálogo
@@ -76,11 +77,15 @@ jobs:
         uses: raven-actions/actionlint@v2
         continue-on-error: true # No bloquea el workflow si hay un warning en el YAML
 
+      # -----------------------------------------------------------------------
+      # Setup Python (Caché condicional para evitar el error si no hay requirements.txt)
+      # -----------------------------------------------------------------------
       - name: Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
+          # Solo usar caché si existe requirements.txt o pyproject.toml
+          cache: ${{ hashFiles('**/requirements.txt', '**/pyproject.toml') != '' && 'pip' || '' }}
 
       - name: Instalar jsonschema
         run: pip install --disable-pip-version-check jsonschema
@@ -95,10 +100,10 @@ jobs:
           schema  = pathlib.Path("${{ env.SCHEMA_PATH }}")
 
           if not catalog.exists():
-              print(f"::error file={catalog}::Catálogo no encontrado")
+              print(f"::error file={catalog}::Catálogo no encontrado. Asegúrate de crear el archivo {catalog}")
               sys.exit(1)
           if not schema.exists():
-              print(f"::error file={schema}::Esquema no encontrado")
+              print(f"::error file={schema}::Esquema no encontrado. Asegúrate de crear el archivo {schema}")
               sys.exit(1)
 
           data   = json.loads(catalog.read_text(encoding="utf-8"))
@@ -146,7 +151,6 @@ jobs:
 
       # -----------------------------------------------------------------------
       # Setup Node.js (Solo si existe package.json)
-      # Se usa hashFiles para evitar el error de caché si no hay package-lock.json
       # -----------------------------------------------------------------------
       - name: Setup Node.js ${{ env.NODE_VERSION }}
         if: steps.check_pkg.outputs.existe == 'true'
