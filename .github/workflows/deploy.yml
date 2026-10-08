@@ -1,139 +1,325 @@
-name: Deploy con Auto-Versionado a GitHub Pages
+# ═══════════════════════════════════════════════════════════════════════
+# Deploy a GitHub Pages con auto-versionado
+# ═══════════════════════════════════════════════════════════════════════
+#
+# RESPONSABILIDADES (todo en un job, por diseño):
+#
+#   A. Bump de PATCH en version.json + fecha UTC.
+#   B. Sincronizar <meta name="app-version"> en index.html.
+#   C. Commitear ambos con [skip ci] y pushear.
+#   D. Construir _site/ con SOLO los archivos públicos.
+#   E. Deployar _site/ a GitHub Pages.
+#
+# POR QUÉ UN SOLO JOB Y NO DOS:
+#
+#   Si el bump fuera un workflow aparte, su commit (con [skip ci])
+#   no dispararía el workflow de deploy. Y sin [skip ci], el commit
+#   del bot dispararía el deploy, pero también volvería a disparar
+#   el bump → loop. La única forma limpia es hacer todo en un job.
+#
+# POR QUÉ [skip ci] ES IMPRESCINDIBLE (NO QUITAR):
+#
+#   Con `concurrency: pages` + `cancel-in-progress: true`:
+#     · Push #1 (humano) → workflow A arranca → bump → commit
+#       con [skip ci] → push.
+#     · El push del bot dispararía workflow B (mismo grupo "pages").
+#     · B cancelaría A por cancel-in-progress.
+#     · B evalúa su `if`: tiene [skip ci] → false → job skip.
+#     · Resultado: A cancelado, B skipeado, deploy NUNCA ocurre.
+#
+#   [skip ci] hace que el push del bot no dispare B en absoluto.
+#   Si alguien lo quita "porque parece ruido", el deploy se rompe
+#   de una forma muy difícil de diagnosticar.
+#
+# POR QUÉ _site/ Y NO path: '.':
+#
+#   Con path: '.' se publican en el sitio público .github/workflows/,
+#   firebase.json, firestore.rules (con UID admin hardcodeado),
+#   functions/ y _seed/. Todo eso queda accesible vía
+#   https://arboldelosterro.github.io/Mejora2/<archivo>.
+#   El paso "Construir artefacto público" copia SOLO lo que debe
+#   ser público y verifica que nada sensible se haya filtrado.
+#
+# ═══════════════════════════════════════════════════════════════════════
+
+name: Deploy a GitHub Pages (con auto-versionado)
 
 on:
   push:
-    branches: ["main"]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: write     # para el commit del bump
+  pages: write        # para deploy-pages
+  id-token: write     # para OIDC de Pages
 
 concurrency:
   group: "pages"
   cancel-in-progress: true
 
 jobs:
-  bump-and-deploy:
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+  build-and-deploy:
+    name: Bump + Build + Deploy
+    # El `|| ''` protege contra github.event.head_commit siendo null
+    # en workflow_dispatch.
+    if: "!contains(github.event.head_commit.message || '', '[skip ci]')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+
     steps:
+      # ─────────────────────────────────────────────────────────────
+      # 0. Checkout
+      # ─────────────────────────────────────────────────────────────
       - name: Checkout del repo
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Diagnóstico previo
-        run: |
-          echo "=== Archivos en la raíz ==="
-          ls -la | head -20
-          echo ""
-          echo "=== ¿index.html existe? ==="
-          test -f index.html && echo "SÍ existe" || echo "NO existe"
-          echo ""
-          echo "=== Tamaño ==="
-          wc -c index.html || true
-          echo ""
-          echo "=== ¿Tiene <head>? ==="
-          grep -c '<head' index.html || echo "0"
-          echo ""
-          echo "=== ¿Tiene <meta? (primeras 5) ==="
-          grep -n '<meta' index.html | head -5 || echo "(sin coincidencias)"
-          echo ""
-          echo "=== ¿Tiene 'app-version'? ==="
-          grep -n 'app-version' index.html | head -3 || echo "(sin coincidencias)"
-
-      - name: Incrementar versión + sincronizar index.html
+      # ─────────────────────────────────────────────────────────────
+      # 1. Prerequisitos
+      # ─────────────────────────────────────────────────────────────
+      - name: Verificar prerequisitos
+        shell: bash
         run: |
           set -euo pipefail
 
-          # 1) Validar version.json
-          test -f version.json || { echo "::error::version.json no encontrado"; exit 1; }
-          VERSION_ACTUAL=$(jq -er '.version' version.json)
-          echo "Versión actual: $VERSION_ACTUAL"
-          [[ "$VERSION_ACTUAL" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
-            echo "::error::version.json no tiene formato MAJOR.MINOR.PATCH: $VERSION_ACTUAL"
-            exit 1
-          }
+          for f in version.json index.html; do
+            if [ ! -f "$f" ]; then
+              echo "::error::$f no encontrado en la raíz del repositorio."
+              exit 1
+            fi
+          done
 
-          # 2) Incrementar patch
-          IFS='.' read -ra PARTS <<< "$VERSION_ACTUAL"
-          VERSION_NUEVA="${PARTS[0]}.${PARTS[1]}.$((PARTS[2] + 1))"
-          echo "Nueva versión: $VERSION_NUEVA"
+          if ! grep -q 'name="app-version"' index.html; then
+            echo "::error file=index.html::No hay <meta name=\"app-version\"> en index.html. Sin ese meta, el VersionChecker del cliente no puede sincronizar la versión y la app entra en loop de recarga."
+            exit 1
+          fi
+
+          echo "::notice::Prerequisitos OK (version.json, index.html, meta app-version)."
+
+      # ─────────────────────────────────────────────────────────────
+      # 2. Bump de versión y sincronización del meta
+      # ─────────────────────────────────────────────────────────────
+      - name: Bump de versión y sincronización de meta
+        id: bump
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # ── 2.1 Leer y validar versión actual ─────────────────
+          VERSION_ACTUAL=$(jq -r '.version // empty' version.json)
+
+          if [ -z "$VERSION_ACTUAL" ]; then
+            echo "::error file=version.json::Campo 'version' ausente, null o vacío. Formato esperado: {\"version\": \"X.Y.Z\"}."
+            exit 1
+          fi
+
+          if ! echo "$VERSION_ACTUAL" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error file=version.json::La versión '$VERSION_ACTUAL' no cumple X.Y.Z numérico. Ejemplos válidos: 1.0.4, 2.15.3."
+            exit 1
+          fi
+
+          # ── 2.2 Incrementar PATCH + fecha UTC ────────────────
+          IFS='.' read -r MAJ MIN PATCH <<< "$VERSION_ACTUAL"
+          VERSION_NUEVA="${MAJ}.${MIN}.$((PATCH + 1))"
           FECHA=$(date -u +%Y-%m-%d)
 
-          # 3) Actualizar version.json
+          echo "::notice::Versión: $VERSION_ACTUAL → $VERSION_NUEVA ($FECHA)"
+
+          # ── 2.3 Actualizar version.json (preserva .notas) ────
           jq --arg v "$VERSION_NUEVA" --arg f "$FECHA" \
-            '.version = $v | .fecha = $f' \
-            version.json > version.json.tmp
+             '.version = $v | .fecha = $f' \
+             version.json > version.json.tmp
           mv version.json.tmp version.json
 
-          # 4) Sincronizar index.html (auto-healing: si falta el meta, lo inserta)
-          VERSION_NUEVA="$VERSION_NUEVA" python3 << 'PYEOF'
+          # ── 2.4 Sincronizar meta en index.html (3 estrategias) ─
+          VERSION_NUEVA="$VERSION_NUEVA" python3 <<'PYEOF'
           import os, re, sys
 
-          version = os.environ['VERSION_NUEVA']
+          version = os.environ["VERSION_NUEVA"]
 
-          with open('index.html', 'r', encoding='utf-8') as f:
+          with open("index.html", "r", encoding="utf-8") as f:
               content = f.read()
 
-          # --- Intento 1: actualizar meta existente (name antes que content) ---
+          # Estrategia 1: name antes que content
           new_content, count = re.subn(
-              r'(<meta\s+name=["\']app-version["\']\s+content=["\'])[^"\']+(["\'])',
-              rf'\g<1>{version}\g<2>', content)
+              r'(<meta\s+name="app-version"[^>]*content=")[^"]+(")',
+              rf'\g<1>{version}\g<2>',
+              content, count=1)
 
-          # --- Intento 2: actualizar meta existente (content antes que name) ---
+          # Estrategia 2: content antes que name
           if count == 0:
               new_content, count = re.subn(
-                  r'(<meta\s+content=["\'])[^"\']+(["\']\s+name=["\']app-version["\'])',
-                  rf'\g<1>{version}\g<2>', content)
+                  r'(<meta\s+content=")[^"]+("[^>]*name="app-version"[^>]*>)',
+                  rf'\g<1>{version}\g<2>',
+                  content, count=1)
 
-          # --- Intento 3: insertar meta nuevo justo después de <head> ---
+          # Estrategia 3: insertar después de <head>
           if count == 0:
-              print("::warning::Meta app-version no encontrado. Insertando después de <head>...")
               new_content, count = re.subn(
                   r'(<head[^>]*>)',
                   rf'\1\n  <meta name="app-version" content="{version}">',
                   content, count=1)
-              if count == 0:
-                  print("::error::No se encontró <head> en index.html. Archivo corrupto o incompleto.")
-                  print(f"::error::Primeras 500 chars: {content[:500]!r}")
-                  sys.exit(1)
-              print(f"OK: meta app-version INSERTADO después de <head> (versión {version})")
-          else:
-              print(f"OK: meta app-version ACTUALIZADO ({count} reemplazo/s) a {version}")
 
-          with open('index.html', 'w', encoding='utf-8') as f:
+          if count == 0:
+              print("::error file=index.html::No se encontró <head> en index.html. Archivo corrupto o formato inesperado.")
+              print(f"::error::Primeros 500 chars: {content[:500]!r}")
+              sys.exit(1)
+
+          with open("index.html", "w", encoding="utf-8") as f:
               f.write(new_content)
+
+          print(f"OK: meta app-version → {version} ({count} reemplazo/s)")
           PYEOF
 
-          # 5) Verificación final
-          grep -q "content=\"${VERSION_NUEVA}\"" index.html || {
-            echo "::error::Verificación post-sustitución falló: no se encontró la versión $VERSION_NUEVA en index.html"
+          # ── 2.5 Verificación post-reemplazo ──────────────────
+          if ! grep -q "content=\"$VERSION_NUEVA\"" index.html; then
+            echo "::error file=index.html::Verificación falló: index.html no contiene content=\"$VERSION_NUEVA\" tras el reemplazo."
             exit 1
-          }
-          echo "✅ index.html verificado y sincronizado a $VERSION_NUEVA"
+          fi
 
-          # 6) Commit de AMBOS archivos
-          git config user.name "github-actions[bot]"
+          echo "::notice::index.html verificado y sincronizado a $VERSION_NUEVA."
+
+          echo "VERSION_ACTUAL=$VERSION_ACTUAL" >> "$GITHUB_OUTPUT"
+          echo "VERSION_NUEVA=$VERSION_NUEVA"   >> "$GITHUB_OUTPUT"
+
+      # ─────────────────────────────────────────────────────────────
+      # 3. Commit + push del bump
+      # ─────────────────────────────────────────────────────────────
+      - name: Commit y push del bump
+        id: commit
+        shell: bash
+        env:
+          V: ${{ steps.bump.outputs.VERSION_NUEVA }}
+        run: |
+          set -euo pipefail
+
+          git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add version.json index.html
-          git commit -m "chore: bump version a $VERSION_NUEVA [skip ci]"
-          git push
 
+          if git diff --quiet -- version.json index.html; then
+            echo "::notice::Sin cambios en version.json ni index.html. Nada que commitear."
+            echo "commit=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git add version.json index.html
+
+          # [skip ci] es IMPRESCINDIBLE. Ver nota en la cabecera del
+          # workflow. Si se quita, el push del bot dispara otra
+          # ejecución que cancela esta por concurrency y luego se
+          # skipea a sí misma por el `if` → deploy nunca ocurre.
+          git commit -m "chore: bump version a ${V} [skip ci]"
+
+          # Pull-rebase por si un humano pusheó entre el checkout y ahora.
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+
+          # Refspec explícito (más robusto que `git push` a secas).
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+          echo "commit=true" >> "$GITHUB_OUTPUT"
+          echo "::notice::Commit pusheado con versión ${V}."
+
+      # ─────────────────────────────────────────────────────────────
+      # 4. Construir _site/ — SOLO archivos públicos
+      # ─────────────────────────────────────────────────────────────
+      # CRÍTICO: NO usar path: '.' en upload-pages-artifact.
+      # Eso publica el repo completo (.github/, firebase.json,
+      # firestore.rules, functions/, _seed/) en el sitio público.
+      # ─────────────────────────────────────────────────────────────
+      - name: Construir artefacto público en _site/
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf _site
+          mkdir -p _site
+
+          # ── Obligatorios ─────────────────────────────────────
+          for f in index.html version.json; do
+            if [ ! -f "$f" ]; then
+              echo "::error::$f no encontrado para el deploy."
+              exit 1
+            fi
+            cp "$f" _site/
+          done
+
+          # ── Opcionales (no falla si faltan) ──────────────────
+          for f in reset-password.html manifest.json sw.js \
+                   favicon.ico robots.txt sitemap.xml; do
+            if [ -f "$f" ]; then
+              cp "$f" _site/
+              echo "::notice::Copiado: $f"
+            fi
+          done
+
+          # ── Directorios opcionales ──────────────────────────
+          for d in assets icons images img css js fonts; do
+            if [ -d "$d" ]; then
+              cp -r "$d" _site/
+              echo "::notice::Copiado dir: $d/"
+            fi
+          done
+
+          # Prevenir procesamiento Jekyll (defensivo).
+          touch _site/.nojekyll
+
+          # ── Sanity check: nada sensible en _site/ ────────────
+          for peligro in firebase.json firestore.rules \
+                         firestore.indexes.json functions _seed .github; do
+            if [ -e "_site/$peligro" ]; then
+              echo "::error::$peligro se filtró a _site/. Abortando deploy para no exponerlo públicamente."
+              exit 1
+            fi
+          done
+
+          echo "::notice::Contenido final de _site/:"
+          ls -la _site/
+
+      # ─────────────────────────────────────────────────────────────
+      # 5. Configurar Pages
+      # ─────────────────────────────────────────────────────────────
       - name: Configurar Pages
         uses: actions/configure-pages@v5
 
+      # ─────────────────────────────────────────────────────────────
+      # 6. Subir artefacto (solo _site/)
+      # ─────────────────────────────────────────────────────────────
       - name: Subir artefacto
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: '_site'
 
-      - name: Desplegar a GitHub Pages
+      # ─────────────────────────────────────────────────────────────
+      # 7. Deploy
+      # ─────────────────────────────────────────────────────────────
+      - name: Deploy a GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      # ─────────────────────────────────────────────────────────────
+      # 8. Resumen del run
+      # ─────────────────────────────────────────────────────────────
+      - name: Resumen
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## 🚀 Deploy a GitHub Pages"
+            echo ""
+            echo "| Campo | Valor |"
+            echo "|---|---|"
+            echo "| Versión anterior | \`${{ steps.bump.outputs.VERSION_ACTUAL }}\` |"
+            echo "| Versión nueva | \`${{ steps.bump.outputs.VERSION_NUEVA }}\` |"
+            echo "| Commit del bot | ${{ steps.commit.outputs.commit == 'true' && '✅ Sí' || '⚪ No' }} |"
+            echo "| URL desplegada | ${{ steps.deployment.outputs.page_url }} |"
+            echo "| Evento | \`${{ github.event_name }}\` |"
+            echo "| Ejecutado por | \`${{ github.actor }}\` |"
+            echo "| SHA base | \`${{ github.sha }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
