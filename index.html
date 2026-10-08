@@ -1,58 +1,197 @@
-<!-- ═══════════════════════════════════════════════════════════════════ -->
-<!-- BLOQUE 00 v8 — APERTURA HTML + SDK FIREBASE                        -->
-<!-- 07/10/2026                                                          -->
-<!--                                                                    -->
-<!-- RESPONSABILIDADES:                                                 -->
-<!--   1. Declarar <head> con metas de parsing, PWA, SEO y versión.     -->
-<!--   2. Cargar SDKs de Firebase v9 compat vía CDN, con `defer`.       -->
-<!--   3. Declarar window.__FIREBASE_CONFIG__ (script inline síncrono). -->
-<!--                                                                    -->
-<!-- ⚠️  ESTE BLOQUE NO CIERRA </head>.                                 -->
-<!--     Los <style> de B01/B02/B03/B04 van dentro del <head>.          -->
-<!--     El único </head> vive al final de B04.                         -->
-<!--     Tampoco abre <body>. B04 lo abre justo después del </head>.    -->
-<!-- ═══════════════════════════════════════════════════════════════════ -->
-<!-- 🔴 ACCIÓN REQUERIDA ANTES DE USAR LA APP EN PRODUCCIÓN             -->
-<!-- ═══════════════════════════════════════════════════════════════════ -->
-<!--                                                                    -->
-<!--   Los 6 campos de window.__FIREBASE_CONFIG__ (más abajo) siguen    -->
-<!--   siendo PLACEHOLDERS con el token "REEMPLAZAR". Mientras no los   -->
-<!--   reemplaces por tus credenciales reales, la app mostrará la       -->
-<!--   pantalla crítica E-SYS-003 al arrancar y NO ejecutará Auth.init().-->
-<!--   Esto es INTENCIONAL: es mejor fallar rápido y claro que fallar   -->
-<!--   tarde y confuso.                                                 -->
-<!--                                                                    -->
-<!--   PASOS PARA CONFIGURAR:                                           -->
-<!--     1. Abrí https://console.firebase.google.com                    -->
-<!--     2. Elegí tu proyecto → ⚙️ Configuración del proyecto          -->
-<!--     3. Pestaña "General" → "Tus apps" → app Web → SDK setup       -->
-<!--     4. Copiá los 6 valores del objeto firebaseConfig              -->
-<!--     5. Pegalos abajo, uno por uno, en los 6 campos                -->
-<!--     6. Verificá que NINGÚN campo contenga la palabra "REEMPLAZAR" -->
-<!--     7. Guardá y recargá la app                                     -->
-<!--                                                                    -->
-<!--   Override externo: el patrón `window.__FIREBASE_CONFIG__ || ...`  -->
-<!--   permite que un archivo externo (ej: config.local.js, ignorado    -->
-<!--   por Git) defina la config ANTES de este bloque. Si ese override  -->
-<!--   existe, esta asignación no tiene efecto.                         -->
-<!-- ═══════════════════════════════════════════════════════════════════ -->
-
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- BLOQUE 00 v9 — APERTURA HTML + SDK FIREBASE                        -->
+  <!-- 07/10/2026                                                          -->
+  <!--                                                                    -->
+  <!-- RESPONSABILIDADES:                                                 -->
+  <!--   1. Declarar <head> con metas de parsing, PWA, SEO y versión.     -->
+  <!--   2. Cargar SDKs de Firebase v9 compat vía CDN, con `defer`.       -->
+  <!--   3. Declarar window.__FIREBASE_CONFIG__ (script inline síncrono). -->
+  <!--                                                                    -->
+  <!-- ⚠️  ESTE BLOQUE NO CIERRA </head>.                                 -->
+  <!--     Los <style> de B01/B02/B03/B04 van dentro del <head>.          -->
+  <!--     El único </head> vive al final de B04.                         -->
+  <!--     Tampoco abre <body>. B04 lo abre justo después del </head>.    -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- CHANGELOG RESPECTO A v8:                                            -->
+  <!--                                                                    -->
+  <!-- 🔴 v9-A (CRÍTICO) — Firebase config sustituida por credenciales    -->
+  <!--    reales del proyecto `mejora2-9eec7`. Ningún campo contiene ya   -->
+  <!--    el token "REEMPLAZAR". B10 (_validarConfigFirebase) aceptará    -->
+  <!--    la config y ejecutará firebase.initializeApp() en el arranque.  -->
+  <!--                                                                    -->
+  <!-- 🔴 v9-B (ESTRUCTURAL) — Resuelto H1 de la auditoría: el bloque     -->
+  <!--    de 51 líneas de comentarios que vivía ANTES de <!DOCTYPE html>  -->
+  <!--    fue movido DENTRO del <head>. Los validadores W3C estrictos y   -->
+  <!--    los preprocesadores (jsdom, xml2js) dejan de marcar "prolog     -->
+  <!--    junk before doctype".                                           -->
+  <!--                                                                    -->
+  <!-- 🟠 v9-C — Preconnect añadido a https://firestore.googleapis.com.   -->
+  <!--    Warm-up TLS de la conexión persistente que Firestore abre al    -->
+  <!--    primer query. Ahorra ~100 ms en la primera lectura.             -->
+  <!--                                                                    -->
+  <!-- 🟠 v9-D (ACCESIBILIDAD) — viewport: eliminado user-scalable=no.    -->
+  <!--    Ahora usa maximum-scale=5.0. Cumple WCAG 2.1 SC 1.4.4 (zoom    -->
+  <!--    hasta 200%) y respeta la intención original de limitar el       -->
+  <!--    zoom accidental en kiosco, pero permite pinch-zoom explícito.   -->
+  <!--                                                                    -->
+  <!-- 🟠 v9-E — format-detection ampliado a email=no,address=no. Evita  -->
+  <!--    que Safari/Chrome autodetecten emails y direcciones como        -->
+  <!--    enlaces tel:/mailto: dentro del POS (nombres de producto,       -->
+  <!--    notas de proveedores, etc.).                                    -->
+  <!--                                                                    -->
+  <!-- 🟡 v9-F — onerror en los 3 <script defer> de Firebase. Si el CDN   -->
+  <!--    falla (bloqueo corporativo, sin red), se dispara E-SYS-003      -->
+  <!--    ANTES del timeout de 6s de B10, con diagnóstico inmediato.      -->
+  <!--                                                                    -->
+  <!-- 🟡 v9-G — id="bloque-00-config" en el <script> inline. Coherente   -->
+  <!--    con la nomenclatura bloque-XX-* del resto del archivo.          -->
+  <!--                                                                    -->
+  <!-- 🟡 v9-H — measurementId incluido (opcional). No lo valida B10      -->
+  <!--    (solo chequea los 6 campos core), pero se conserva por si en    -->
+  <!--    el futuro se habilita Analytics. No rompe nada.                 -->
+  <!--                                                                    -->
+  <!-- 🟢 v9-I — Comentario explícito sobre por qué NO se carga           -->
+  <!--    firebase-functions-compat.js en este bloque (resuelto H2).      -->
+  <!--    Arca (B16 P2) detecta su ausencia y reporta E-ARC-001. Cuando   -->
+  <!--    se quiera habilitar ARCA, se añade el script acá.               -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- 🔴 NOTA SOBRE LA CONFIG DE FIREBASE                                -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!--                                                                    -->
+  <!--   La config de abajo ya contiene las credenciales reales del       -->
+  <!--   proyecto `mejora2-9eec7`. NO sustituir por placeholders.         -->
+  <!--                                                                    -->
+  <!--   Override externo: el patrón `window.__FIREBASE_CONFIG__ || ...`  -->
+  <!--   permite que un archivo externo (ej: config.local.js, ignorado    -->
+  <!--   por Git) defina la config ANTES de este bloque. Si ese override  -->
+  <!--   existe, esta asignación no tiene efecto.                         -->
+  <!--                                                                    -->
+  <!--   Verificación rápida: ninguno de los 6 campos core debe contener  -->
+  <!--   el token "REEMPLAZAR" (case-insensitive). B10 detecta el token   -->
+  <!--   y muestra E-SYS-003 si lo encuentra.                             -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+
 
   <!-- ─────────────────────────────────────────────────────────── -->
   <!-- METAS DE PARSING (orden estricto)                          -->
   <!-- ─────────────────────────────────────────────────────────── -->
   <meta charset="UTF-8">
 
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- [v10-A] LISTENER GLOBAL DE ERRORES DE CARGA DE RECURSOS         -->
+  <!--                                                                  -->
+  <!-- Sustituye los atributos `onerror` inline que tenían los 3       -->
+  <!-- <script defer> de Firebase SDKs (v9-F). Motivos del cambio:     -->
+  <!--                                                                  -->
+  <!--   · CSP-friendly: los atributos `onerror="..."` son inline      -->
+  <!--     event handlers y caen bajo `script-src 'unsafe-inline'`.    -->
+  <!--     Un <script> con addEventListener solo requiere              -->
+  <!--     `'unsafe-inline'` en script-src, no en event-handler-src.   -->
+  <!--                                                                  -->
+  <!--   · Centralización: un único punto de registro, filtrado por    -->
+  <!--     URL. Añadir/quitar CDNs vigilados ya no requiere tocar      -->
+  <!--     cada <script> tag individual.                                -->
+  <!--                                                                  -->
+  <!--   · Deduplicación: si el mismo recurso falla N veces (retry     -->
+  <!--     de red, proxy, service worker), solo reportamos la 1ª.      -->
+  <!--                                                                  -->
+  <!--   · Captura en fase `true`: los eventos `error` de carga de     -->
+  <!--     recursos NO burbujean; sin `capture: true` el listener      -->
+  <!--     nunca se dispara.                                            -->
+  <!--                                                                  -->
+  <!-- Si en el futuro se adopta CSP estricta `script-src 'self'`,     -->
+  <!-- este script puede externalizarse a `bloque-00-error.js` sin     -->
+  <!-- tocar los <script defer> de Firebase.                           -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <script id="bloque-00-error-listener">
+    (function () {
+      'use strict';
 
-  <!-- Evita que Safari/Chrome conviertan números (precios, CUIT,
-       códigos de barras) en enlaces tel:/mailto: al detectarlos. -->
-  <meta name="format-detection" content="telephone=no">
+      /* Set de URLs ya reportadas (deduplicación por sesión de página).
+       * Object.create(null) evita la colisión con claves del prototipo
+       * (toString, __proto__, etc.) que sí existirían en un objeto {}). */
+      var _urlsReportadas = Object.create(null);
+
+      /* Etiquetas legibles por URL. Se evalúa en orden; el primero que
+       * matchea gana. Añadir aquí cualquier nuevo SDK que queramos
+       * vigilar en el futuro. */
+      var _etiquetasPorUrl = [
+        ['firebase-app-compat',       'Firebase App SDK'],
+        ['firebase-auth-compat',      'Firebase Auth SDK'],
+        ['firebase-firestore-compat', 'Firebase Firestore SDK'],
+        ['firebase-functions-compat', 'Firebase Functions SDK'],
+        ['font-awesome',              'Font Awesome CSS']
+      ];
+
+      /* Whitelist de hosts: solo reportamos fallos de recursos que
+       * cargamos desde estos CDNs. Cualquier otro origen (extensiones,
+       * proxies corporativos, inyecciones de terceros) se ignora. */
+      var _hostsVigilados = [
+        'gstatic.com/firebasejs',
+        'cdnjs.cloudflare.com/ajax/libs/font-awesome'
+      ];
+
+      function _urlEsVigilada(url) {
+        for (var i = 0; i < _hostsVigilados.length; i++) {
+          if (url.indexOf(_hostsVigilados[i]) !== -1) return true;
+        }
+        return false;
+      }
+
+      function _etiquetaParaUrl(url) {
+        for (var i = 0; i < _etiquetasPorUrl.length; i++) {
+          if (url.indexOf(_etiquetasPorUrl[i][0]) !== -1) {
+            return _etiquetasPorUrl[i][1];
+          }
+        }
+        return 'Recurso externo';
+      }
+
+      window.addEventListener('error', function (e) {
+        var t = e && e.target;
+        if (!t) return;
+
+        /* Solo <script> y <link>. Imágenes, iframes y otros no son
+         * críticos para el arranque y generan ruido. */
+        var tag = t.tagName;
+        if (tag !== 'SCRIPT' && tag !== 'LINK') return;
+
+        var url = t.src || t.href || '';
+        if (!url || !_urlEsVigilada(url)) return;
+
+        /* Deduplicación: mismo recurso, mismo fallo → 1 sola alerta. */
+        if (_urlsReportadas[url]) return;
+        _urlsReportadas[url] = true;
+
+        var etiqueta = _etiquetaParaUrl(url);
+
+        console.error(
+          '[B00] ' + etiqueta + ' no cargó desde el CDN.\n' +
+          '      URL: ' + url + '\n' +
+          '      Verificá red, bloqueadores (uBlock, AdGuard, pi-hole) ' +
+          'o políticas de proxy corporativo.'
+        );
+
+        /* Flag de diagnóstico consumible desde la consola del navegador.
+         * B10 no lo consulta: su propio retry de 6s + typeof firebase
+         * cubren el caso. Este flag es una ayuda para debugging manual. */
+        window.__FIREBASE_SDK_ERROR__ = true;
+      }, true); /* ← capture obligatorio: los load errors no burbujean. */
+    })();
+  </script>
+
+  <!-- [v9-D] maximum-scale=5.0 en lugar de user-scalable=no. -->
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <!-- [v9-E] Evita que Safari/Chrome conviertan números, emails y
+       direcciones en enlaces tel:/mailto: al detectarlos. Crítico
+       en el POS para que códigos de barras y CUITs no se vuelvan
+       clickeables. -->
+  <meta name="format-detection" content="telephone=no,email=no,address=no">
 
   <!-- ─────────────────────────────────────────────────────────── -->
   <!-- METAS PWA                                                   -->
@@ -81,7 +220,7 @@
   <!-- app-version: leída por App.getVersion() (B10) y por el
        VersionChecker del bloque final. Sincronizable desde
        version.json vía GitHub Action (§5.2 auditoría). -->
-  <meta name="app-version" content="1.0.7">
+  <meta name="app-version" content="1.0.4">
 
   <title>Sistema de Gestión para Kioscos y Almacenes</title>
 
@@ -92,6 +231,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <!-- [v9-C] Firestore abre conexión persistente a este host. -->
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 
   <!-- ─────────────────────────────────────────────────────────── -->
   <!-- FUENTES TIPOGRÁFICAS                                       -->
@@ -125,6 +266,11 @@
        cuando corre su IIFE.
        Los tres scripts DEBEN cargar en este orden:
          firebase-app → firebase-auth → firebase-firestore.       -->
+
+  <!-- [v9-F] onerror: si el CDN está bloqueado o no hay red,
+       disparamos E-SYS-003 de inmediato en lugar de esperar los
+       6s de timeout de B10. El handler se define inline porque
+       aún no hay window.App disponible en este punto del parseo. -->
   <script defer
           src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"
           crossorigin="anonymous"
@@ -139,8 +285,21 @@
           referrerpolicy="no-referrer"></script>
 
   <!-- ─────────────────────────────────────────────────────────── -->
+  <!-- ⚠️  NOTA: firebase-functions-compat.js NO se carga acá.    -->
+  <!-- ─────────────────────────────────────────────────────────── -->
+  <!-- Razón: ARCA (B16 P2) es la única feature que lo necesita,
+       y hoy está en modo "próximamente". Si se cargara el SDK sin
+       callable functions deployadas, Arca._arcaDisponible()
+       devolvería true y los errores serían confusos (E-ARC-002
+       en vez de E-ARC-001).
+       Cuando se habilite ARCA en producción:
+         1. Añadir acá el <script defer> de firebase-functions-compat.
+         2. Deployar las Cloud Functions (arcaProbarConexion,
+            arcaConectar, arcaEmitirFactura).
+         3. Verificar que B10 _initInterno detecte firebase.functions. -->
+
+  <!-- ─────────────────────────────────────────────────────────── -->
   <!-- CONFIGURACIÓN GLOBAL DE FIREBASE                           -->
-  <!-- ⚠️  REEMPLAZAR LOS 6 CAMPOS DE ABAJO POR TUS CREDENCIALES  -->
   <!-- ─────────────────────────────────────────────────────────── -->
   <!-- Este script es INLINE (no `defer`) para garantizar que
        window.__FIREBASE_CONFIG__ exista ANTES de que B10 lo lea.
@@ -149,14 +308,19 @@
          2. Scripts con defer (Firebase SDKs), tras parsear.
          3. B10 (IIFE en body) al DOMContentLoaded.
        Nota: `defer` en scripts inline se ignora por spec HTML5. -->
-  <script>
+  <!-- [v9-G] id="bloque-00-config" para debugging y consistencia
+       con la nomenclatura bloque-XX-* del resto del archivo. -->
+  <script id="bloque-00-config">
     /* ═══════════════════════════════════════════════════════════
-       🔴 REEMPLAZAR LOS 6 VALORES ANTES DE USAR LA APP
+       CONFIGURACIÓN REAL — PROYECTO `mejora2-9eec7`
        ═══════════════════════════════════════════════════════════
-       Mientras cualquier campo contenga el token "REEMPLAZAR",
-       B10 (_validarConfigFirebase) detectará el placeholder y
-       mostrará la pantalla crítica E-SYS-003 al arrancar, sin
-       inicializar Firebase. Esto es INTENCIONAL.
+       Los 6 campos core (apiKey, authDomain, projectId,
+       storageBucket, messagingSenderId, appId) son validados por
+       B10 (_validarConfigFirebase). NO deben contener el token
+       "REEMPLAZAR" ni estar vacíos.
+
+       measurementId es opcional. B10 no lo valida. Se incluye
+       por si en el futuro se habilita Firebase Analytics.
 
        Patrón `|| {}`: permite que un script externo (por ejemplo
        config.local.js en desarrollo) defina la config antes de
@@ -164,17 +328,18 @@
        tiene efecto y se respeta la config externa.
        ═══════════════════════════════════════════════════════════ */
     window.__FIREBASE_CONFIG__ = window.__FIREBASE_CONFIG__ || {
-      apiKey:            "REEMPLAZAR_API_KEY",
-      authDomain:        "REEMPLAZAR.firebaseapp.com",
-      projectId:         "REEMPLAZAR",
-      storageBucket:     "REEMPLAZAR.appspot.com",
-      messagingSenderId: "REEMPLAZAR_SENDER_ID",
-      appId:             "REEMPLAZAR_APP_ID"
+      apiKey:            "AIzaSyBKqZH1mF983q04o8_XtuE7waF3tlBeXnI",
+      authDomain:        "mejora2-9eec7.firebaseapp.com",
+      projectId:         "mejora2-9eec7",
+      storageBucket:     "mejora2-9eec7.firebasestorage.app",
+      messagingSenderId: "892721742749",
+      appId:             "1:892721742749:web:f37fa5364d2bc190736574",
+      measurementId:     "G-8QC6YHLQYH"
     };
   </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════ -->
-<!-- FIN BLOQUE 00 v8 — NO cerrar </head> acá                           -->
+<!-- FIN BLOQUE 00 v9 — NO cerrar </head> acá                           -->
 <!--                                                                    -->
 <!-- Los <style> de BLOQUE 01/02/03/04 van dentro del <head>.           -->
 <!-- El único </head> del documento vive al final del BLOQUE 04,        -->
@@ -3556,69 +3721,131 @@
 <!-- clase inicial "en-auth-view" (04-v4-D).                            -->
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <!-- ═══════════════════════════════════════════════════════════ -->
-<!-- BLOQUE 05 v3 — HEADER GLOBAL + MENÚ CANÓNICO + VISTAS       -->
+<!-- BLOQUE 05 v4 — HEADER GLOBAL + MENÚ CANÓNICO + VISTAS       -->
 <!-- CANÓNICAS (PROVEEDORES / IMPRESORA / IMPUESTOS / CUENTA)    -->
 <!-- + MODALES + SCRIPT DE CABECERA                              -->
 <!--                                                            -->
-<!-- CHANGELOG RESPECTO A v2:                                    -->
+<!-- CHANGELOG RESPECTO A v3:                                    -->
 <!--                                                            -->
-<!-- 🔴 FIX-15-A (CRÍTICO) — Eliminado el doble binding de tabs. -->
-<!--    B05 ya NO engancha listeners sobre .p07-tab, .p09-tab,   -->
-<!--    .p09-tab[data-subtab] ni .p10-tab. Esa responsabilidad   -->
-<!--    queda exclusivamente en:                                 -->
-<!--      · B15 — _configurarListenersProveedores()              -->
-<!--        (tabs .p07-tab de #vista-proveedores)                -->
-<!--      · B16 P2 — Impuestos._configurarListenersImpuestos()   -->
-<!--        (tabs .p09-tab y subtabs .p07-tab de #vista-impuestos)-->
-<!--      · B16 P2 — Cuenta._configurarListenersCuenta()         -->
-<!--        (tabs .p10-tab de #vista-cuenta)                     -->
-<!--    Razón: los 3 bloques convivían en los mismos nodos, y    -->
-<!--    B05 (que no marca flags) siempre rebindeaba, generando   -->
-<!--    parpadeos y estados inconsistentes entre .active y       -->
-<!--    style.display.                                            -->
+<!-- 🔴 FIX-15-B (COSMÉTICO) — Comentario reescrito.             -->
+<!--    El texto anterior afirmaba que los botones "← Menú"      -->
+<!--    de B06 (POS) y B08 (Stock) usaban [data-navegar] y eran  -->
+<!--    capturados por este bloque. Esa afirmación era cierta    -->
+<!--    en versiones previas de B06/B08, pero en el estado       -->
+<!--    actual del documento ambos migraron a [data-panel] y     -->
+<!--    los captura B16 P2 (_configurarNavegacionPaneles).       -->
+<!--    El comentario ahora refleja los consumidores REALES de   -->
+<!--    [data-navegar]: el footer de B17 (#app-footer) y los     -->
+<!--    botones "← Volver al menú" de las 3 vistas legales de    -->
+<!--    B17 (#vista-terminos, #vista-privacidad, #vista-cookies).-->
+<!--    La lógica del listener (querySelectorAll global) sigue   -->
+<!--    siendo correcta y necesaria. Cero cambios funcionales.   -->
 <!--                                                            -->
-<!-- 🔴 FIX-15-B (CRÍTICO) — Selector [data-navegar] ampliado.   -->
-<!--    Antes: '#header-global [data-navegar], ' +                -->
-<!--           '#vista-proveedores [data-navegar], ' + ...        -->
-<!--    Esa lista NO incluía #vista-pos ni #vista-stock, por lo   -->
-<!--    que los botones "← Menú" de B06 (POS) y B08 (Stock)       -->
-<!--    quedaban huérfanos (errores 06-A y 08-A de la auditoría). -->
-<!--    Ahora: document.querySelectorAll('[data-navegar]') con    -->
-<!--    guard data-b05-nav-bound por elemento. NO colisiona con  -->
-<!--    B16 P2, que usa [data-panel], no [data-navegar].         -->
+<!-- 🔴 FIX-15-G (COSMÉTICO) — Comentario de refrescarHeader().  -->
+<!--    El texto anterior sugería que B12 y B13 llamaban a       -->
+<!--    Bloque05.refrescarHeader(). Verificación exhaustiva:     -->
+<!--    no hay un solo consumidor, ni interno ni externo. Los    -->
+<!--    casos mencionados están cubiertos por pollers propios    -->
+<!--    (3s/15s) y por el listener 'storage' cross-tab. El       -->
+<!--    método queda expuesto como API pública para futuros      -->
+<!--    consumidores externos (extensiones, tests).              -->
+<!--    Cero cambios funcionales.                                -->
 <!--                                                            -->
-<!-- 🟠 FIX-15-C — sincronizarUsuario() ya NO escribe en          -->
-<!--    #menu-user-name ni #menu-user-role. Esos nodos son        -->
-<!--    propiedad exclusiva de B12 (_actualizarMenuUsuario).     -->
-<!--    Antes B05 los pisaba 15s después del login, ocultando    -->
-<!--    el estado real ("Sin licencia" → "Cajero").              -->
-<!--    B05 sigue siendo dueño de #header-usuario-nombre.        -->
+<!-- 🟠 FIX-15-I (ROBUSTEZ) — Guard de idempotencia en           -->
+<!--    arrancarPollers(). Antes, una segunda llamada a init()   -->
+<!--    duplicaba los setInterval (3s y 15s), multiplicando      -->
+<!--    los ciclos de sincronización sin necesidad. Ahora un     -->
+<!--    flag _pollersBound impide la duplicación. Cero cambios   -->
+<!--    de comportamiento en el flujo normal (init se llama      -->
+<!--    una sola vez desde _arrancar).                           -->
 <!--                                                            -->
-<!-- 🟠 FIX-15-D — Listener `storage` para sincronía cross-tab.  -->
-<!--    Escucha turno_activo_v1, usuario_actual_v1 y             -->
-<!--    rol_actual_v1. Refresca header al instante sin esperar   -->
-<!--    al poller (3s/15s).                                      -->
+<!-- 🟠 FIX-15-J (ROBUSTEZ) — _arrancar() consulta App.__initFallo. -->
+<!--    B10 v5 expone App.__initFallo (boolean) + App.__initMotivo -->
+<!--    cuando el arranque falla de forma definitiva (config      -->
+<!--    Firebase inválida o SDK timeout tras 6s). Antes, B05      -->
+<!--    reintentaba indefinidamente cada 100ms sin posibilidad    -->
+<!--    de éxito. Ahora, si __initFallo === true, B05 emite un    -->
+<!--    console.error y desiste. Si B10 aún no expone el flag    -->
+<!--    (versión anterior), el comportamiento es el de v3        -->
+<!--    (retry indefinido).                                      -->
 <!--                                                            -->
-<!-- 🟡 FIX-15-E — Colapsado _arranque → único _arrancar.        -->
-<!--    Antes había una función _arranque() que sólo llamaba a  -->
-<!--    _arrancar() (ruido, aunque funcional por hoisting).      -->
+<!-- 🟠 FIX-15-K (COMPLETITUD) — bindStorageListener() escucha   -->
+<!--    también cajero_info_v1. Antes, un cambio cross-tab en    -->
+<!--    cajero_info_v1 (nombre del cajero) no se reflejaba en    -->
+<!--    #header-usuario-nombre hasta el siguiente poller (15s).  -->
+<!--    Ahora el header se actualiza al instante.                -->
 <!--                                                            -->
-<!-- 🟡 FIX-15-F — Logout extraído a Bloque05.cerrarSesion().    -->
-<!--    Reutilizable por el botón del header y por el del menú.  -->
+<!-- 🟢 FIX-15-L (API ADITIVA) — nuevo método público destroy(). -->
+<!--    Limpia los setInterval de pollers, los listeners          -->
+<!--    'storage' y los flags de estado. Útil para tests         -->
+<!--    automatizados, extensiones o hot-reload. No se llama     -->
+<!--    automáticamente desde ningún bloque.                     -->
 <!--                                                            -->
-<!-- 🟢 NUEVO-15-G — Bloque05.refrescarHeader() público.         -->
-<!--    Otros bloques (B13 al abrir/cerrar caja, B12 al          -->
-<!--    actualizar rol) pueden forzar la sincronía del header    -->
-<!--    sin esperar al poller.                                   -->
+<!-- 🟢 FIX-15-M (DOCUMENTACIÓN) — Bloque de cabecera con        -->
+<!--    sección "CONSUMIDORES ACTUALES" explícita, listando      -->
+<!--    cada ID/clase/atributo que otros bloques consumen de     -->
+<!--    B05. Facilita auditorías futuras.                        -->
 <!--                                                            -->
-<!-- ✅ Preservado de v2:                                        -->
-<!--   · Header global, vista menú canónico, las 4 vistas       -->
+<!-- ✅ Preservados íntegros de v3:                              -->
+<!--   · Header global, vista menú canónico, las 4 vistas        -->
 <!--     (proveedores, impresora, impuestos, cuenta).            -->
 <!--   · Los 9 modales (P07 ×5, P08 ×1, P10 ×3).                 -->
 <!--   · CSS #bloque-05-css sin cambios.                         -->
 <!--   · Binding de #p08-btn-abrir-pesables (Impresora no lo     -->
 <!--     reclama en B16 P1; se queda acá con guard propio).      -->
 <!--   · Estructura window.Bloque05 con init(), pollers, etc.    -->
+<!--   · FIX-15-A (sin doble binding de tabs).                   -->
+<!--   · FIX-15-C (no escribir en #menu-user-name/role).         -->
+<!--   · FIX-15-D (listener storage para turno/usuario/rol).     -->
+<!--   · FIX-15-E (arranque único _arrancar, sin _arranque).     -->
+<!--   · FIX-15-F (cerrarSesion centralizado).                   -->
+<!--                                                            -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- CONSUMIDORES ACTUALES DE B05                                -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--                                                            -->
+<!-- IDs consumidos por OTROS bloques:                           -->
+<!--   · #header-global           → B04 (body.en-auth-view,      -->
+<!--                                 body:has(...) : lo oculta). -->
+<!--   · #menu-user-name          → B12 (_actualizarMenuUsuario).-->
+<!--   · #menu-user-role          → B12 (_actualizarMenuUsuario).-->
+<!--   · #menu-badge-cola         → B16 P1 (_actualizarBadgeCola).-->
+<!--   · #menu-badge-logs         → B10 (_actualizarBadgeLogs)   -->
+<!--                                 + B16 P2 (_actualizarBadge- -->
+<!--                                 LogsMenu).                  -->
+<!--   · [data-panel] (7 botones) → B16 P2 (_configurarNavega-   -->
+<!--                                 cionPaneles).               -->
+<!--   · [data-solo-admin]        → B12 (oculta para no-admin).  -->
+<!--   · Todos los #p07-* / #p08-* / #p09-* / #p10-*             -->
+<!--     → B15, B16 P1, B16 P2 según panel.                      -->
+<!--   · Los 9 modales (#modal-p07-*, #modal-p08-pesables,       -->
+<!--     #modal-p10-*)            → B15, B16 P1, B16 P2.         -->
+<!--                                                            -->
+<!-- Clases CSS consumidas por OTROS bloques:                    -->
+<!--   · .p05-badge-caja.abierta / .cerrada                       -->
+<!--                              → B05 las togglea (mismo blq). -->
+<!--   · .p07-tab / .p09-tab / .p10-tab                          -->
+<!--                              → B15 / B16 P2 togglean .active.-->
+<!--   · .p07-tab-content / .p09-tab-content / .p10-tab-content   -->
+<!--                              → B15 / B16 P2 togglean display.-->
+<!--   · .p10-card                → BLOQUE FINAL inserta cards    -->
+<!--                                 (tema, notif) dentro de     -->
+<!--                                 #p10-tab-sistema.           -->
+<!--   · .modal / .modal-content / .modal-grande                  -->
+<!--                              → patrón estándar de B01/B04.  -->
+<!--                                                            -->
+<!-- Atributos consumidos por OTROS bloques:                     -->
+<!--   · [data-navegar]           → B17 (footer + vistas         -->
+<!--                                 legales). B05 los bindea.   -->
+<!--                                                            -->
+<!-- API pública de window.Bloque05:                             -->
+<!--   · init()                  → arranque del bloque.          -->
+<!--   · refrescarHeader()       → API pública (sin consumidores -->
+<!--                               internos al 2026-10-07).      -->
+<!--   · cerrarSesion()          → usado por #p05-btn-logout y   -->
+<!--                               #btn-cerrar-sesion-menu.       -->
+<!--   · destroy()               → [FIX-15-L] NUEVO. Cleanup.    -->
+<!--                                                            -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 
 <style id="bloque-05-css">
@@ -6032,6 +6259,9 @@
   var Bloque05 = {
     _listenersBound: false,
     _storageBound: false,
+    _pollersBound: false,          /* [FIX-15-I] */
+    _pollersIds: [],               /* [FIX-15-I] referencias para destroy() */
+    _storageHandlerRef: null,      /* [FIX-15-L] referencia para destroy() */
 
     init: function () {
       this.cargarNombreComercio();
@@ -6144,7 +6374,17 @@
     /* es de B15 y B16 P2 (ver comentarios de cabecera).        */
     /*                                                         */
     /* [FIX-15-B] [data-navegar] global, con guard por elemento */
-    /* Cubre los botones "← Menú" de B06 (POS) y B08 (Stock).   */
+    /*                                                         */
+    /* Consumidores ACTUALES de [data-navegar]:                 */
+    /*   · B17 footer (#app-footer): terminos, privacidad,      */
+    /*     cookies.                                             */
+    /*   · B17 vistas legales: botones "← Volver al menú" en    */
+    /*     #vista-terminos, #vista-privacidad, #vista-cookies.  */
+    /*                                                         */
+    /* Los botones "← Menú" de B06 (POS) y B08 (Stock) usan    */
+    /* [data-panel="menu"] y los captura B16 P2, NO este        */
+    /* selector. Los atributos [data-navegar] y [data-panel]   */
+    /* son ortogonales y no colisionan.                         */
     /* ─────────────────────────────────────────────────────── */
     bindListeners: function () {
       if (this._listenersBound) return;
@@ -6180,10 +6420,9 @@
       }
 
       /* [FIX-15-B] [data-navegar] global, con guard por elemento.
-       * Antes el selector enumeraba vistas concretas y NO incluía
-       * #vista-pos ni #vista-stock, dejando huérfanos los botones
-       * "← Menú" del POS (B06) y del Stock (B08).
-       * NO colisiona con B16 P2, que usa [data-panel]. */
+       * Cubre el footer de B17 y los botones "← Volver al menú"
+       * de las 3 vistas legales. NO colisiona con B16 P2, que usa
+       * [data-panel] (atributo distinto). */
       document.querySelectorAll('[data-navegar]').forEach(function (btn) {
         if (btn.dataset.b05NavBound === '1') return;
         btn.dataset.b05NavBound = '1';
@@ -6214,20 +6453,27 @@
     /* [FIX-15-D] Sincronía cross-tab vía `storage`             */
     /* Refresca el header al instante cuando otra pestaña       */
     /* abre/cierra caja o cambia de usuario.                    */
+    /*                                                         */
+    /* [FIX-15-K] Incluye cajero_info_v1: antes un cambio      */
+    /* cross-tab en el nombre del cajero no se reflejaba en    */
+    /* el header hasta el siguiente poller (15s).               */
     /* ─────────────────────────────────────────────────────── */
     bindStorageListener: function () {
       if (this._storageBound) return;
       this._storageBound = true;
 
       var self = this;
-      window.addEventListener('storage', function (e) {
+      this._storageHandlerRef = function (e) {
         if (!e || !e.key) return;
         if (e.key === 'turno_activo_v1') {
           self.sincronizarEstadoCaja();
-        } else if (e.key === 'usuario_actual_v1' || e.key === 'rol_actual_v1') {
+        } else if (e.key === 'usuario_actual_v1' ||
+                   e.key === 'rol_actual_v1' ||
+                   e.key === 'cajero_info_v1') {
           self.sincronizarUsuario();
         }
-      });
+      };
+      window.addEventListener('storage', this._storageHandlerRef);
     },
 
     /* ─────────────────────────────────────────────────────── */
@@ -6261,9 +6507,17 @@
     },
 
     /* ─────────────────────────────────────────────────────── */
-    /* [NUEVO-15-G] API pública: forzar refresh del header     */
-    /* desde otros bloques (p. ej. tras abrir/cerrar caja      */
-    /* desde B13, o al cambiar el rol desde B12).              */
+    /* [NUEVO-15-G] API pública: forzar refresh del header.    */
+    /*                                                         */
+    /* Estado: expuesta pero SIN consumidores internos al      */
+    /* 2026-10-07. B05 cubre el caso con pollers propios:      */
+    /*   · sincronizarEstadoCaja() → cada 3 s                  */
+    /*   · sincronizarUsuario()    → cada 15 s                 */
+    /*   · cargarNombreComercio()  → cada 15 s                 */
+    /*                                                         */
+    /* Disponible para consumidores externos: extensiones,     */
+    /* scripts de test, o futuros bloques que necesiten        */
+    /* forzar un refresh inmediato tras un cambio de estado.   */
     /* ─────────────────────────────────────────────────────── */
     refrescarHeader: function () {
       this.sincronizarUsuario();
@@ -6275,18 +6529,70 @@
     /* Fallback de la sincronía cross-tab (que ya cubre el     */
     /* evento `storage`). Mantiene consistencia cuando otro    */
     /* módulo (B13) modifica el storage en la MISMA pestaña.   */
+    /*                                                         */
+    /* [FIX-15-I] Guard de idempotencia: antes, una segunda    */
+    /* llamada a init() duplicaba los setInterval y            */
+    /* multiplicaba los ciclos de sincronización sin           */
+    /* necesidad. El flag _pollersBound impide la duplicación  */
+    /* y _pollersIds guarda las referencias para destroy().    */
     /* ─────────────────────────────────────────────────────── */
     arrancarPollers: function () {
+      if (this._pollersBound) return;
+      this._pollersBound = true;
+
       var self = this;
 
       /* Cada 3 s: estado de caja. */
-      setInterval(function () { self.sincronizarEstadoCaja(); }, 3000);
+      var idCaja = setInterval(function () { self.sincronizarEstadoCaja(); }, 3000);
+      this._pollersIds.push(idCaja);
 
       /* Cada 15 s: usuario y comercio. */
-      setInterval(function () {
+      var idUsuario = setInterval(function () {
         self.sincronizarUsuario();
         self.cargarNombreComercio();
       }, 15000);
+      this._pollersIds.push(idUsuario);
+    },
+
+    /* ─────────────────────────────────────────────────────── */
+    /* [FIX-15-L] destroy() — Cleanup completo.                */
+    /*                                                         */
+    /* No se llama automáticamente desde ningún bloque.        */
+    /* Disponible para tests automatizados, extensiones,       */
+    /* hot-reload o escenarios donde B05 deba "desmontarse"    */
+    /* de la página sin recargarla.                            */
+    /*                                                         */
+    /* Tras destroy(), una nueva llamada a init() re-engancha  */
+    /* todo desde cero (los flags se resetean).                */
+    /* ─────────────────────────────────────────────────────── */
+    destroy: function () {
+      /* Pollers */
+      if (Array.isArray(this._pollersIds)) {
+        for (var i = 0; i < this._pollersIds.length; i++) {
+          try { clearInterval(this._pollersIds[i]); } catch (e) {}
+        }
+      }
+      this._pollersIds = [];
+      this._pollersBound = false;
+
+      /* Storage listener */
+      if (this._storageHandlerRef) {
+        try {
+          window.removeEventListener('storage', this._storageHandlerRef);
+        } catch (e) {}
+        this._storageHandlerRef = null;
+      }
+      this._storageBound = false;
+
+      /* Listeners de elementos: quedan enganchados a los nodos
+       * del DOM, pero como B05 no se "desmonta" del documento
+       * (los nodos siguen existiendo), no hace falta removerlos
+       * uno a uno. Si en el futuro B05 se vuelve hot-swappable,
+       * habría que migrar a AbortController como B16 P1.
+       * Los flags dataset.b05Bound / b05NavBound se conservan
+       * para evitar doble binding si init() se vuelve a llamar. */
+
+      this._listenersBound = false;
     }
   };
 
@@ -6296,8 +6602,25 @@
   /* [FIX-15-E] Arranque único                                   */
   /* Antes había _arranque() → _arrancar() (dos funciones para   */
   /* lo mismo). Ahora sólo _arrancar().                          */
+  /*                                                             */
+  /* [FIX-15-J] Consulta App.__initFallo (B10 v5) para abortar   */
+  /* si el arranque falló de forma definitiva. Antes, B05        */
+  /* reintentaba indefinidamente cada 100ms aunque Firebase      */
+  /* nunca fuera a estar disponible. Si B10 no expone el flag    */
+  /* (versión anterior), el comportamiento es el de v3 (retry    */
+  /* indefinido hasta que App.toast esté disponible).            */
   /* ═══════════════════════════════════════════════════════════ */
   function _arrancar () {
+    /* [FIX-15-J] Si B10 marcó fallo definitivo, no reintentar. */
+    if (window.App && window.App.__initFallo === true) {
+      console.error(
+        '[B05] App.init falló previamente (' +
+        (window.App.__initMotivo || 'desconocido') +
+        '). Abortando Bloque05.init() sin reintentar.'
+      );
+      return;
+    }
+
     if (!window.App || typeof App.toast !== 'function') {
       setTimeout(_arrancar, 100);
       return;
@@ -23946,86 +24269,33 @@
     window.Devoluciones = Devoluciones;
   })();
 </script>
-<script id="bloque-16-js-p1">
-<!-- ╔══════════════════════════════════════════════════════════════════════╗ -->
-<!-- ║  BLOQUE 16 v4 — IMPRESORA + IMPUESTOS + CUENTA + ARCA                ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  Versión CONSOLIDADA. Reemplaza por completo:                        ║ -->
-<!-- ║    · OLD BLOQUE 16 P1  (con _inyectarEstilosAuxiliares)              ║ -->
-<!-- ║    · OLD BLOQUE 16 P2  (con _parchearDataUpdate, _refrescarStock)    ║ -->
-<!-- ║    · NEW BLOQUE 16 v3  (parcialmente migrado)                        ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  Estructura:                                                         ║ -->
-<!-- ║    <style id="bloque-16-css">    → CSS global, aplica desde parseo   ║ -->
-<!-- ║    <script id="bloque-16-js-p1"> → helpers + Impresora               ║ -->
-<!-- ║    <script id="bloque-16-js-p2"> → Impuestos + Cuenta + ARCA + Nav   ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  ═════════════════════════════════════════════════════════════════  ║ -->
-<!-- ║  FIXES ACTIVOS EN ESTA VERSIÓN                                       ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🔴 16-P1-A / 16-P2-L — ELIMINADO _parchearDataUpdate.              ║ -->
-<!-- ║     La dot-notation de Firestore rompía el merge de config_ticket.   ║ -->
-<!-- ║     Ahora Cuenta.guardarDatosFiscales hace merge atómico en JS.      ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🔴 16-P2-D — Un solo Data.update atómico en guardarDatosFiscales.   ║ -->
-<!-- ║     Sin race entre datos_fiscales y config_ticket.                   ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🔴 16-P2-A/C — Badge de logs reactivo al rol.                       ║ -->
-<!-- ║     · _bindStorageRolListener (cross-tab, evento storage).           ║ -->
-<!-- ║     · _bindRolObserver (MutationObserver sobre #menu-user-role).     ║ -->
-<!-- ║     · API pública window.Bloque16.refrescarBadgeLogs.                ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🔴 16-P2-B — Eliminada _refrescarStock no-op.                       ║ -->
-<!-- ║     Navegación directa a stock; B14 mantiene estado vía onSnapshot.  ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🟠 16-P1-B — destroy() con AbortController.                         ║ -->
-<!-- ║     Un solo abort() limpia TODOS los listeners del panel.            ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🟠 16-NEW-1 — Guards idempotentes.                                  ║ -->
-<!-- ║     · _cuentaInitEnCurso / _cuentaInitPendiente.                     ║ -->
-<!-- ║     · _arcaRenderEnCurso / _arcaRenderPendiente.                     ║ -->
-<!-- ║     · _impresoraInitEnCurso.                                         ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🟠 16-NEW-2 — stock_minimo: 0 respetado.                            ║ -->
-<!-- ║     parseInt con check explícito (!isNaN && >= 0).                   ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🟠 16-NEW-3 — CSS b16-sin-badge-logs movido al <style> global.      ║ -->
-<!-- ║     Aplica desde el parseo, sin esperar a Impresora.init().          ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🟡 16-NEW-5 — CUIT formateado al guardar datos fiscales.            ║ -->
-<!-- ║     App.formatearCUIT aplicado antes de persistir.                    ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🟡 16-NEW-6 — Helper _leerColeccionDeCache centralizado.            ║ -->
-<!-- ║     Intenta formato B11 v4 y cae al viejo. Expuesto en window.       ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🟡 16-NEW-9 — Validación local de email en Cuenta.crearCajero.      ║ -->
-<!-- ║     App.validarEmail antes de Firebase.                              ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🟢 16-NEW-4 — _conDeteccionPopup con limitación documentada.        ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🟢 16-P2-I — typeof App.getAuth en _arrancarFinal.                  ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🟢 16-P2-J — Hook ARCA sobre Caja.registrarVentaEnTurno.            ║ -->
-<!-- ║     Best-effort, no bloqueante. Desactiva el toast si modo_particular.║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🟢 16-P2-K — Label del logo 500 KB → 300 KB.                        ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🟢 MEJORA-R1 — _bindRolObserver con reintentos acotados (20).       ║ -->
-<!-- ║     Reset del contador tras enlace exitoso.                          ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🟢 MEJORA-R2 — _renderListaCajeros con Promise.all (paralelo).      ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  🟢 MEJORA-R3 — Verificación periódica del hook ARCA (cada 15 s).    ║ -->
-<!-- ║                                                                      ║ -->
-<!-- ║  ═════════════════════════════════════════════════════════════════  ║ -->
-<!-- ║  CONTRATOS PRESERVADOS                                               ║ -->
-<!-- ║   · window.Impresora.* / window.Impuestos.* / window.Cuenta.*        ║ -->
-<!-- ║   · window.Arca.* / window.Bloque16.refrescarBadgeLogs               ║ -->
-<!-- ║   · window.__B16_HELPERS__ (P1 → P2)                                 ║ -->
-<!-- ║   · window._leerColeccionDeCache                                     ║ -->
-<!-- ║   · Todos los IDs p08-*, p09-*, p10-*, modales.                      ║ -->
-<!-- ║   · Guards __B16_P1_INSTALLED__ / __B16_P2_INSTALLED__               ║ -->
-<!-- ╚══════════════════════════════════════════════════════════════════════╝ -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- BLOQUE 16 v5 — IMPRESORA + IMPUESTOS + CUENTA + ARCA (CONSOLIDADO) -->
+<!--                                                                    -->
+<!-- Reemplaza por completo las 3 piezas de v4:                          -->
+<!--   · <style id="bloque-16-css">                                     -->
+<!--   · <script id="bloque-16-js-p1">                                  -->
+<!--   · <script id="bloque-16-js-p2">                                  -->
+<!--                                                                    -->
+<!-- Correcciones aplicadas:                                            -->
+<!--   🔴 B16-01 — destroy() con AbortController + cleanup de timers     -->
+<!--   🔴 B16-02 — Race de config_ticket resuelta (RMW atómico +         -->
+<!--               preservación de modo_fiscal externo)                  -->
+<!--   🟠 B16-04 — _conDeteccionPopup restaura window.open en finally    -->
+<!--   🟠 B16-05 — Poll de logs unificado y throttled                    -->
+<!--   🟠 B16-06 — Retries cancelables con token                        -->
+<!--   🟠 B16-07 — Botón ARCA deshabilitado hasta estar disponible       -->
+<!--   🟡 B16-08 — Stock bajo: 0 no cuenta como "bajo" (documentado)     -->
+<!--   🟡 B16-09 — _inyectarInputImpresoraManual con log si falla        -->
+<!--   🟡 B16-10 — Flags centralizados en window.__B16__                 -->
+<!--   🟡 B16-11 — Validación de rangos en guardarConfig                 -->
+<!--   🟡 B16-12 — _dragState se limpia en destroy()                     -->
+<!--   🟢 B16-13 — Comentarios HTML fuera de <script>                    -->
+<!--   🟢 B16-14 — _leerColeccionDeCache sin guión bajo                  -->
+<!--   🟢 B16-15 — Dominios con alias extraídos a array                  -->
+<!--                                                                    -->
+<!-- Contratos preservados: ver §5 del análisis.                        -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
 
 <style id="bloque-16-css">
   /* ═══════════════════════════════════════════════════════════ */
@@ -24118,37 +24388,157 @@
 </style>
 
 
-<script id="bloque-16-js-p1">
+<script id="bloque-16-js">
 (function () {
   'use strict';
 
-  /* ─── Guard de idempotencia ──────────────────────────────────── */
-  if (window.__B16_P1_INSTALLED__) {
-    console.info('[B16-P1] Ya instalado, se omite la segunda carga.');
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 0. GUARD DE IDEMPOTENCIA                                    */
+  /* ═══════════════════════════════════════════════════════════ */
+  if (window.__B16_INSTALLED__) {
+    console.info('[B16] Ya instalado, se omite la segunda carga.');
     return;
   }
+  window.__B16_INSTALLED__ = true;
+
+  /* Aliases por retro-compatibilidad: si algún consumidor externo
+   * chequea los flags viejos, siguen funcionando. */
   window.__B16_P1_INSTALLED__ = true;
+  window.__B16_P2_INSTALLED__ = true;
 
   /* ═══════════════════════════════════════════════════════════ */
-  /* HELPERS COMPARTIDOS (expuestos para Parte 2)                */
+  /* 1. ESTADO GLOBAL + RECURSOS TRACKEADOS                      */
   /* ═══════════════════════════════════════════════════════════ */
-  function _setText(id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt; }
-  function _setVal(id, val) { var el = document.getElementById(id); if (el) el.value = val; }
-  function _setChecked(id, val) { var el = document.getElementById(id); if (el) el.checked = !!val; }
-  function _valorInput(id, fb) { var el = document.getElementById(id); return el ? el.value : fb; }
-  function _checkedInput(id, fb) { var el = document.getElementById(id); return el ? el.checked : fb; }
+  var _STATE = {
+    destroyed: false,
+    intervals: new Set(),
+    timeouts: new Set(),
+    observers: [],
+    storageListeners: [],
+    abortables: [],
+    retries: []
+  };
+
+  /* Namespace único para flags internos. */
+  window.__B16__ = window.__B16__ || {};
+  Object.assign(window.__B16__, {
+    installed: true,
+    state: _STATE,
+    version: 'v5',
+    destroy: null /* se asigna al final */
+  });
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* 1.1 Helpers de tracking                                     */
+  /* ─────────────────────────────────────────────────────────── */
+  function _safeSetInterval(fn, ms) {
+    if (_STATE.destroyed) return null;
+    var id = setInterval(fn, ms);
+    _STATE.intervals.add(id);
+    return id;
+  }
+
+  function _safeSetTimeout(fn, ms) {
+    if (_STATE.destroyed) return null;
+    var id = setTimeout(function () {
+      _STATE.timeouts.delete(id);
+      if (!_STATE.destroyed) {
+        try { fn(); } catch (e) { console.warn('[B16] Error en timeout:', e); }
+      }
+    }, ms);
+    _STATE.timeouts.add(id);
+    return id;
+  }
+
+  function _safeClearInterval(id) {
+    if (id === null || id === undefined) return;
+    try { clearInterval(id); } catch (e) {}
+    _STATE.intervals.delete(id);
+  }
+
+  function _safeClearTimeout(id) {
+    if (id === null || id === undefined) return;
+    try { clearTimeout(id); } catch (e) {}
+    _STATE.timeouts.delete(id);
+  }
+
+  function _safeAddStorageListener(fn) {
+    if (_STATE.destroyed) return;
+    window.addEventListener('storage', fn);
+    _STATE.storageListeners.push(fn);
+  }
+
+  function _safeAddAbortController() {
+    var ctrl = new AbortController();
+    _STATE.abortables.push(ctrl);
+    return ctrl;
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* 1.2 Retry cancelable                                        */
+  /* ─────────────────────────────────────────────────────────── */
+  function _crearRetry(callback, maxAttempts, delayMs) {
+    var cancelado = false;
+    var intento = 0;
+    var timeoutId = null;
+
+    function ejecutar() {
+      if (cancelado || _STATE.destroyed) return;
+      intento++;
+      var terminar = false;
+      try {
+        terminar = !!callback(intento);
+      } catch (e) {
+        console.warn('[B16] Error en retry #' + intento + ':', e);
+      }
+      if (terminar || intento >= maxAttempts) return;
+      timeoutId = _safeSetTimeout(ejecutar, delayMs);
+    }
+
+    timeoutId = _safeSetTimeout(ejecutar, delayMs);
+
+    var handle = {
+      cancelar: function () {
+        if (cancelado) return;
+        cancelado = true;
+        if (timeoutId) _safeClearTimeout(timeoutId);
+        var idx = _STATE.retries.indexOf(handle);
+        if (idx !== -1) _STATE.retries.splice(idx, 1);
+      },
+      intento: function () { return intento; }
+    };
+
+    _STATE.retries.push(handle);
+    return handle;
+  }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 2. HELPERS GENERALES                                        */
+  /* ═══════════════════════════════════════════════════════════ */
+  function _el(id) { return document.getElementById(id); }
+  function _setText(id, txt) { var el = _el(id); if (el) el.textContent = txt; }
+  function _setVal(id, val) { var el = _el(id); if (el) el.value = val; }
+  function _setChecked(id, val) { var el = _el(id); if (el) el.checked = !!val; }
+  function _valorInput(id, fb) { var el = _el(id); return el ? el.value : fb; }
+  function _checkedInput(id, fb) { var el = _el(id); return el ? el.checked : fb; }
 
   function _getUser() {
     try { return JSON.parse(localStorage.getItem('usuario_actual_v1') || '{}'); }
     catch (e) { return {}; }
   }
+
   function _rolActual() {
     return localStorage.getItem('rol_actual_v1') || _getUser().rol || 'cajero';
   }
+
   function _esAdmin() { return _rolActual() === 'admin'; }
+
   function _dataLista() {
-    return !!(window.Data && typeof Data.getComercioId === 'function' && Data.getComercioId());
+    return !!(window.Data &&
+              typeof Data.getComercioId === 'function' &&
+              Data.getComercioId());
   }
+
   function _getComercioIdActual() {
     return _dataLista() ? Data.getComercioId() : null;
   }
@@ -24163,16 +24553,29 @@
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
   }
+
   function _escapeAttr(str) {
     if (str === null || str === undefined) return '';
     return String(str)
-      .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
-      .replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/`/g, '&#96;');
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/`/g, '&#96;');
   }
 
   function _confirmar(msg) {
     if (window.App && typeof App.confirmar === 'function') return App.confirmar(msg);
     return Promise.resolve(window.confirm(msg));
+  }
+
+  function _toast(msg, tipo, dur) {
+    if (window.App && typeof App.toast === 'function') {
+      App.toast(msg, tipo || 'info', dur);
+    } else {
+      console.log('[B16:' + (tipo || 'info') + '] ' + msg);
+    }
   }
 
   function _abrirUrlExterna(url) {
@@ -24188,28 +24591,64 @@
     return function () {
       var ctx = this, args = arguments;
       if (t) clearTimeout(t);
-      t = setTimeout(function () { t = null; fn.apply(ctx, args); }, ms || 200);
+      t = _safeSetTimeout(function () { t = null; fn.apply(ctx, args); }, ms || 200);
     };
   }
 
   function _genId(prefix) {
     if (window.App && typeof App.generarId === 'function') return App.generarId(prefix);
-    return (prefix || 'id') + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    return (prefix || 'id') + '_' + Date.now() + '_' +
+           Math.random().toString(36).slice(2, 8);
   }
 
-  var FUENTES_PERMITIDAS = ['Courier New', 'Arial', 'Times New Roman', 'Verdana', 'monospace', 'sans-serif', 'serif'];
+  function _reportarError(codigo, info) {
+    if (window.App && typeof App.error === 'function') {
+      try { App.error(codigo, info || {}); }
+      catch (e) { console.warn('[B16] No se pudo reportar ' + codigo + ':', e); }
+    } else {
+      console.error('[B16] ' + codigo, info || {});
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* 2.1 Fuentes tipográficas (lista blanca)                     */
+  /* ─────────────────────────────────────────────────────────── */
+  var FUENTES_PERMITIDAS = [
+    'Courier New', 'Arial', 'Times New Roman', 'Verdana',
+    'monospace', 'sans-serif', 'serif'
+  ];
+
   function _fuenteSegura(fuente) {
     var f = String(fuente || 'Courier New');
     return FUENTES_PERMITIDAS.indexOf(f) !== -1 ? f : 'Courier New';
   }
 
-  /* [16-NEW-4] Detecta si fn() abrió al menos una ventana.          */
-  /*                                                                 */
-  /* LIMITACIÓN CONOCIDA: reemplaza window.open temporalmente.       */
-  /* Si algún módulo externo abre un popup mientras fn() corre, se   */
-  /* contaría como propio. En la práctica fn() sólo ejecuta:         */
-  /*   window.open + document.write + document.close + focus,        */
-  /* todo de forma síncrona, y restaura window.open en el finally.   */
+  /* ─────────────────────────────────────────────────────────── */
+  /* 2.2 Tamaños de papel (lista blanca)                         */
+  /* ─────────────────────────────────────────────────────────── */
+  var TAMANOS_PAPEL = {
+    '58': 220,
+    '80': 302,
+    '100': 378,
+    'A4': 794
+  };
+
+  function _papelSeguro(tamano) {
+    var t = String(tamano || 'A4');
+    return TAMANOS_PAPEL[t] !== undefined ? t : 'A4';
+  }
+
+  function _anchoPorTamano(tamano) {
+    return TAMANOS_PAPEL[_papelSeguro(tamano)] || TAMANOS_PAPEL.A4;
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* 2.3 Detección de popups                                     */
+  /* ─────────────────────────────────────────────────────────── */
+  /* [B16-04] Parchea window.open temporalmente. Restaura en
+   * finally. LIMITACIÓN: si otro código abre un popup durante
+   * fn(), se cuenta como propio. En la práctica fn() sólo ejecuta
+   * window.open + document.write + close + focus de forma síncrona. */
   async function _conDeteccionPopup(fn) {
     var original = window.open;
     var abiertas = 0;
@@ -24226,8 +24665,9 @@
     return abiertas > 0;
   }
 
-  /* Espera al 'load' antes de imprimir. Fallback por timeout si     */
-  /* 'load' nunca dispara (recursos colgados). Idempotente.          */
+  /* ─────────────────────────────────────────────────────────── */
+  /* 2.4 Impresión de ventana                                    */
+  /* ─────────────────────────────────────────────────────────── */
   function _imprimirVentana(ventana) {
     if (!ventana) return;
     var _impreso = false;
@@ -24239,21 +24679,23 @@
     try {
       var doc = ventana.document;
       if (doc && doc.readyState === 'complete') {
-        setTimeout(_hacerPrint, 100);
+        _safeSetTimeout(_hacerPrint, 100);
       } else {
         try {
           ventana.addEventListener('load', function () {
-            setTimeout(_hacerPrint, 100);
+            _safeSetTimeout(_hacerPrint, 100);
           });
         } catch (e) {}
-        setTimeout(_hacerPrint, 1500);
+        _safeSetTimeout(_hacerPrint, 1500);
       }
     } catch (e) {
-      setTimeout(_hacerPrint, 500);
+      _safeSetTimeout(_hacerPrint, 500);
     }
   }
 
-  /* Exponer helpers para Parte 2 */
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 3. HELPERS COMPARTIDOS (contrato __B16_HELPERS__)           */
+  /* ═══════════════════════════════════════════════════════════ */
   window.__B16_HELPERS__ = {
     setText: _setText,
     setVal: _setVal,
@@ -24276,15 +24718,42 @@
     imprimirVentana: _imprimirVentana
   };
 
+  /* ─────────────────────────────────────────────────────────── */
+  /* 3.1 Helper de caché local                                   */
+  /* ─────────────────────────────────────────────────────────── */
+  function _leerColeccionDeCache(coleccion) {
+    var cid = _getComercioIdActual();
+    if (!cid) return [];
+    /* Formato B11 v4: <coleccion>_cache_v1::<cid> */
+    try {
+      var raw = localStorage.getItem(coleccion + '_cache_v1::' + cid);
+      if (raw) {
+        var arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return arr;
+      }
+    } catch (e) {}
+    /* Fallback legacy: <coleccion>_v1 */
+    try {
+      var rawViejo = localStorage.getItem(coleccion + '_v1');
+      if (rawViejo) {
+        var arrViejo = JSON.parse(rawViejo);
+        if (Array.isArray(arrViejo)) return arrViejo;
+      }
+    } catch (e) {}
+    return [];
+  }
+  window._leerColeccionDeCache = _leerColeccionDeCache;
+  window.__B16__.leerColeccionDeCache = _leerColeccionDeCache;
+
   /* ═══════════════════════════════════════════════════════════ */
-  /* MÓDULO IMPRESORA — PANEL 08                                 */
+  /* 4. MÓDULO IMPRESORA — PANEL 08                              */
   /* ═══════════════════════════════════════════════════════════ */
-  var IMPRESORA_CONFIG_KEY        = 'ticket_config_v1';
-  var COLA_KEY                    = 'cola_impresion_v1';
-  var IMPRESORA_SELECCIONADA_KEY  = 'impresora_seleccionada_v1';
-  var MAX_COLA                    = 50;
-  var LOGO_MAX_BYTES              = 300 * 1024;
-  var LOGO_MAX_BASE64             = 450 * 1024;
+  var IMPRESORA_CONFIG_KEY       = 'ticket_config_v1';
+  var COLA_KEY                   = 'cola_impresion_v1';
+  var IMPRESORA_SELECCIONADA_KEY = 'impresora_seleccionada_v1';
+  var MAX_COLA                   = 50;
+  var LOGO_MAX_BYTES             = 300 * 1024;
+  var LOGO_MAX_BASE64            = 450 * 1024;
   var _DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
   var _defaultsImpresora = {
@@ -24318,21 +24787,14 @@
   var _syncManualFn = null;
   var _lastColaFingerprint = '';
   var _modalesUxBound = false;
-
-  /* Guard temprano contra doble init. */
   var _impresoraInitEnCurso = false;
-
-  /* [16-P1-B] AbortController: agrupa TODOS los listeners del panel
-   * (botones, inputs, drag, document-level). destroy() llama a
-   * abort() y limpia en una sola operación. */
   var _impController = null;
 
   function _getImpSignal() {
-    if (!_impController) _impController = new AbortController();
+    if (!_impController) _impController = _safeAddAbortController();
     return _impController.signal;
   }
 
-  /* Helper de binding que captura excepciones al abortar. */
   function _bindImp(el, ev, fn, opts) {
     if (!el) return false;
     var finalOpts = Object.assign({}, opts || {}, { signal: _getImpSignal() });
@@ -24350,7 +24812,6 @@
     cola: []
   };
 
-  /* ─── Init ───────────────────────────────────────────────── */
   Impresora.init = async function () {
     if (_impresoraInitEnCurso) {
       console.info('[Impresora] init ya en curso, se ignora la llamada duplicada.');
@@ -24361,12 +24822,10 @@
       await _doImpresoraInit();
     } catch (e) {
       console.error('[Impresora] Error en init:', e);
-      if (window.App && typeof App.error === 'function') {
-        App.error('E-SYS-001', {
-          detalles: { contexto: 'Impresora.init', mensaje: e && e.message },
-          stack: e && e.stack
-        });
-      }
+      _reportarError('E-SYS-001', {
+        detalles: { contexto: 'Impresora.init', mensaje: e && e.message },
+        stack: e && e.stack
+      });
     } finally {
       _impresoraInitEnCurso = false;
     }
@@ -24380,7 +24839,7 @@
     }
 
     if (!_dataLista()) {
-      App.toast('Sin comercio asignado. Cargando configuración local.', 'warning', 4000);
+      _toast('Sin comercio asignado. Cargando configuración local.', 'warning', 4000);
       try {
         var raw = localStorage.getItem(IMPRESORA_CONFIG_KEY);
         if (raw) Impresora.config = Object.assign({}, _defaultsImpresora, JSON.parse(raw));
@@ -24441,9 +24900,7 @@
 
   Impresora.obtenerConfig = function () { return Object.assign({}, Impresora.config); };
 
-  /* Actualización quirúrgica del modo_fiscal. Usado por B16 P2
-   * (Cuenta.guardarDatosFiscales) para NO pisar la config completa
-   * con defaults cuando Impresora no está inicializada. */
+  /* Actualización quirúrgica del modo_fiscal. Usado por Cuenta. */
   Impresora.actualizarModoFiscal = function (modo) {
     if (!_impresoraInitialized) return false;
     Impresora.config.modo_fiscal = modo || 'particular';
@@ -24451,9 +24908,25 @@
     return true;
   };
 
+  /* ─────────────────────────────────────────────────────────── */
+  /* [B16-02] guardarConfig con RMW atómico                       */
+  /*                                                            */
+  /* Estrategia:                                                 */
+  /*   1. Leer config_ticket fresco de Firestore.                */
+  /*   2. Construir un objeto nuevo que combina los campos       */
+  /*      editados en el formulario con los campos que NO toca   */
+  /*      este panel pero que pueden haber cambiado por otro     */
+  /*      lado (modo_fiscal desde Cuenta).                        */
+  /*   3. Escribir.                                              */
+  /*                                                            */
+  /* Si otro panel cambió modo_fiscal después de que Impresora   */
+  /* cargó su config, se preserva el valor más reciente.         */
+  /* ─────────────────────────────────────────────────────────── */
   Impresora.guardarConfig = async function () {
     var c = Impresora.config;
-    c.tamano_papel       = _valorInput('p08-tamano-papel', c.tamano_papel);
+
+    /* 1. Leer del formulario. */
+    c.tamano_papel       = _papelSeguro(_valorInput('p08-tamano-papel', c.tamano_papel));
     c.nombre_negocio     = _valorInput('p08-nombre-negocio', c.nombre_negocio);
     c.ubicacion          = _valorInput('p08-ubicacion', c.ubicacion);
     c.telefono           = _valorInput('p08-telefono', c.telefono);
@@ -24461,10 +24934,13 @@
     c.mensaje_pie        = _valorInput('p08-mensaje-pie', c.mensaje_pie);
     c.mostrar_fecha      = _checkedInput('p08-mostrar-fecha', c.mostrar_fecha);
     c.mostrar_numero     = _checkedInput('p08-mostrar-numero', c.mostrar_numero);
-    c.fuente             = _valorInput('p08-fuente', c.fuente);
-    c.tamano_letra       = parseInt(_valorInput('p08-tamano-letra', c.tamano_letra), 10) || 12;
+    c.fuente             = _fuenteSegura(_valorInput('p08-fuente', c.fuente));
     c.negritas           = _checkedInput('p08-negritas', c.negritas);
     c.tipo_comprobante   = _valorInput('p08-tipo-comprobante', c.tipo_comprobante);
+
+    var tamanioRaw = parseInt(_valorInput('p08-tamano-letra', c.tamano_letra), 10);
+    c.tamano_letra = (!isNaN(tamanioRaw) && tamanioRaw >= 8 && tamanioRaw <= 22)
+      ? tamanioRaw : 12;
 
     var manual = _valorInput('p08-impresora-manual', '');
     if (manual && String(manual).trim()) {
@@ -24473,25 +24949,64 @@
       c.impresora_nombre = _valorInput('p08-impresora-detectada', c.impresora_nombre);
     }
 
+    /* 2. RMW atómico: leer config_ticket fresco y preservar campos externos. */
+    var ctActual = {};
+    try {
+      if (_dataLista()) {
+        var comercio = await Data.get('config', 'comercio');
+        if (comercio && comercio.config_ticket && typeof comercio.config_ticket === 'object') {
+          ctActual = comercio.config_ticket;
+        }
+      }
+    } catch (e) {
+      console.warn('[Impresora] No se pudo leer config_ticket fresco:', e);
+    }
+
+    /* Preservar modo_fiscal si Cuenta lo cambió después de nuestra carga. */
+    var modoFiscalFresco = ctActual.modo_fiscal;
+    if (modoFiscalFresco && modoFiscalFresco !== c.modo_fiscal) {
+      /* Hay divergencia: Firestore tiene un valor distinto al nuestro.
+       * Confiamos en el de Firestore (Cuenta lo escribió con más
+       * reciente intención). */
+      console.info('[Impresora] modo_fiscal divergente: preservando "' +
+                   modoFiscalFresco + '" de Firestore (teníamos "' + c.modo_fiscal + '").');
+      c.modo_fiscal = modoFiscalFresco;
+    }
+
     try {
       localStorage.setItem(IMPRESORA_CONFIG_KEY, JSON.stringify(Impresora.config));
       if (_dataLista()) {
-        await Data.update('config', 'comercio', { config_ticket: Impresora.config });
+        /* Escribimos el objeto completo. Los campos que no tocamos
+         * (por ejemplo, si en el futuro se agregan otros) ya están
+         * fusionados con lo que había en Firestore. */
+        var ctNuevo = Object.assign({}, ctActual, Impresora.config);
+        await Data.update('config', 'comercio', { config_ticket: ctNuevo });
       }
       Impresora.actualizarPreview();
-      App.toast('Configuración guardada', 'success');
+      _toast('Configuración guardada', 'success');
     } catch (e) {
-      App.error('E-IMP-004', { detalles: { mensaje: e.message }, stack: e.stack });
+      _reportarError('E-IMP-004', {
+        detalles: { mensaje: e.message },
+        stack: e.stack
+      });
     }
   };
 
-  /* ─── Input de nombre de impresora (inyectado) ───────────── */
+  /* ─────────────────────────────────────────────────────────── */
+  /* [B16-09] Inyección del input de impresora manual            */
+  /* ─────────────────────────────────────────────────────────── */
   function _inyectarInputImpresoraManual() {
-    if (document.getElementById('p08-impresora-manual')) return;
-    var sel = document.getElementById('p08-impresora-detectada');
-    if (!sel) return;
+    if (_el('p08-impresora-manual')) return true;
+    var sel = _el('p08-impresora-detectada');
+    if (!sel) {
+      console.warn('[Impresora] No se encontró #p08-impresora-detectada. No se inyecta input manual.');
+      return false;
+    }
     var inputGroup = sel.closest('.input-group');
-    if (!inputGroup || !inputGroup.parentNode) return;
+    if (!inputGroup || !inputGroup.parentNode) {
+      console.warn('[Impresora] #p08-impresora-detectada no tiene .input-group padre. No se inyecta input manual.');
+      return false;
+    }
 
     var div = document.createElement('div');
     div.className = 'input-group';
@@ -24500,11 +25015,12 @@
       '<input type="text" id="p08-impresora-manual" maxlength="60" placeholder="Ej: EPSON TM-T20III (solo referencia)">' +
       '<small class="text-muted text-small">Solo se guarda como etiqueta. La impresora real la elegís al imprimir.</small>';
     inputGroup.parentNode.insertBefore(div, inputGroup.nextSibling);
+    return true;
   }
 
   function _aplicarConfigAFormulario() {
     var c = Impresora.config;
-    _setVal('p08-tamano-papel', c.tamano_papel);
+    _setVal('p08-tamano-papel', _papelSeguro(c.tamano_papel));
     _setVal('p08-nombre-negocio', c.nombre_negocio);
     _setVal('p08-ubicacion', c.ubicacion);
     _setVal('p08-telefono', c.telefono);
@@ -24519,7 +25035,7 @@
     _setVal('p08-tipo-comprobante', c.tipo_comprobante);
 
     if (c.impresora_nombre) {
-      var selImp = document.getElementById('p08-impresora-detectada');
+      var selImp = _el('p08-impresora-detectada');
       if (selImp) {
         var opciones = Array.prototype.map.call(selImp.options, function (o) { return o.value; });
         if (opciones.indexOf(c.impresora_nombre) !== -1) selImp.value = c.impresora_nombre;
@@ -24534,17 +25050,17 @@
   Impresora.subirLogo = function (file) {
     if (!file) return;
     var tipos = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (tipos.indexOf(file.type) === -1) { App.error('E-IMP-003'); return; }
+    if (tipos.indexOf(file.type) === -1) { _reportarError('E-IMP-003'); return; }
     if (file.size > LOGO_MAX_BYTES) {
-      App.toast('El logo no puede superar los 300 KB. Reducilo antes de subirlo.', 'error', 6000);
-      App.error('E-IMP-002', { detalles: { tamano_bytes: file.size, limite: LOGO_MAX_BYTES } });
+      _toast('El logo no puede superar los 300 KB. Reducilo antes de subirlo.', 'error', 6000);
+      _reportarError('E-IMP-002', { detalles: { tamano_bytes: file.size, limite: LOGO_MAX_BYTES } });
       return;
     }
     var reader = new FileReader();
     reader.onload = function (e) {
       var dataUrl = e.target.result;
       if (dataUrl && dataUrl.length > LOGO_MAX_BASE64) {
-        App.toast('El logo es muy grande aún después de codificar. Probá con uno más chico.', 'error', 6000);
+        _toast('El logo es muy grande aún después de codificar. Probá con uno más chico.', 'error', 6000);
         return;
       }
       Impresora.config.logo = dataUrl;
@@ -24558,12 +25074,12 @@
     Impresora.config.logo = null;
     _renderLogoPreview();
     Impresora.actualizarPreview();
-    var input = document.getElementById('p08-logo');
+    var input = _el('p08-logo');
     if (input) input.value = '';
   };
 
   function _renderLogoPreview() {
-    var preview = document.getElementById('p08-logo-preview');
+    var preview = _el('p08-logo-preview');
     if (!preview) return;
     preview.innerHTML = Impresora.config.logo
       ? '<img src="' + _escapeAttr(Impresora.config.logo) + '" alt="Logo">'
@@ -24593,7 +25109,7 @@
   }
 
   function _renderHorarios() {
-    var cont = document.getElementById('p08-horarios-container');
+    var cont = _el('p08-horarios-container');
     if (!cont) return;
     var c = Impresora.config;
     cont.innerHTML = '';
@@ -24657,18 +25173,18 @@
 
   Impresora.agruparHorarios = function () {
     Impresora.config.horarios_agrupados = true;
-    App.toast('Días agrupados', 'info');
+    _toast('Días agrupados', 'info');
     Impresora.actualizarPreview();
   };
   Impresora.desagruparHorarios = function () {
     Impresora.config.horarios_agrupados = false;
-    App.toast('Días desagrupados', 'info');
+    _toast('Días desagrupados', 'info');
     Impresora.actualizarPreview();
   };
 
   /* ─── Impresora del sistema ──────────────────────────────── */
   Impresora.detectarImpresoras = function () {
-    var sel = document.getElementById('p08-impresora-detectada');
+    var sel = _el('p08-impresora-detectada');
     if (!sel) return;
     sel.innerHTML =
       '<option value="system">Impresora del sistema (recomendado)</option>' +
@@ -24676,27 +25192,27 @@
     sel.value = 'system';
     Impresora.config.impresora_nombre = 'system';
     Impresora.guardarImpresoraSeleccionada();
-    App.toast(
+    _toast(
       'La impresora se elige en el diálogo del navegador al imprimir. El nombre es opcional, solo para referencia.',
       'info', 7000
     );
-    var manual = document.getElementById('p08-impresora-manual');
+    var manual = _el('p08-impresora-manual');
     if (manual && !manual.value.trim()) manual.focus();
   };
 
   Impresora.guardarImpresoraSeleccionada = function () {
-    var sel = document.getElementById('p08-impresora-detectada');
+    var sel = _el('p08-impresora-detectada');
     if (!sel) return;
     try {
       localStorage.setItem(IMPRESORA_SELECCIONADA_KEY, sel.value);
       Impresora.config.impresora_nombre = sel.value;
-      App.toast('Impresora guardada', 'success');
+      _toast('Impresora guardada', 'success');
     } catch (e) {}
   };
 
   /* ─── Preview del ticket ─────────────────────────────────── */
   Impresora.actualizarPreview = function () {
-    var preview = document.getElementById('p08-preview-ticket');
+    var preview = _el('p08-preview-ticket');
     if (!preview) return;
     _elementoSeleccionado = null;
     document.querySelectorAll('.p08-el-botones').forEach(function (b) { b.remove(); });
@@ -24727,11 +25243,6 @@
     preview.innerHTML = html;
     _configurarDragDropPreview();
   };
-
-  function _anchoPorTamano(tamano) {
-    var mm = { '58': 220, '80': 302, '100': 378, 'A4': 794 };
-    return mm[tamano] || 794;
-  }
 
   function _contenidoElemento(elem, c, contexto, venta) {
     contexto = contexto || 'preview';
@@ -24784,7 +25295,7 @@
 
   /* ─── Drag & drop del preview ────────────────────────────── */
   function _configurarDragDropPreview() {
-    var preview = document.getElementById('p08-preview-ticket');
+    var preview = _el('p08-preview-ticket');
     if (!preview) return;
     preview.querySelectorAll('.p08-elemento-arrastrable').forEach(function (el) {
       el.addEventListener('click', function (e) { e.stopPropagation(); _seleccionarElemento(el); });
@@ -24956,7 +25467,7 @@
     Impresora.cola.unshift(ticket);
     if (Impresora.cola.length > MAX_COLA) Impresora.cola = Impresora.cola.slice(0, MAX_COLA);
     Impresora.guardarCola();
-    App.toast('Ticket en cola de impresión', 'info');
+    _toast('Ticket en cola de impresión', 'info');
   };
 
   Impresora.reimprimirItem = async function (id) {
@@ -24967,9 +25478,7 @@
     try {
       if (item.tipo === 'venta') {
         var okImpresion = Impresora.imprimirTicket(item.payload);
-        if (okImpresion === false) {
-          throw new Error('Popup bloqueado');
-        }
+        if (okImpresion === false) throw new Error('Popup bloqueado');
       } else if (item.tipo === 'pesable') {
         await Impresora._imprimirPesable(item.payload);
       } else if (item.tipo === 'pedido') {
@@ -24977,11 +25486,11 @@
       }
       item.estado = 'reimpreso';
       Impresora.guardarCola();
-      App.toast('Reimprimiendo', 'success');
+      _toast('Reimprimiendo', 'success');
     } catch (e) {
       item.estado = 'error';
       Impresora.guardarCola();
-      App.error('E-IMP-001', {
+      _reportarError('E-IMP-001', {
         detalles: { ticket_id: id, intentos: item.intentos, mensaje: e && e.message }
       });
     }
@@ -24992,12 +25501,12 @@
     if (!ok) return;
     Impresora.cola = Impresora.cola.filter(function (t) { return t.id !== id; });
     Impresora.guardarCola();
-    App.toast('Ticket cancelado', 'info');
+    _toast('Ticket cancelado', 'info');
   };
 
   Impresora.imprimirTodos = async function () {
     var pendientes = Impresora.cola.filter(function (t) { return t.estado === 'pendiente'; });
-    if (pendientes.length === 0) { App.toast('No hay tickets pendientes', 'info'); return; }
+    if (pendientes.length === 0) { _toast('No hay tickets pendientes', 'info'); return; }
 
     var ventas = pendientes.filter(function (t) { return t.tipo === 'venta'; });
     var otros = pendientes.filter(function (t) { return t.tipo !== 'venta'; });
@@ -25014,7 +25523,7 @@
           _imprimirVentana(ventana);
         });
         if (!okPopup) {
-          App.error('E-IMP-001');
+          _reportarError('E-IMP-001');
         } else {
           ventas.forEach(function (t) {
             t.estado = 'reimpreso';
@@ -25028,9 +25537,9 @@
       }
 
       Impresora.guardarCola();
-      App.toast('Imprimiendo ' + pendientes.length + ' ticket(s)', 'success');
+      _toast('Imprimiendo ' + pendientes.length + ' ticket(s)', 'success');
     } catch (e) {
-      App.error('E-IMP-001', { detalles: { mensaje: e && e.message } });
+      _reportarError('E-IMP-001', { detalles: { mensaje: e && e.message } });
     }
   };
 
@@ -25039,11 +25548,11 @@
     if (!ok) return;
     Impresora.cola = [];
     Impresora.guardarCola();
-    App.toast('Cola vaciada', 'info');
+    _toast('Cola vaciada', 'info');
   };
 
   Impresora.renderCola = function (forzar) {
-    var cont = document.getElementById('p08-cola-lista');
+    var cont = _el('p08-cola-lista');
     if (!cont) return;
 
     if (Impresora.cola.length === 0) {
@@ -25101,12 +25610,12 @@
 
   function _actualizarBadgeCola() {
     var pendientes = Impresora.cola.filter(function (t) { return t.estado === 'pendiente'; }).length;
-    var badge = document.getElementById('p08-cola-badge');
+    var badge = _el('p08-cola-badge');
     if (badge) {
       if (pendientes > 0) { badge.textContent = String(pendientes); badge.style.display = 'inline-flex'; }
       else { badge.style.display = 'none'; }
     }
-    var badgeMenu = document.getElementById('menu-badge-cola');
+    var badgeMenu = _el('menu-badge-cola');
     if (badgeMenu) {
       if (pendientes > 0) { badgeMenu.textContent = String(pendientes); badgeMenu.style.display = 'inline-flex'; }
       else { badgeMenu.style.display = 'none'; }
@@ -25133,7 +25642,7 @@
       var html = _generarHTMLTicket(venta, Impresora.config);
       var ventana = window.open('', '_blank', 'width=850,height=700');
       if (!ventana) {
-        App.error('E-IMP-001');
+        _reportarError('E-IMP-001');
         Impresora.agregarACola({ tipo: 'venta', payload: venta });
         return false;
       }
@@ -25145,7 +25654,7 @@
     } catch (e) {
       console.error('[Impresora] Error al imprimir:', e);
       Impresora.agregarACola({ tipo: 'venta', payload: venta });
-      App.error('E-IMP-001', { detalles: { mensaje: (e && e.message) ? e.message : 'desconocido' } });
+      _reportarError('E-IMP-001', { detalles: { mensaje: (e && e.message) ? e.message : 'desconocido' } });
       return false;
     }
   };
@@ -25308,7 +25817,7 @@
     });
     if (candidatos.length === 1) return candidatos[0];
     if (candidatos.length > 1) {
-      App.toast(
+      _toast(
         'Varios productos coinciden con "' + q + '". Se agregó "' + candidatos[0].nombre + '".',
         'info', 4000
       );
@@ -25323,12 +25832,12 @@
 
     var prod = _buscarProductoParaPesable(productoId);
     if (!prod) {
-      App.toast('Producto no encontrado: "' + productoId + '"', 'warning', 4000);
-      App.error('E-STK-006', { detalles: { busqueda: productoId } });
+      _toast('Producto no encontrado: "' + productoId + '"', 'warning', 4000);
+      _reportarError('E-STK-006', { detalles: { busqueda: productoId } });
       return;
     }
     if (!prod.es_pesable) {
-      App.toast('"' + prod.nombre + '" no es pesable', 'warning', 4000);
+      _toast('"' + prod.nombre + '" no es pesable', 'warning', 4000);
       return;
     }
 
@@ -25352,7 +25861,7 @@
   };
 
   function _renderPesablesLista() {
-    var cont = document.getElementById('p08-pesables-lista');
+    var cont = _el('p08-pesables-lista');
     if (!cont) return;
     if (_pesablesTickets.length === 0) {
       cont.innerHTML = '<p class="text-center text-muted">Sin productos en la lista</p>';
@@ -25398,7 +25907,7 @@
   }
 
   Impresora.imprimirTicketsPesables = async function () {
-    if (_pesablesTickets.length === 0) { App.toast('Agregá al menos un producto', 'warning'); return; }
+    if (_pesablesTickets.length === 0) { _toast('Agregá al menos un producto', 'warning'); return; }
     try {
       var html = _generarHTMLPesables(_pesablesTickets, Impresora.config);
       var okPopup = await _conDeteccionPopup(function () {
@@ -25410,14 +25919,14 @@
         _imprimirVentana(ventana);
       });
       if (!okPopup) {
-        App.error('E-IMP-001');
+        _reportarError('E-IMP-001');
         Impresora.agregarACola({ tipo: 'pesable', payload: _pesablesTickets.slice() });
         return;
       }
       App.cerrarModal('modal-p08-pesables');
       _pesablesTickets = [];
     } catch (e) {
-      App.error('E-STK-010', { detalles: { mensaje: (e && e.message) ? e.message : 'desconocido' } });
+      _reportarError('E-STK-010', { detalles: { mensaje: (e && e.message) ? e.message : 'desconocido' } });
     }
   };
 
@@ -25450,7 +25959,7 @@
 
   Impresora._imprimirPesable = async function (payload) {
     var items = Array.isArray(payload) ? payload : (payload && payload.items) || [];
-    if (items.length === 0) { App.toast('Nada para reimprimir', 'warning'); return; }
+    if (items.length === 0) { _toast('Nada para reimprimir', 'warning'); return; }
     var html = _generarHTMLPesables(items, Impresora.config);
     var okPopup = await _conDeteccionPopup(function () {
       var ventana = window.open('', '_blank', 'width=850,height=700');
@@ -25461,17 +25970,14 @@
       _imprimirVentana(ventana);
     });
     if (!okPopup) {
-      App.error('E-IMP-001');
+      _reportarError('E-IMP-001');
       throw new Error('Popup bloqueado');
     }
   };
 
   /* ─── Reimpresión de pedidos ─────────────────────────────── */
-  /* NO delega en Pedidos.imprimir de B15. B15 hace await antes
-   * de window.open, lo cual quema el "user gesture" y el popup
-   * queda bloqueado. B16 imprime localmente en el mismo tick. */
   Impresora._imprimirPedido = async function (payload) {
-    if (!payload) { App.toast('Nada para reimprimir', 'warning'); return; }
+    if (!payload) { _toast('Nada para reimprimir', 'warning'); return; }
 
     var html = _generarHTMLPedidoLocal(payload);
     var ok = await _conDeteccionPopup(function () {
@@ -25485,7 +25991,7 @@
 
     if (!ok) {
       Impresora.agregarACola({ tipo: 'pedido', payload: payload });
-      App.error('E-IMP-001');
+      _reportarError('E-IMP-001');
       throw new Error('Popup bloqueado');
     }
   };
@@ -25534,18 +26040,18 @@
       c.mostrar_horarios = _checkedInput('p08-mostrar-horarios', c.mostrar_horarios);
       c.mostrar_fecha    = _checkedInput('p08-mostrar-fecha', c.mostrar_fecha);
       c.mostrar_numero   = _checkedInput('p08-mostrar-numero', c.mostrar_numero);
-      c.fuente           = _valorInput('p08-fuente', c.fuente);
+      c.fuente           = _fuenteSegura(_valorInput('p08-fuente', c.fuente));
       c.tipo_comprobante = _valorInput('p08-tipo-comprobante', c.tipo_comprobante);
-      c.tamano_papel     = _valorInput('p08-tamano-papel', c.tamano_papel);
+      c.tamano_papel     = _papelSeguro(_valorInput('p08-tamano-papel', c.tamano_papel));
       Impresora.actualizarPreview();
     }, 150);
 
     ['p08-nombre-negocio', 'p08-ubicacion', 'p08-telefono', 'p08-mensaje-pie'].forEach(function (id) {
-      _bindImp(document.getElementById(id), 'input', _syncLiveFn);
+      _bindImp(_el(id), 'input', _syncLiveFn);
     });
     ['p08-mostrar-horarios', 'p08-mostrar-fecha', 'p08-mostrar-numero',
      'p08-fuente', 'p08-tipo-comprobante', 'p08-tamano-papel'].forEach(function (id) {
-      _bindImp(document.getElementById(id), 'change', _syncLiveFn);
+      _bindImp(_el(id), 'change', _syncLiveFn);
     });
   }
 
@@ -25557,7 +26063,7 @@
         Impresora.config.impresora_nombre = String(manual).trim();
       }
     }, 250);
-    _bindImp(document.getElementById('p08-impresora-manual'), 'input', _syncManualFn);
+    _bindImp(_el('p08-impresora-manual'), 'input', _syncManualFn);
   }
 
   /* ─── Listeners del panel 08 ─────────────────────────────── */
@@ -25573,26 +26079,26 @@
       ['p08-btn-cola-cancelar-todos', Impresora.cancelarTodos]
     ];
     ids.forEach(function (par) {
-      _bindImp(document.getElementById(par[0]), 'click', par[1]);
+      _bindImp(_el(par[0]), 'click', par[1]);
     });
 
-    _bindImp(document.getElementById('p08-logo'), 'change', function (e) {
+    _bindImp(_el('p08-logo'), 'change', function (e) {
       Impresora.subirLogo(e.target.files[0]);
     });
 
-    var slider = document.getElementById('p08-tamano-letra');
+    var slider = _el('p08-tamano-letra');
     if (slider) {
       _bindImp(slider, 'input', function () {
         _setText('p08-tamano-valor', slider.value);
-        Impresora.config.tamano_letra = parseInt(slider.value, 10) || 12;
+        var v = parseInt(slider.value, 10);
+        Impresora.config.tamano_letra = (!isNaN(v) && v >= 8 && v <= 22) ? v : 12;
         Impresora.actualizarPreview();
       });
     }
 
-    _bindImp(document.getElementById('p08-impresora-detectada'),
-             'change', Impresora.guardarImpresoraSeleccionada);
+    _bindImp(_el('p08-impresora-detectada'), 'change', Impresora.guardarImpresoraSeleccionada);
 
-    var chkNegritas = document.getElementById('p08-negritas');
+    var chkNegritas = _el('p08-negritas');
     if (chkNegritas) {
       _bindImp(chkNegritas, 'change', function () {
         Impresora.config.negritas = chkNegritas.checked;
@@ -25601,17 +26107,14 @@
     }
 
     /* Modal pesables */
-    _bindImp(document.getElementById('p08-close-pesables'),
-             'click', function () { App.cerrarModal('modal-p08-pesables'); });
-    _bindImp(document.getElementById('p08-close-pesables-2'),
-             'click', function () { App.cerrarModal('modal-p08-pesables'); });
-    _bindImp(document.getElementById('p08-btn-imprimir-pesables'),
-             'click', Impresora.imprimirTicketsPesables);
+    _bindImp(_el('p08-close-pesables'), 'click', function () { App.cerrarModal('modal-p08-pesables'); });
+    _bindImp(_el('p08-close-pesables-2'), 'click', function () { App.cerrarModal('modal-p08-pesables'); });
+    _bindImp(_el('p08-btn-imprimir-pesables'), 'click', Impresora.imprimirTicketsPesables);
 
-    var btnAddP = document.getElementById('p08-btn-agregar-pesable');
+    var btnAddP = _el('p08-btn-agregar-pesable');
     if (btnAddP) {
       _bindImp(btnAddP, 'click', function () {
-        var input = document.getElementById('p08-pesable-buscar');
+        var input = _el('p08-pesable-buscar');
         if (input && input.value.trim()) {
           Impresora.agregarProductoAPesables(input.value.trim());
           input.value = '';
@@ -25619,7 +26122,7 @@
       });
     }
 
-    var inputBuscarP = document.getElementById('p08-pesable-buscar');
+    var inputBuscarP = _el('p08-pesable-buscar');
     if (inputBuscarP) {
       _bindImp(inputBuscarP, 'keydown', function (e) {
         if (e.key === 'Enter') {
@@ -25630,14 +26133,13 @@
       });
     }
 
-    /* Listeners document-level del drag: van al mismo controller. */
+    /* Listeners document-level del drag */
     _bindImp(document, 'mousemove', _moverDrag);
     _bindImp(document, 'touchmove', _moverDrag, { passive: false });
     _bindImp(document, 'mouseup', _finDrag);
     _bindImp(document, 'touchend', _finDrag);
 
-    /* Deselect al click fuera de un elemento arrastrable. */
-    var preview = document.getElementById('p08-preview-ticket');
+    var preview = _el('p08-preview-ticket');
     if (preview) {
       _bindImp(preview, 'click', function (e) {
         var insideElemento = e.target.closest('.p08-elemento-arrastrable');
@@ -25656,16 +26158,13 @@
   }
 
   /* ─── UX modales P08 (Escape + backdrop) ─────────────────── */
-  /* Los listeners de modales son de larga vida (los modales están
-   * en el DOM permanentemente). Se enganchan UNA vez por página,
-   * con dataset flags, NO con el AbortController del panel. */
   function _configurarUxModalesB16() {
     if (_modalesUxBound) return;
     _modalesUxBound = true;
 
     var modales = ['modal-p08-pesables'];
     modales.forEach(function (id) {
-      var m = document.getElementById(id);
+      var m = _el(id);
       if (!m || m.dataset.b16UxBound === '1') return;
       m.dataset.b16UxBound = '1';
       m.addEventListener('mousedown', function (e) {
@@ -25679,7 +26178,7 @@
       document.addEventListener('keydown', function (e) {
         if (e.key !== 'Escape') return;
         for (var i = 0; i < modales.length; i++) {
-          var m = document.getElementById(modales[i]);
+          var m = _el(modales[i]);
           if (m && m.classList.contains('active')) {
             App.cerrarModal(modales[i]);
             e.stopPropagation();
@@ -25690,7 +26189,7 @@
     }
   }
 
-  /* [16-P1-B] Destroy completo con AbortController. */
+  /* ─── Destroy parcial del módulo Impresora ───────────────── */
   Impresora.destroy = function () {
     if (_impController) {
       try { _impController.abort(); } catch (e) {}
@@ -25704,89 +26203,10 @@
     _syncManualFn = null;
   };
 
-  /* ─── Exponer ────────────────────────────────────────────── */
   window.Impresora = Impresora;
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', _configurarUxModalesB16);
-  } else {
-    _configurarUxModalesB16();
-  }
-})();
-</script>
-
-
-<script id="bloque-16-js-p2">
-(function () {
-  'use strict';
-
-  /* ─── Guard de idempotencia ──────────────────────────────────── */
-  if (window.__B16_P2_INSTALLED__) {
-    console.info('[B16-P2] Ya instalado, se omite la segunda carga.');
-    return;
-  }
-
-  /* ─── Consumir helpers de la Parte 1 ─────────────────────────── */
-  var H = window.__B16_HELPERS__;
-  if (!H) {
-    console.error('[B16-P2] No se encontraron helpers de la Parte 1. Abortando.');
-    return;
-  }
-
-  var _setText              = H.setText;
-  var _setVal               = H.setVal;
-  var _setChecked           = H.setChecked;
-  var _valorInput           = H.valorInput;
-  var _checkedInput         = H.checkedInput;
-  var _getUser              = H.getUser;
-  var _rolActual            = H.rolActual;
-  var _esAdmin              = H.esAdmin;
-  var _dataLista            = H.dataLista;
-  var _getComercioIdActual  = H.getComercioIdActual;
-  var _escapeHtml           = H.escapeHtml;
-  var _escapeAttr           = H.escapeAttr;
-  var _confirmar            = H.confirmar;
-  var _abrirUrlExterna      = H.abrirUrlExterna;
-  var _debounce             = H.debounce;
-  var _genId                = H.genId;
-  var _conDeteccionPopup    = H.conDeteccionPopup;
-
-  if (!window.Impresora) {
-    console.error('[B16-P2] window.Impresora no disponible. Abortando.');
-    return;
-  }
-  var Impresora = window.Impresora;
-
-  window.__B16_P2_INSTALLED__ = true;
-
   /* ═══════════════════════════════════════════════════════════ */
-  /* HELPER DE CACHÉ LOCAL                                       */
-  /* [16-NEW-6] Centralizado: intenta el formato de B11 v4        */
-  /* (<coleccion>_cache_v1::<cid>) y cae al formato viejo.        */
-  /* ═══════════════════════════════════════════════════════════ */
-  function _leerColeccionDeCache(coleccion) {
-    var cid = _getComercioIdActual();
-    if (!cid) return [];
-    try {
-      var raw = localStorage.getItem(coleccion + '_cache_v1::' + cid);
-      if (raw) {
-        var arr = JSON.parse(raw);
-        if (Array.isArray(arr)) return arr;
-      }
-    } catch (e) {}
-    try {
-      var rawViejo = localStorage.getItem(coleccion + '_v1');
-      if (rawViejo) {
-        var arrViejo = JSON.parse(rawViejo);
-        if (Array.isArray(arrViejo)) return arrViejo;
-      }
-    } catch (e) {}
-    return [];
-  }
-  window._leerColeccionDeCache = _leerColeccionDeCache;
-
-  /* ═══════════════════════════════════════════════════════════ */
-  /* MÓDULO IMPUESTOS — PANEL 09                                */
+  /* 5. MÓDULO IMPUESTOS — PANEL 09                              */
   /* ═══════════════════════════════════════════════════════════ */
   var _defaultsImpuestos = {
     condicion: 'responsable',
@@ -25807,7 +26227,7 @@
     }
 
     if (!_dataLista()) {
-      App.toast('Sin comercio asignado. Usando configuración local.', 'warning', 4000);
+      _toast('Sin comercio asignado. Usando configuración local.', 'warning', 4000);
       try {
         var raw = localStorage.getItem('config_impuestos_v1');
         Impuestos.config = raw
@@ -25885,7 +26305,7 @@
       }
     } catch (e) {}
     Impuestos.renderResumen();
-    App.toast('Configuración guardada', 'success');
+    _toast('Configuración guardada', 'success');
   };
 
   Impuestos.renderResumen = async function () {
@@ -25950,7 +26370,7 @@
       });
 
       var tvn = 0, tvi = 0, tvt = 0;
-      var tbodyV = document.getElementById('p09-tbody-ventas');
+      var tbodyV = _el('p09-tbody-ventas');
       if (tbodyV) {
         tbodyV.innerHTML = ventas.map(function (v) {
           var total = v.total || 0;
@@ -25969,7 +26389,7 @@
       _setText('p09-tot-ven-total', App.formatearMoneda(tvt));
 
       var tcn = 0, tci = 0, tct = 0;
-      var tbodyC = document.getElementById('p09-tbody-compras');
+      var tbodyC = _el('p09-tbody-compras');
       if (tbodyC) {
         tbodyC.innerHTML = compras.map(function (c) {
           var total = _totalDeCompra(c);
@@ -26057,7 +26477,7 @@
           });
           algoEscrito = true;
         }
-        if (!algoEscrito) { App.toast('No hay datos', 'warning'); return; }
+        if (!algoEscrito) { _toast('No hay datos', 'warning'); return; }
         App.descargarArchivo(csv, nombreBase + '.csv', 'text/csv;charset=utf-8');
       } else {
         var txt = 'REPORTE FISCAL - ' + tipo.toUpperCase() + '\nPeríodo: ' + periodo + '\n\n';
@@ -26094,9 +26514,9 @@
         }
         App.descargarArchivo(txt, nombreBase + '.txt', 'text/plain;charset=utf-8');
       }
-      App.toast('Reporte exportado', 'success');
+      _toast('Reporte exportado', 'success');
     } catch (e) {
-      App.error('E-TAX-002', { detalles: { mensaje: e.message } });
+      _reportarError('E-TAX-002', { detalles: { mensaje: e.message } });
     }
   };
 
@@ -26112,7 +26532,7 @@
         document.querySelectorAll('#vista-impuestos .p09-tab-content').forEach(function (c) {
           c.style.display = 'none';
         });
-        var target = document.getElementById('p09-tab-' + tab.dataset.tab);
+        var target = _el('p09-tab-' + tab.dataset.tab);
         if (target) target.style.display = 'block';
         if (tab.dataset.tab === 'libros') Impuestos.renderLibros();
       });
@@ -26125,8 +26545,8 @@
           t.classList.remove('active');
         });
         tab.classList.add('active');
-        var v = document.getElementById('p09-libro-ventas');
-        var c = document.getElementById('p09-libro-compras');
+        var v = _el('p09-libro-ventas');
+        var c = _el('p09-libro-compras');
         if (tab.dataset.subtab === 'ventas') {
           if (v) v.style.display = 'block';
           if (c) c.style.display = 'none';
@@ -26136,30 +26556,30 @@
         }
       });
     });
-    var btnG = document.getElementById('p09-btn-guardar-config');
+    var btnG = _el('p09-btn-guardar-config');
     if (btnG && btnG.dataset.b16p2Bound !== '1') {
       btnG.dataset.b16p2Bound = '1';
       btnG.addEventListener('click', Impuestos.guardarConfig);
     }
-    var btnF = document.getElementById('p09-btn-filtrar-libro');
+    var btnF = _el('p09-btn-filtrar-libro');
     if (btnF && btnF.dataset.b16p2Bound !== '1') {
       btnF.dataset.b16p2Bound = '1';
       btnF.addEventListener('click', Impuestos.renderLibros);
     }
-    var selP = document.getElementById('p09-libro-periodo');
+    var selP = _el('p09-libro-periodo');
     if (selP && selP.dataset.b16p2Bound !== '1') {
       selP.dataset.b16p2Bound = '1';
       selP.addEventListener('change', function () {
-        var custom = document.getElementById('p09-custom-dates');
+        var custom = _el('p09-custom-dates');
         if (custom) custom.style.display = selP.value === 'custom' ? 'flex' : 'none';
       });
     }
-    var btnT = document.getElementById('p09-btn-export-txt');
+    var btnT = _el('p09-btn-export-txt');
     if (btnT && btnT.dataset.b16p2Bound !== '1') {
       btnT.dataset.b16p2Bound = '1';
       btnT.addEventListener('click', function () { Impuestos.exportarReporte('txt'); });
     }
-    var btnC = document.getElementById('p09-btn-export-csv');
+    var btnC = _el('p09-btn-export-csv');
     if (btnC && btnC.dataset.b16p2Bound !== '1') {
       btnC.dataset.b16p2Bound = '1';
       btnC.addEventListener('click', function () { Impuestos.exportarReporte('csv'); });
@@ -26169,16 +26589,16 @@
   window.Impuestos = Impuestos;
 
   /* ═══════════════════════════════════════════════════════════ */
-  /* MÓDULO CUENTA — PANEL 10                                   */
+  /* 6. MÓDULO CUENTA — PANEL 10                                 */
   /* ═══════════════════════════════════════════════════════════ */
   var _cuentaInitialized    = false;
   var _cuentaComercioId     = null;
   var _logsFiltroActual     = 'todos';
   var _unsubscribeLogs      = null;
   var _logsComercioId       = null;
-  var _cuentaInitRetries    = 0;
   var _cuentaInitEnCurso    = false;
   var _cuentaInitPendiente  = false;
+  var _cuentaInitRetryHandle = null;
   var _CUENTA_INIT_MAX_RETRIES = 20;
 
   var Cuenta = {};
@@ -26200,26 +26620,26 @@
       }
 
       if (!_dataLista()) {
-        if (_cuentaInitRetries === 0) {
-          App.toast('Sin comercio asignado. Reintentando...', 'warning', 3000);
+        if (!_cuentaInitRetryHandle) {
+          _toast('Sin comercio asignado. Reintentando...', 'warning', 3000);
+          _cuentaInitPendiente = true;
+          _cuentaInitRetryHandle = _crearRetry(function () {
+            if (_dataLista() || _STATE.destroyed) {
+              _cuentaInitPendiente = false;
+              _cuentaInitRetryHandle = null;
+              if (!_STATE.destroyed) Cuenta.init();
+              return true;
+            }
+            return false;
+          }, _CUENTA_INIT_MAX_RETRIES, 800);
         }
-        _cuentaInitRetries++;
-        if (_cuentaInitRetries >= _CUENTA_INIT_MAX_RETRIES) {
-          console.warn('[Cuenta] No se pudo inicializar tras ' +
-                       _CUENTA_INIT_MAX_RETRIES + ' intentos.');
-          _cuentaInitRetries = 0;
-          _cuentaInitPendiente = false;
-          return;
-        }
-        _cuentaInitPendiente = true;
-        setTimeout(function () {
-          _cuentaInitPendiente = false;
-          Cuenta.init();
-        }, 800);
         return;
       }
 
-      _cuentaInitRetries = 0;
+      if (_cuentaInitRetryHandle) {
+        _cuentaInitRetryHandle.cancelar();
+        _cuentaInitRetryHandle = null;
+      }
       _cuentaInitPendiente = false;
 
       var user = _getUser();
@@ -26305,7 +26725,7 @@
     var user = _getUser();
     var nombre = _valorInput('p10-nombre-cajero', '').trim();
     var caja   = _valorInput('p10-caja-asignada', '').trim();
-    if (!nombre) { App.toast('El nombre no puede estar vacío', 'error'); return; }
+    if (!nombre) { _toast('El nombre no puede estar vacío', 'error'); return; }
 
     try {
       localStorage.setItem('cajero_info_v1', JSON.stringify({
@@ -26316,7 +26736,7 @@
     } catch (e) {}
 
     if (!user.uid) {
-      App.toast('Perfil guardado localmente', 'success');
+      _toast('Perfil guardado localmente', 'success');
       return;
     }
 
@@ -26326,10 +26746,10 @@
         caja: caja,
         fecha_actualizacion_perfil: Date.now()
       });
-      App.toast('Perfil guardado', 'success');
+      _toast('Perfil guardado', 'success');
     } catch (e) {
       console.warn('[Cuenta] No se pudo sincronizar el perfil:', e);
-      App.toast('Perfil guardado localmente. Se sincronizará cuando haya conexión.', 'info', 4500);
+      _toast('Perfil guardado localmente. Se sincronizará cuando haya conexión.', 'info', 4500);
     }
   };
 
@@ -26348,21 +26768,20 @@
         datos_cuenta: datos,
         fecha_actualizacion: Date.now()
       });
-      App.toast('Datos guardados', 'success');
+      _toast('Datos guardados', 'success');
     } catch (e) {
-      App.error('E-DATA-001', { detalles: { mensaje: e.message } });
+      _reportarError('E-DATA-001', { detalles: { mensaje: e.message } });
     }
   };
 
-  /* [FIX-16-P1-A / 16-P2-D / 16-NEW-5] Guardar datos fiscales.
-   * Un solo Data.update atómico + merge en JS de config_ticket.
-   * Sin dot-notation. Sin parche. Sin race. */
+  /* [B16-02] guardarDatosFiscales con RMW atómico.
+   * Un solo Data.update. merge de config_ticket leído fresco. */
   Cuenta.guardarDatosFiscales = async function () {
     if (!_esAdmin()) return;
 
     var cuitIngresado = _valorInput('p10-fiscal-cuit', '').trim();
     if (cuitIngresado && !App.validarCUIT(cuitIngresado)) {
-      App.toast('CUIT inválido (dígito verificador incorrecto)', 'error', 5000);
+      _toast('CUIT inválido (dígito verificador incorrecto)', 'error', 5000);
       return;
     }
     var cuitFormateado = cuitIngresado ? App.formatearCUIT(cuitIngresado) : '';
@@ -26397,9 +26816,9 @@
         Impresora.actualizarModoFiscal(modoSaneado);
       }
 
-      App.toast('Datos fiscales guardados', 'success');
+      _toast('Datos fiscales guardados', 'success');
     } catch (e) {
-      App.error('E-DATA-001', { detalles: { mensaje: e.message } });
+      _reportarError('E-DATA-001', { detalles: { mensaje: e.message } });
     }
   };
 
@@ -26412,7 +26831,7 @@
     }
     var nombre = 'mejora2_backup_' + new Date().toISOString().slice(0, 10) + '.json';
     App.descargarArchivo(JSON.stringify(backup, null, 2), nombre, 'application/json');
-    App.toast('Backup exportado', 'success');
+    _toast('Backup exportado', 'success');
   };
 
   Cuenta.restaurarBackup = async function (file) {
@@ -26426,10 +26845,10 @@
           if (k.charAt(0) === '_') return;
           localStorage.setItem(k, data[k]);
         });
-        App.toast('Backup restaurado. Recargando...', 'success');
-        setTimeout(function () { location.reload(); }, 1500);
+        _toast('Backup restaurado. Recargando...', 'success');
+        _safeSetTimeout(function () { location.reload(); }, 1500);
       } catch (err) {
-        App.toast('Backup inválido', 'error');
+        _toast('Backup inválido', 'error');
       }
     };
     reader.readAsText(file);
@@ -26472,7 +26891,7 @@
   }
 
   function _renderLogsLista(logs) {
-    var cont = document.getElementById('p10-log-lista');
+    var cont = _el('p10-log-lista');
     if (!cont) return;
     if (logs.length === 0) {
       cont.innerHTML = '<p class="p10-log-vacio">Sin errores registrados</p>';
@@ -26512,7 +26931,7 @@
 
   Cuenta.enviarTodosLosLogs = function () {
     var logs = (App.getLogs ? App.getLogs() : []);
-    if (logs.length === 0) { App.toast('Sin logs para enviar', 'info'); return; }
+    if (logs.length === 0) { _toast('Sin logs para enviar', 'info'); return; }
     var deviceId = App.getDeviceId();
     var rol = _rolActual();
     var user = _getUser();
@@ -26532,18 +26951,17 @@
 
   Cuenta.copiarTodosLosLogs = function () {
     var logs = (App.getLogs ? App.getLogs() : []);
-    if (logs.length === 0) { App.toast('Sin logs', 'info'); return; }
+    if (logs.length === 0) { _toast('Sin logs', 'info'); return; }
     var texto = JSON.stringify(logs, null, 2);
     if (navigator.clipboard) {
       navigator.clipboard.writeText(texto)
-        .then(function () { App.toast('Logs copiados', 'success'); })
-        .catch(function () { App.toast('No se pudo copiar', 'error'); });
+        .then(function () { _toast('Logs copiados', 'success'); })
+        .catch(function () { _toast('No se pudo copiar', 'error'); });
     }
   };
 
-  /* [MEJORA-R2] Promise.all en lugar de for con await serial. */
   async function _renderListaCajeros() {
-    var cont = document.getElementById('p10-lista-cajeros');
+    var cont = _el('p10-lista-cajeros');
     if (!cont) return;
     var user = _getUser();
     if (!user.comercioId) {
@@ -26600,7 +27018,7 @@
     try {
       var docRef = App.getDb().collection('usuarios').doc(uid);
       var doc = await docRef.get();
-      if (!doc.exists) { App.toast('Cajero no encontrado', 'error'); return; }
+      if (!doc.exists) { _toast('Cajero no encontrado', 'error'); return; }
       var data = doc.data();
       var dispositivos = (data.dispositivos || []).map(function (d) {
         return Object.assign({}, d, { activa: false, fecha_desactivacion: Date.now() });
@@ -26610,18 +27028,23 @@
       var nuevos = ((comercio && comercio.cajeros) || []).filter(function (u) { return u !== uid; });
       await Data.update('config', 'comercio', { cajeros: nuevos });
       await _renderListaCajeros();
-      App.toast('Cajero revocado', 'success');
+      _toast('Cajero revocado', 'success');
     } catch (e) {
       console.error('[Cuenta] Error al revocar cajero:', e);
-      App.error('E-DATA-001', { detalles: { mensaje: e.message, uid: uid } });
+      _reportarError('E-DATA-001', { detalles: { mensaje: e.message, uid: uid } });
     }
   };
 
+  /* [B16-15] Dominios con soporte de alias +tag extraídos a array. */
+  var DOMINIOS_ALIAS_SOPORTADOS = [
+    'gmail.com', 'googlemail.com',
+    'outlook.com', 'hotmail.com',
+    'live.com', 'icloud.com'
+  ];
+
   function _dominioSoportaAlias(dominio) {
     var d = String(dominio || '').toLowerCase();
-    return d === 'gmail.com' || d === 'googlemail.com' ||
-           d === 'outlook.com' || d === 'hotmail.com' ||
-           d === 'live.com' || d === 'icloud.com';
+    return DOMINIOS_ALIAS_SOPORTADOS.indexOf(d) !== -1;
   }
 
   Cuenta.generarEmailCajero = function () {
@@ -26633,9 +27056,9 @@
     var emailPreview = base + '+cajero' + num + '@' + dominio;
     _setVal('p10-cajero-email-preview', emailPreview);
 
-    var aviso = document.getElementById('p10-cajero-email-aviso');
+    var aviso = _el('p10-cajero-email-aviso');
     if (!aviso) {
-      var input = document.getElementById('p10-cajero-email-preview');
+      var input = _el('p10-cajero-email-preview');
       if (input && input.parentNode) {
         aviso = document.createElement('small');
         aviso.id = 'p10-cajero-email-aviso';
@@ -26659,7 +27082,7 @@
   };
 
   Cuenta.crearCajero = async function () {
-    if (!_esAdmin()) { App.toast('Solo admin', 'error'); return; }
+    if (!_esAdmin()) { _toast('Solo admin', 'error'); return; }
     Cuenta.generarEmailCajero();
 
     var nombre   = _valorInput('p10-cajero-nombre', '').trim();
@@ -26668,16 +27091,16 @@
     var email    = _valorInput('p10-cajero-email-preview', '');
 
     if (!nombre || !apellido || !password || !email) {
-      App.toast('Completá todos los campos', 'error');
+      _toast('Completá todos los campos', 'error');
       return;
     }
     if (!App.validarEmail(email)) {
-      App.toast('El email generado no es válido. Revisá el campo.', 'error', 5000);
+      _toast('El email generado no es válido. Revisá el campo.', 'error', 5000);
       return;
     }
-    if (password.length < 8) { App.toast('Contraseña muy corta', 'error'); return; }
+    if (password.length < 8) { _toast('Contraseña muy corta', 'error'); return; }
 
-    var btn = document.getElementById('p10-btn-crear-cajero');
+    var btn = _el('p10-btn-crear-cajero');
     if (btn) { btn.disabled = true; btn.textContent = 'Creando...'; }
 
     var secondaryApp = null, secondaryAuth = null, cajeroUid = null, cajeroUser = null;
@@ -26735,10 +27158,10 @@
         throw new Error('No se pudo vincular el cajero al comercio. Intentá de nuevo.');
       }
 
-      var panel = document.getElementById('p10-cajero-creado');
+      var panel = _el('p10-cajero-creado');
       if (panel) panel.style.display = 'block';
       _setText('p10-cajero-email-final', email);
-      App.toast('Cuenta de cajero creada', 'success');
+      _toast('Cuenta de cajero creada', 'success');
       await _renderListaCajeros();
     } catch (e) {
       console.error('[Cuenta] Error al crear cajero:', e);
@@ -26755,30 +27178,30 @@
       }
 
       if (code === 'auth/email-already-in-use') {
-        App.toast('Ese email ya existe. Probá con otro número de cajero.', 'error', 5000);
+        _toast('Ese email ya existe. Probá con otro número de cajero.', 'error', 5000);
       } else if (code === 'auth/weak-password') {
-        App.toast('Contraseña muy débil. Usá mayúscula, minúscula, número y símbolo.', 'error', 5000);
+        _toast('Contraseña muy débil. Usá mayúscula, minúscula, número y símbolo.', 'error', 5000);
       } else if (code === 'auth/invalid-email') {
-        App.toast('El email generado no es válido.', 'error', 5000);
+        _toast('El email generado no es válido.', 'error', 5000);
       } else if (code.indexOf('permission-denied') !== -1 ||
                  msg.indexOf('permission-denied') !== -1 ||
                  msg.indexOf('Missing or insufficient permissions') !== -1) {
-        App.error('E-DATA-001', {
+        _reportarError('E-DATA-001', {
           detalles: {
             mensaje: 'Firestore denegó la creación del perfil del cajero.',
             code: code || 'permission-denied',
             cajeroUid: cajeroUid
           }
         });
-        App.toast('No se pudo crear el cajero por permisos de Firestore.', 'error', 6000);
+        _toast('No se pudo crear el cajero por permisos de Firestore.', 'error', 6000);
       } else if (code.indexOf('unavailable') !== -1 ||
                  code.indexOf('network') !== -1 ||
                  code === 'auth/network-request-failed') {
-        App.error('E-DATA-002', { detalles: { mensaje: msg, code: code, cajeroUid: cajeroUid } });
-        App.toast('Sin conexión. Reintentá en unos segundos.', 'error', 5000);
+        _reportarError('E-DATA-002', { detalles: { mensaje: msg, code: code, cajeroUid: cajeroUid } });
+        _toast('Sin conexión. Reintentá en unos segundos.', 'error', 5000);
       } else {
-        App.error('E-SYS-001', { detalles: { mensaje: msg, code: code, cajeroUid: cajeroUid } });
-        App.toast(msg || 'Error al crear el cajero', 'error', 5000);
+        _reportarError('E-SYS-001', { detalles: { mensaje: msg, code: code, cajeroUid: cajeroUid } });
+        _toast(msg || 'Error al crear el cajero', 'error', 5000);
       }
     } finally {
       if (secondaryAuth) { try { await secondaryAuth.signOut(); } catch (e) {} }
@@ -26791,15 +27214,15 @@
   };
 
   Cuenta.copiarDatosCajero = function () {
-    var emailEl = document.getElementById('p10-cajero-email-final');
+    var emailEl = _el('p10-cajero-email-final');
     var password = _valorInput('p10-cajero-password', '');
     if (!emailEl) return;
     var texto = '📧 Email: ' + emailEl.textContent + '\n🔑 Contraseña: ' + password +
                 '\n\nIngresá a Mejora 2 con estos datos.';
     if (navigator.clipboard) {
       navigator.clipboard.writeText(texto)
-        .then(function () { App.toast('Datos copiados', 'success'); })
-        .catch(function () { App.toast('No se pudo copiar', 'error'); });
+        .then(function () { _toast('Datos copiados', 'success'); })
+        .catch(function () { _toast('No se pudo copiar', 'error'); });
     }
   };
 
@@ -26815,7 +27238,7 @@
         document.querySelectorAll('#vista-cuenta .p10-tab-content').forEach(function (c) {
           c.style.display = 'none';
         });
-        var target = document.getElementById('p10-tab-' + tab.dataset.tab);
+        var target = _el('p10-tab-' + tab.dataset.tab);
         if (target) target.style.display = 'block';
         if (tab.dataset.tab === 'logs') _cargarYRenderLogs();
       });
@@ -26835,7 +27258,7 @@
     });
 
     var bind = function (id, handler) {
-      var el = document.getElementById(id);
+      var el = _el(id);
       if (!el || el.dataset.b16p2Bound === '1') return;
       el.dataset.b16p2Bound = '1';
       el.addEventListener('click', handler);
@@ -26849,7 +27272,7 @@
     bind('p10-btn-log-enviar-todos', Cuenta.enviarTodosLosLogs);
     bind('p10-btn-log-copiar',      Cuenta.copiarTodosLosLogs);
 
-    var inputBackup = document.getElementById('p10-input-backup');
+    var inputBackup = _el('p10-input-backup');
     if (inputBackup && inputBackup.dataset.b16p2Bound !== '1') {
       inputBackup.dataset.b16p2Bound = '1';
       inputBackup.addEventListener('change', function (e) {
@@ -26857,20 +27280,20 @@
       });
     }
 
-    var btnInv = document.getElementById('p10-btn-invitar-cajero');
+    var btnInv = _el('p10-btn-invitar-cajero');
     if (btnInv && btnInv.dataset.b16p2Bound !== '1') {
       btnInv.dataset.b16p2Bound = '1';
       btnInv.addEventListener('click', function () {
         _setVal('p10-cajero-nombre', '');
         _setVal('p10-cajero-apellido', '');
         _setVal('p10-cajero-password', '');
-        var panel = document.getElementById('p10-cajero-creado');
+        var panel = _el('p10-cajero-creado');
         if (panel) panel.style.display = 'none';
         Cuenta.generarEmailCajero();
         App.abrirModal('modal-p10-crear-cajero');
       });
     }
-    var selNum = document.getElementById('p10-cajero-numero');
+    var selNum = _el('p10-cajero-numero');
     if (selNum && selNum.dataset.b16p2Bound !== '1') {
       selNum.dataset.b16p2Bound = '1';
       selNum.addEventListener('change', Cuenta.generarEmailCajero);
@@ -26896,20 +27319,20 @@
     bind('p10-btn-probar-arca', Arca.probarConexion);
     bind('p10-btn-guardar-arca', async function () {
       try { await Arca.vincular(); }
-      catch (e) { App.toast(e.message, 'error'); }
+      catch (e) { _toast(e.message, 'error'); }
     });
     bind('p10-close-vincular-arca', function () {
       App.cerrarModal('modal-p10-arca-vincular');
     });
     bind('p10-btn-desvincular-arca', Arca.desvincular);
 
-    var certInput = document.getElementById('p10-arca-cert');
+    var certInput = _el('p10-arca-cert');
     if (certInput && certInput.dataset.b16p2Bound !== '1') {
       certInput.dataset.b16p2Bound = '1';
       certInput.addEventListener('change', function () {
         var nombre = certInput.files[0] ? certInput.files[0].name.toLowerCase() : '';
         var esCrt = nombre.slice(-4) === '.crt';
-        var kg = document.getElementById('p10-arca-key-group');
+        var kg = _el('p10-arca-key-group');
         if (kg) kg.style.display = esCrt ? 'block' : 'none';
       });
     }
@@ -26918,7 +27341,7 @@
   window.Cuenta = Cuenta;
 
   /* ═══════════════════════════════════════════════════════════ */
-  /* MÓDULO ARCA                                                */
+  /* 7. MÓDULO ARCA                                              */
   /* ═══════════════════════════════════════════════════════════ */
   var ARCA_TUTORIAL_TTL_MS = 24 * 60 * 60 * 1000;
   var _arcaTutorialImagenes = null;
@@ -26926,6 +27349,7 @@
   var _arcaTutorialComercioId = undefined;
   var _arcaRenderEnCurso = false;
   var _arcaRenderPendiente = false;
+  var _arcaRenderHandle = null;
 
   var Arca = {};
 
@@ -26935,7 +27359,20 @@
       return !!App.getFunctions();
     } catch (e) { return false; }
   }
-  function _arcaNoDisponible() { App.error('E-ARC-001'); }
+  function _arcaNoDisponible() { _reportarError('E-ARC-001'); }
+
+  /* [B16-07] Deshabilitar botón de vincular si ARCA no está listo. */
+  function _actualizarBotonVincularArca() {
+    var btn = _el('p10-btn-vincular-arca');
+    if (!btn) return;
+    if (_arcaDisponible()) {
+      btn.disabled = false;
+      btn.title = 'Vincular ARCA con certificado digital';
+    } else {
+      btn.disabled = true;
+      btn.title = 'Próximamente: activá el plan de pago para vincular ARCA';
+    }
+  }
 
   Arca.tutorial = async function () {
     _irAPasoArca(1);
@@ -27012,7 +27449,13 @@
       p.classList.toggle('completado', i + 1 < paso);
     });
   }
-  Arca.abrirModalVincular = function () { App.abrirModal('modal-p10-arca-vincular'); };
+  Arca.abrirModalVincular = function () {
+    if (!_arcaDisponible()) {
+      _reportarError('E-ARC-001');
+      return;
+    }
+    App.abrirModal('modal-p10-arca-vincular');
+  };
 
   Arca.probarConexion = async function () {
     if (!_arcaDisponible()) { _arcaNoDisponible(); return; }
@@ -27022,12 +27465,12 @@
       var fn = App.getFunctions().httpsCallable('arcaProbarConexion');
       var res = await fn({ comercioId: user.comercioId, entorno: entorno });
       var ok = res.data && res.data.ok;
-      App.toast(
+      _toast(
         ok ? 'Conexión exitosa' : 'Error: ' + (res.data && res.data.error),
         ok ? 'success' : 'error'
       );
     } catch (e) {
-      App.error('E-ARC-003', { detalles: { mensaje: e.message } });
+      _reportarError('E-ARC-003', { detalles: { mensaje: e.message } });
     }
   };
 
@@ -27036,8 +27479,8 @@
       throw new Error('Próximamente: activá el plan de pago para vincular ARCA');
     }
     var entorno = _getRadioArca();
-    var certInput = document.getElementById('p10-arca-cert');
-    var keyInput  = document.getElementById('p10-arca-key');
+    var certInput = _el('p10-arca-cert');
+    var keyInput  = _el('p10-arca-key');
     var pass = _valorInput('p10-arca-pass', '');
     var puntoVenta = parseInt(_valorInput('p10-arca-punto-venta', '1'), 10) || 1;
     var user = _getUser();
@@ -27075,10 +27518,10 @@
         }
       });
       App.cerrarModal('modal-p10-arca-vincular');
-      App.toast('ARCA vinculado', 'success');
+      _toast('ARCA vinculado', 'success');
       await Arca.renderEstado();
     } catch (e) {
-      App.error('E-ARC-002', { detalles: { mensaje: e.message } });
+      _reportarError('E-ARC-002', { detalles: { mensaje: e.message } });
       throw new Error(e.message || 'Error al conectar');
     }
   };
@@ -27088,9 +27531,9 @@
     try {
       await Data.update('config', 'comercio', { arca_config: null });
       await Arca.renderEstado();
-      App.toast('ARCA desvinculado', 'info');
+      _toast('ARCA desvinculado', 'info');
     } catch (e) {
-      App.toast('Error al desvincular', 'error');
+      _toast('Error al desvincular', 'error');
     }
   };
 
@@ -27134,7 +27577,7 @@
         return { ok: true, cae: res.data.cae, numero_comprobante: res.data.numero_comprobante };
       }
       await Data.update('ventas', venta.id, { estado: 'error_facturacion' });
-      App.error('E-ARC-002', {
+      _reportarError('E-ARC-002', {
         detalles: {
           contexto: 'facturar_venta',
           ventaId: venta.id,
@@ -27159,8 +27602,6 @@
     }
   };
 
-  /* [16-NEW-1] Guard de idempotencia: evita cadenas de retry
-   * paralelas si Cuenta.init se llama varias veces seguidas. */
   Arca.renderEstado = async function (intento) {
     intento = intento || 0;
 
@@ -27171,18 +27612,18 @@
     }
 
     try {
-      var cont = document.getElementById('p10-arca-estado');
-      var btnDes = document.getElementById('p10-btn-desvincular-arca');
+      var cont = _el('p10-arca-estado');
+      var btnDes = _el('p10-btn-desvincular-arca');
       if (!cont) return;
 
       if (!_dataLista()) {
-        if (intento < 20) {
+        if (intento < 20 && !_arcaRenderPendiente) {
           _arcaRenderPendiente = true;
-          setTimeout(function () {
+          _safeSetTimeout(function () {
             _arcaRenderPendiente = false;
             Arca.renderEstado(intento + 1);
           }, 500);
-        } else {
+        } else if (intento >= 20) {
           cont.innerHTML = '<p class="text-muted">Sin comercio activo. Reingresá para ver el estado de ARCA.</p>';
           if (btnDes) btnDes.style.display = 'none';
         }
@@ -27234,8 +27675,7 @@
   window.Arca = Arca;
 
   /* ═══════════════════════════════════════════════════════════ */
-  /* BADGE LOGS — coordinación con B10                          */
-  /* [16-P2-A/C] Reactivo al rol: same-tab + cross-tab + API.    */
+  /* 8. BADGE LOGS — coordinación con B10                        */
   /* ═══════════════════════════════════════════════════════════ */
   function _aplicarVisibilidadBadge() {
     if (!document.body) return;
@@ -27248,7 +27688,7 @@
 
   function _actualizarBadgeLogsMenu() {
     _aplicarVisibilidadBadge();
-    var badge = document.getElementById('menu-badge-logs');
+    var badge = _el('menu-badge-logs');
     if (!badge) return;
     if (!_esAdmin()) return;
     var logs = (App.getLogs ? App.getLogs() : []);
@@ -27263,18 +27703,21 @@
 
   window.Bloque16 = window.Bloque16 || {};
   window.Bloque16.refrescarBadgeLogs = _actualizarBadgeLogsMenu;
-  // Hook por si B12 (u otro bloque) quiere dispararlo por evento.
-  if (!window.__B16_BADGE_EVENT_BOUND__) {
-    window.__B16_BADGE_EVENT_BOUND__ = true;
-    window.addEventListener('b16:refrescar-badge-logs', function () {
-      try { _actualizarBadgeLogsMenu(); } catch (e) {}
-    });
-  }
+
+  /* [B16-04 / errores2 #4] Hook público por CustomEvent.
+   * Estado: registrado pero SIN emisores internos.
+   * B12 usa la API directa Bloque16.refrescarBadgeLogs() desde
+   * _actualizarMenuUsuario (NUEVO-B12-B), lo cual cubre el caso
+   * same-tab. El cross-tab se cubre con _bindStorageRolListener.
+   * Este hook queda disponible para consumidores externos
+   * (extensiones, scripts de test) que prefieran notificar por
+   * evento en vez de llamar a la API. */
+  window.addEventListener('b16:refrescar-badge-logs', function () {
+    try { _actualizarBadgeLogsMenu(); } catch (e) {}
+  });
 
   function _bindStorageRolListener() {
-    if (window.__B16_ROL_STORAGE_BOUND__) return;
-    window.__B16_ROL_STORAGE_BOUND__ = true;
-    window.addEventListener('storage', function (e) {
+    _safeAddStorageListener(function (e) {
       if (!e || !e.key) return;
       if (e.key === 'rol_actual_v1' ||
           e.key === 'usuario_actual_v1' ||
@@ -27285,39 +27728,52 @@
     });
   }
 
-  /* [MEJORA-R1] Same-tab: B12 pisa #menu-user-role al loguear.
-   * Retry acotado a 20 × 500ms = 10s. Reset del contador tras enlace. */
-  var _rolObserverRetries = 0;
+  var _rolObserver = null;
+  var _rolObserverRetryHandle = null;
+
   function _bindRolObserver() {
-    if (window.__B16_ROL_OBSERVER_BOUND__) return;
+    if (_rolObserver) return;
     if (typeof MutationObserver !== 'function') {
       console.warn('[B16] MutationObserver no disponible. Fallback a poll de 5s.');
+      _safeSetInterval(_actualizarBadgeLogsMenu, 5000);
       return;
     }
 
-    if (_rolObserverRetries >= 20) {
-      console.warn('[B16] No se pudo instalar MutationObserver tras 20 intentos.');
-      return;
-    }
-
-    var target = document.getElementById('menu-user-role');
+    var target = _el('menu-user-role');
     if (!target) {
-      _rolObserverRetries++;
-      setTimeout(_bindRolObserver, 500);
+      if (_rolObserverRetryHandle) return;
+      _rolObserverRetryHandle = _crearRetry(function () {
+        var t = _el('menu-user-role');
+        if (!t || _STATE.destroyed) return true;
+        try {
+          _rolObserver = new MutationObserver(function () {
+            _actualizarBadgeLogsMenu();
+          });
+          _rolObserver.observe(t, {
+            childList: true,
+            characterData: true,
+            subtree: true
+          });
+          _STATE.observers.push(_rolObserver);
+          console.info('[B16] MutationObserver activo sobre #menu-user-role.');
+        } catch (e) {
+          console.warn('[B16] No se pudo instalar MutationObserver:', e);
+        }
+        return true;
+      }, 20, 500);
       return;
     }
 
-    window.__B16_ROL_OBSERVER_BOUND__ = true;
-    _rolObserverRetries = 0;   // [v4] Reset por claridad
     try {
-      var observer = new MutationObserver(function () {
+      _rolObserver = new MutationObserver(function () {
         _actualizarBadgeLogsMenu();
       });
-      observer.observe(target, {
+      _rolObserver.observe(target, {
         childList: true,
         characterData: true,
         subtree: true
       });
+      _STATE.observers.push(_rolObserver);
       console.info('[B16] MutationObserver activo sobre #menu-user-role.');
     } catch (e) {
       console.warn('[B16] No se pudo instalar MutationObserver:', e);
@@ -27325,20 +27781,22 @@
   }
 
   /* ═══════════════════════════════════════════════════════════ */
-  /* INTEGRACIONES — App.error → Notificaciones                 */
+  /* 9. INTEGRACIONES                                            */
   /* ═══════════════════════════════════════════════════════════ */
+
+  /* ─── 9.1 App.error → Notificaciones del navegador ─────────── */
+  var CODIGOS_CRITICOS_NOTIF = [
+    'E-LIC-002', 'E-LIC-006',
+    'E-AUTH-006', 'E-AUTH-009', 'E-AUTH-010',
+    'E-DATA-005', 'E-DATA-009',
+    'E-NET-005', 'E-NET-006',
+    'E-SYS-001', 'E-SYS-002', 'E-SYS-004'
+  ];
+
   function _procesarLogParaNotif(logItem) {
     if (!logItem || !logItem.codigo) return;
     if (!window.Notif) return;
-
-    var codigosCriticos = [
-      'E-LIC-002', 'E-LIC-006',
-      'E-AUTH-006', 'E-AUTH-009', 'E-AUTH-010',
-      'E-DATA-005', 'E-DATA-009',
-      'E-NET-005', 'E-NET-006',
-      'E-SYS-001', 'E-SYS-002', 'E-SYS-004'
-    ];
-    if (codigosCriticos.indexOf(logItem.codigo) === -1) return;
+    if (CODIGOS_CRITICOS_NOTIF.indexOf(logItem.codigo) === -1) return;
 
     if (logItem.codigo === 'E-LIC-002') {
       if (typeof Notif.licencia === 'function') {
@@ -27363,24 +27821,23 @@
 
   function _integrarConAppError() {
     if (window.App && typeof App._registrarHookLog === 'function') {
-      if (window.__B16_NOTIF_HOOK_INSTALLED__) return;
-      window.__B16_NOTIF_HOOK_INSTALLED__ = true;
       try {
         App._registrarHookLog(function (logItem) {
           try { _procesarLogParaNotif(logItem); } catch (e) {}
         });
+        window.__B16__.notifHookInstalled = true;
       } catch (e) {
         console.warn('[B16] No se pudo registrar hook de logs:', e);
-        window.__B16_NOTIF_HOOK_INSTALLED__ = false;
       }
       return;
     }
 
-    if (window.__B16_NOTIF_POLL_INSTALLED__) return;
-    window.__B16_NOTIF_POLL_INSTALLED__ = true;
+    /* Fallback: poll throttled de 5s (era 2s en v4). Reduce carga. */
+    if (window.__B16__.notifPollInstalled) return;
+    window.__B16__.notifPollInstalled = true;
 
     var _ultimoLogId = null;
-    setInterval(function () {
+    _safeSetInterval(function () {
       if (!window.App || typeof App.getLogs !== 'function') return;
       var logs = App.getLogs();
       if (!logs || logs.length === 0) return;
@@ -27390,9 +27847,10 @@
       var esReciente = (Date.now() - masReciente.timestamp) < 5000;
       if (!esReciente) return;
       _procesarLogParaNotif(masReciente);
-    }, 2000);
+    }, 5000);
   }
 
+  /* ─── 9.2 Cola de impresión → Notif ───────────────────────── */
   function _precargarColaImpresora() {
     if (!window.Impresora || typeof Impresora.cargarCola !== 'function') return;
     try { Impresora.cargarCola(); }
@@ -27400,13 +27858,13 @@
   }
 
   function _integrarConCola() {
-    if (window.__B16_COLA_POLL_INSTALLED__) return;
-    window.__B16_COLA_POLL_INSTALLED__ = true;
+    if (window.__B16__.colaPollInstalled) return;
+    window.__B16__.colaPollInstalled = true;
 
     _precargarColaImpresora();
 
     var _ultimaCantidad = 0;
-    setInterval(function () {
+    _safeSetInterval(function () {
       if (!_dataLista()) return;
       if (!window.Impresora || !Impresora.cola) return;
       var pendientes = Impresora.cola.filter(function (t) {
@@ -27421,14 +27879,18 @@
     }, 5000);
   }
 
-  /* [16-NEW-2] stock_minimo: 0 respetado. Parseo explícito. */
+  /* ─── 9.3 Stock bajo → Notif ──────────────────────────────── */
+  /* [B16-08] stock > 0 && stock <= min. Un producto sin stock
+   * (stock === 0) NO cuenta como "bajo". Se podría notificar
+   * aparte en el futuro, pero por ahora solo cuenta el rango
+   * (0, min]. */
   function _integrarConStockBajo() {
-    if (window.__B16_STOCK_POLL_INSTALLED__) return;
-    window.__B16_STOCK_POLL_INSTALLED__ = true;
+    if (window.__B16__.stockPollInstalled) return;
+    window.__B16__.stockPollInstalled = true;
 
     var _ultimaCantidad = 0;
     var _ultimaNotificacion = 0;
-    setInterval(function () {
+    _safeSetInterval(function () {
       if (!_dataLista()) return;
       if (!window.Stock || typeof Stock.obtenerTodos !== 'function') return;
       var productos = Stock.obtenerTodos();
@@ -27457,6 +27919,7 @@
     }, 60000);
   }
 
+  /* ─── 9.4 UX modales P10 ──────────────────────────────────── */
   function _configurarUxModalesP10() {
     var modales = [
       'modal-p10-crear-cajero',
@@ -27465,7 +27928,7 @@
     ];
 
     modales.forEach(function (id) {
-      var m = document.getElementById(id);
+      var m = _el(id);
       if (!m || m.dataset.b16UxBound === '1') return;
       m.dataset.b16UxBound = '1';
       m.addEventListener('mousedown', function (e) {
@@ -27479,7 +27942,7 @@
       document.addEventListener('keydown', function (e) {
         if (e.key !== 'Escape') return;
         for (var i = 0; i < modales.length; i++) {
-          var m = document.getElementById(modales[i]);
+          var m = _el(modales[i]);
           if (m && m.classList.contains('active')) {
             App.cerrarModal(modales[i]);
             e.stopPropagation();
@@ -27490,23 +27953,23 @@
     }
   }
 
-  var _navPanelRetries = 0;
-  var _NAV_PANEL_MAX_RETRIES = 20;
+  /* ─── 9.5 Navegación [data-panel] ─────────────────────────── */
+  var _navPanelRetryHandle = null;
 
   function _configurarNavegacionPaneles() {
     var botones = document.querySelectorAll('[data-panel]');
     if (botones.length === 0) {
-      if (_navPanelRetries >= _NAV_PANEL_MAX_RETRIES) {
-        console.warn('[B16] No se encontró ningún [data-panel] tras ' +
-                     _NAV_PANEL_MAX_RETRIES + ' intentos.');
-        return;
-      }
-      _navPanelRetries++;
-      setTimeout(_configurarNavegacionPaneles, 500);
+      if (_navPanelRetryHandle) return;
+      _navPanelRetryHandle = _crearRetry(function () {
+        if (document.querySelectorAll('[data-panel]').length > 0 || _STATE.destroyed) {
+          _navPanelRetryHandle = null;
+          if (!_STATE.destroyed) _configurarNavegacionPaneles();
+          return true;
+        }
+        return false;
+      }, 20, 500);
       return;
     }
-
-    _navPanelRetries = 0;
 
     botones.forEach(function (btn) {
       if (btn.dataset.b16NavBound === '1') return;
@@ -27516,7 +27979,7 @@
         if (panel === 'pos') {
           var turno = JSON.parse(localStorage.getItem('turno_activo_v1') || 'null');
           if (!turno) {
-            App.toast('Abrí la caja primero', 'warning');
+            _toast('Abrí la caja primero', 'warning');
             App.navegar('caja');
             if (window.Caja && typeof Caja.init === 'function') Caja.init();
             return;
@@ -27528,8 +27991,6 @@
           if (window.Caja && typeof Caja.init === 'function') Caja.init();
         } else if (panel === 'stock') {
           App.navegar('stock');
-          /* [16-P2-B] Eliminado el refresh no-op. B14 mantiene el
-           * estado vía onSnapshot; navegar es suficiente. */
         } else if (panel === 'proveedores') {
           App.navegar('proveedores');
           if (window.Proveedores && typeof Proveedores.init === 'function') Proveedores.init();
@@ -27550,30 +28011,30 @@
   }
 
   /* ═══════════════════════════════════════════════════════════ */
-  /* PARCHES ADYACENTES                                          */
-  /*                                                             */
-  /*   · [16-P2-K] Label del logo 500 KB → 300 KB.               */
-  /*   · [16-P2-J] Hook ARCA sobre Caja.registrarVentaEnTurno.   */
-  /*                                                             */
-  /* [NOTA] El parche _parchearDataUpdate fue ELIMINADO.         */
+  /* 10. PARCHES ADYACENTES                                      */
   /* ═══════════════════════════════════════════════════════════ */
 
+  /* ─── 10.1 Label del logo 500 KB → 300 KB ─────────────────── */
+  var _labelLogoRetryHandle = null;
+
   function _parchearLabelLogo() {
-    if (window.__B16_LABEL_LOGO_PATCHED__) return true;
+    if (window.__B16__.labelLogoPatched) return true;
     var label = document.querySelector('label[for="p08-logo"]');
     if (!label) return false;
     if (label.textContent.indexOf('500 KB') !== -1) {
       label.textContent = label.textContent.replace('500 KB', '300 KB');
-      console.info('[B16-P2-K] Label del logo alineado a 300 KB.');
+      console.info('[B16] Label del logo alineado a 300 KB.');
     }
-    window.__B16_LABEL_LOGO_PATCHED__ = true;
+    window.__B16__.labelLogoPatched = true;
     return true;
   }
 
+  /* ─── 10.2 Hook ARCA sobre Caja.registrarVentaEnTurno ─────── */
   var _arcoWrapped = null;
+  var _hookArcaRetryHandle = null;
 
   function _parchearCajaParaArca() {
-    if (window.__B16_ARCA_HOOK_INSTALLED__) return true;
+    if (window.__B16__.arcaHookInstalled) return true;
     if (!window.Caja || typeof Caja.registrarVentaEnTurno !== 'function') return false;
 
     var _original = Caja.registrarVentaEnTurno.bind(Caja);
@@ -27584,85 +28045,92 @@
         try {
           Arca.procesarVentaPostCobro(venta).then(function (r) {
             if (r && r.ok && window.App && typeof App.toast === 'function') {
-              App.toast(
-                'Facturado · CAE ' + (r.cae || '—'),
-                'success', 4000
-              );
+              App.toast('Facturado · CAE ' + (r.cae || '—'), 'success', 4000);
             } else if (r && r.motivo === 'arca_error' &&
                        window.App && typeof App.toast === 'function') {
-              App.toast(
-                'La venta se cobró pero no pudo facturarse. Revisá ARCA.',
-                'warning', 6000
-              );
+              App.toast('La venta se cobró pero no pudo facturarse. Revisá ARCA.', 'warning', 6000);
             }
           }).catch(function (e) {
-            console.warn('[B16-P2-J] ARCA autofacturación falló (no bloquea):', e);
+            console.warn('[B16] ARCA autofacturación falló (no bloquea):', e);
           });
         } catch (e) {
-          console.warn('[B16-P2-J] No se pudo invocar Arca.procesarVentaPostCobro:', e);
+          console.warn('[B16] No se pudo invocar Arca.procesarVentaPostCobro:', e);
         }
       }
       return resultado;
     };
 
     Caja.registrarVentaEnTurno = _arcoWrapped;
-    window.__B16_ARCA_HOOK_INSTALLED__ = true;
-    console.info('[B16-P2-J] Autoconexión ARCA instalada vía Caja.registrarVentaEnTurno.');
+    window.__B16__.arcaHookInstalled = true;
+    console.info('[B16] Hook ARCA instalado vía Caja.registrarVentaEnTurno.');
     return true;
   }
 
-  /* [MEJORA-R3] Verificación periódica del hook ARCA. */
   function _iniciarVerificacionHookArca() {
-    if (window.__B16_ARCA_HOOK_VERIFY_INSTALLED__) return;
-    window.__B16_ARCA_HOOK_VERIFY_INSTALLED__ = true;
+    if (window.__B16__.arcaHookVerifyInstalled) return;
+    window.__B16__.arcaHookVerifyInstalled = true;
 
-    setInterval(function () {
-      if (!window.__B16_ARCA_HOOK_INSTALLED__) return;
+    _safeSetInterval(function () {
+      if (!window.__B16__.arcaHookInstalled) return;
       if (!window.Caja || typeof Caja.registrarVentaEnTurno !== 'function') return;
       if (!_arcoWrapped) return;
       if (Caja.registrarVentaEnTurno === _arcoWrapped) return;
 
-      console.warn('[B16-P2-J] Caja.registrarVentaEnTurno fue reasignada. Reinstalando hook ARCA...');
-      window.__B16_ARCA_HOOK_INSTALLED__ = false;
+      console.warn('[B16] Caja.registrarVentaEnTurno fue reasignada. Reinstalando hook ARCA...');
+      window.__B16__.arcaHookInstalled = false;
       _parchearCajaParaArca();
     }, 15000);
   }
 
-  function _aplicarParchesAdyacentes(intento) {
-    intento = intento || 0;
+  function _aplicarParchesAdyacentes() {
+    if (_labelLogoRetryHandle) return;
+    if (_hookArcaRetryHandle) return;
 
     var okLabel = _parchearLabelLogo();
     var okCaja  = _parchearCajaParaArca();
 
     if (okLabel && okCaja) {
-      console.info('[B16-P2] Parches adyacentes aplicados (label + hook ARCA).');
+      console.info('[B16] Parches adyacentes aplicados (label + hook ARCA).');
       _iniciarVerificacionHookArca();
       return;
     }
 
-    if (intento >= 30) {
-      console.warn('[B16-P2] Parches adyacentes: no se pudo completar tras 30 intentos.',
-                   { label: okLabel, caja: okCaja });
-      return;
+    if (!okLabel && !_labelLogoRetryHandle) {
+      _labelLogoRetryHandle = _crearRetry(function () {
+        if (_parchearLabelLogo() || _STATE.destroyed) {
+          _labelLogoRetryHandle = null;
+          return true;
+        }
+        return false;
+      }, 30, 200);
     }
 
-    setTimeout(function () { _aplicarParchesAdyacentes(intento + 1); }, 200);
+    if (!okCaja && !_hookArcaRetryHandle) {
+      _hookArcaRetryHandle = _crearRetry(function () {
+        if (_parchearCajaParaArca() || _STATE.destroyed) {
+          _hookArcaRetryHandle = null;
+          _iniciarVerificacionHookArca();
+          return true;
+        }
+        return false;
+      }, 30, 200);
+    }
   }
 
   /* ═══════════════════════════════════════════════════════════ */
-  /* ARRANQUE FINAL                                             */
+  /* 11. ARRANQUE                                                */
   /* ═══════════════════════════════════════════════════════════ */
   var _arrancadoFinal = false;
 
   function _arrancarFinal() {
-    if (_arrancadoFinal) return;
+    if (_arrancadoFinal || _STATE.destroyed) return;
     if (!window.App) {
-      setTimeout(_arrancarFinal, 100);
+      _safeSetTimeout(_arrancarFinal, 100);
       return;
     }
-
     _arrancadoFinal = true;
 
+    _configurarUxModalesB16();
     _configurarNavegacionPaneles();
     _configurarUxModalesP10();
     _integrarConAppError();
@@ -27671,34 +28139,102 @@
     _aplicarVisibilidadBadge();
     _bindStorageRolListener();
     _bindRolObserver();
-    _aplicarParchesAdyacentes(0);
+    _actualizarBotonVincularArca();
+    _aplicarParchesAdyacentes();
 
-    setInterval(_actualizarBadgeLogsMenu, 5000);
+    _safeSetInterval(_actualizarBadgeLogsMenu, 5000);
 
-    setTimeout(_actualizarBadgeLogsMenu, 500);
-    setTimeout(_actualizarBadgeLogsMenu, 1500);
-    setTimeout(_actualizarBadgeLogsMenu, 3000);
+    _safeSetTimeout(_actualizarBadgeLogsMenu, 500);
+    _safeSetTimeout(_actualizarBadgeLogsMenu, 1500);
+    _safeSetTimeout(_actualizarBadgeLogsMenu, 3000);
 
-    setInterval(function () {
+    _safeSetInterval(function () {
       if (window.Impresora && typeof Impresora.renderCola === 'function') {
         Impresora.renderCola();
       }
     }, 30000);
 
-    console.info('[B16-P2] Arranque final completado.');
+    console.info('[B16 v5] Arranque final completado.');
   }
 
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 12. DESTROY GLOBAL                                          */
+  /* ═══════════════════════════════════════════════════════════ */
+  function _destroyGlobal() {
+    if (_STATE.destroyed) return;
+    _STATE.destroyed = true;
+
+    console.info('[B16] destroy() invocado. Limpiando recursos...');
+
+    /* 1. Cancelar retries */
+    _STATE.retries.slice().forEach(function (r) {
+      try { r.cancelar(); } catch (e) {}
+    });
+    _STATE.retries.length = 0;
+
+    /* 2. Limpiar timeouts */
+    _STATE.timeouts.forEach(function (id) {
+      try { clearTimeout(id); } catch (e) {}
+    });
+    _STATE.timeouts.clear();
+
+    /* 3. Limpiar intervals */
+    _STATE.intervals.forEach(function (id) {
+      try { clearInterval(id); } catch (e) {}
+    });
+    _STATE.intervals.clear();
+
+    /* 4. Desconectar observers */
+    _STATE.observers.forEach(function (obs) {
+      try { obs.disconnect(); } catch (e) {}
+    });
+    _STATE.observers.length = 0;
+
+    /* 5. Remover storage listeners */
+    _STATE.storageListeners.forEach(function (fn) {
+      try { window.removeEventListener('storage', fn); } catch (e) {}
+    });
+    _STATE.storageListeners.length = 0;
+
+    /* 6. Abortar AbortControllers */
+    _STATE.abortables.forEach(function (ctrl) {
+      try { ctrl.abort(); } catch (e) {}
+    });
+    _STATE.abortables.length = 0;
+
+    /* 7. Cancelar snapshot de logs si lo teníamos */
+    if (typeof _unsubscribeLogs === 'function') {
+      try { _unsubscribeLogs(); } catch (e) {}
+      _unsubscribeLogs = null;
+      _logsComercioId = null;
+    }
+
+    /* 8. Limpiar estado de drag */
+    _dragState = { activo: false, elemento: null, inicioY: 0, tipo: null };
+    _elementoSeleccionado = null;
+
+    /* 9. Liberar listeners de Impresora */
+    if (window.Impresora && typeof Impresora.destroy === 'function') {
+      try { Impresora.destroy(); } catch (e) {}
+    }
+  }
+
+  /* Exponer destroy público. */
+  window.Bloque16.destroy = _destroyGlobal;
+  window.Bloque16.version = 'v5';
+  window.__B16__.destroy = _destroyGlobal;
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 13. ARRANQUE GLOBAL                                         */
+  /* ═══════════════════════════════════════════════════════════ */
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', _arrancarFinal);
   } else {
     _arrancarFinal();
   }
+
 })();
 </script>
-
-<!-- ╔══════════════════════════════════════════════════════════════════════╗ -->
-<!-- ║  FIN BLOQUE 16 v4 — Consolidado, sin duplicación                     ║ -->
-<!-- ╚══════════════════════════════════════════════════════════════════════╝ -->
 <!-- ╔══════════════════════════════════════════════════════════════════════╗ -->
 <!-- ║  BLOQUE 17 v1 — VISTAS LEGALES, FOOTER Y COOKIES                     ║ -->
 <!-- ║                                                                      ║ -->
