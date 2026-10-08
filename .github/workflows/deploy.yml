@@ -36,15 +36,17 @@ jobs:
           echo "=== ¿index.html existe? ==="
           test -f index.html && echo "SÍ existe" || echo "NO existe"
           echo ""
-          echo "=== Tamaño y encoding ==="
-          file index.html || true
+          echo "=== Tamaño ==="
           wc -c index.html || true
           echo ""
-          echo "=== Líneas con 'app-version' (primeras 5) ==="
-          grep -n 'app-version' index.html | head -5 || echo "(sin coincidencias)"
+          echo "=== ¿Tiene <head>? ==="
+          grep -c '<head' index.html || echo "0"
           echo ""
-          echo "=== Líneas con '<meta' (primeras 5) ==="
+          echo "=== ¿Tiene <meta? (primeras 5) ==="
           grep -n '<meta' index.html | head -5 || echo "(sin coincidencias)"
+          echo ""
+          echo "=== ¿Tiene 'app-version'? ==="
+          grep -n 'app-version' index.html | head -3 || echo "(sin coincidencias)"
 
       - name: Incrementar versión + sincronizar index.html
         run: |
@@ -71,38 +73,51 @@ jobs:
             version.json > version.json.tmp
           mv version.json.tmp version.json
 
-          # 4) Sincronizar index.html con Python (tolera reformateos)
+          # 4) Sincronizar index.html (auto-healing: si falta el meta, lo inserta)
           VERSION_NUEVA="$VERSION_NUEVA" python3 << 'PYEOF'
           import os, re, sys
+
           version = os.environ['VERSION_NUEVA']
+
           with open('index.html', 'r', encoding='utf-8') as f:
               content = f.read()
-          # Patrón 1: name antes que content
+
+          # --- Intento 1: actualizar meta existente (name antes que content) ---
           new_content, count = re.subn(
               r'(<meta\s+name=["\']app-version["\']\s+content=["\'])[^"\']+(["\'])',
               rf'\g<1>{version}\g<2>', content)
-          # Patrón 2: content antes que name
+
+          # --- Intento 2: actualizar meta existente (content antes que name) ---
           if count == 0:
               new_content, count = re.subn(
                   r'(<meta\s+content=["\'])[^"\']+(["\']\s+name=["\']app-version["\'])',
                   rf'\g<1>{version}\g<2>', content)
+
+          # --- Intento 3: insertar meta nuevo justo después de <head> ---
           if count == 0:
-              print("::error::No se pudo actualizar el meta app-version")
-              print(f"::error::La cadena 'app-version' aparece {content.count('app-version')} vez/veces en el archivo")
-              for i, line in enumerate(content.split('\n')):
-                  if 'app-version' in line:
-                      print(f"::error::Línea {i+1}: {line.strip()[:150]}")
-              sys.exit(1)
+              print("::warning::Meta app-version no encontrado. Insertando después de <head>...")
+              new_content, count = re.subn(
+                  r'(<head[^>]*>)',
+                  rf'\1\n  <meta name="app-version" content="{version}">',
+                  content, count=1)
+              if count == 0:
+                  print("::error::No se encontró <head> en index.html. Archivo corrupto o incompleto.")
+                  print(f"::error::Primeras 500 chars: {content[:500]!r}")
+                  sys.exit(1)
+              print(f"OK: meta app-version INSERTADO después de <head> (versión {version})")
+          else:
+              print(f"OK: meta app-version ACTUALIZADO ({count} reemplazo/s) a {version}")
+
           with open('index.html', 'w', encoding='utf-8') as f:
               f.write(new_content)
-          print(f"OK: index.html sincronizado a {version} ({count} reemplazo/s)")
           PYEOF
 
-          # 5) Verificación post-sustitución
+          # 5) Verificación final
           grep -q "content=\"${VERSION_NUEVA}\"" index.html || {
-            echo "::error::Verificación post-sustitución falló"
+            echo "::error::Verificación post-sustitución falló: no se encontró la versión $VERSION_NUEVA en index.html"
             exit 1
           }
+          echo "✅ index.html verificado y sincronizado a $VERSION_NUEVA"
 
           # 6) Commit de AMBOS archivos
           git config user.name "github-actions[bot]"
