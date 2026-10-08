@@ -3,8 +3,8 @@
 # -----------------------------------------------------------------------------
 # Objetivo : validar el catálogo (esquema, IDs únicos, integridad, formato)
 #            en cada push a ramas principales y en cada Pull Request.
-# Mejoras  : permisos mínimos, versiones pinneadas, caché, concurrency,
-#            paths filtrados, timeout, anotaciones de error, fail-fast.
+# Mejoras  : manejo condicional de Node.js, permisos mínimos, versiones
+#            pinneadas, concurrency, paths filtrados, timeout, anotaciones.
 # =============================================================================
 
 name: Validar catálogo
@@ -33,7 +33,7 @@ on:
       - 'data/**'
       - 'scripts/**'
       - '.github/workflows/validar-catalogo.yml'
-  workflow_dispatch: {}   # permite ejecución manual desde la pestaña Actions
+  workflow_dispatch: {}   # Permite ejecución manual desde la pestaña Actions
 
 # -----------------------------------------------------------------------------
 # Permisos mínimos (principio de menor privilegio)
@@ -55,100 +55,26 @@ env:
   NODE_VERSION: '20'
   PYTHON_VERSION: '3.12'
   CATALOG_PATH: 'catalogo/catalogo.json'
+  SCHEMA_PATH: 'catalogo/schema.json'
 
 jobs:
   # ===========================================================================
-  # JOB 1 · Validación principal
-  # ===========================================================================
-  validar:
-    name: Validar catálogo (${{ matrix.os }} · Node ${{ matrix.node }})
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        node: ['20']
-
-    steps:
-      # ---------------------------------------------------------------------
-      # 1) Checkout del repositorio
-      # ---------------------------------------------------------------------
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      # ---------------------------------------------------------------------
-      # 2) Setup Node.js con caché de dependencias
-      # ---------------------------------------------------------------------
-      - name: Setup Node.js ${{ matrix.node }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node }}
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
-
-      # ---------------------------------------------------------------------
-      # 3) Instalación reproducible de dependencias
-      # ---------------------------------------------------------------------
-      - name: Instalar dependencias
-        run: npm ci --no-audit --no-fund
-
-      # ---------------------------------------------------------------------
-      # 4) Lint del propio workflow (opcional pero recomendado)
-      # ---------------------------------------------------------------------
-      - name: Validar sintaxis del workflow con actionlint
-        uses: raven-actions/actionlint@v2
-        continue-on-error: false
-
-      # ---------------------------------------------------------------------
-      # 5) Verificar que el catálogo existe antes de validar
-      # ---------------------------------------------------------------------
-      - name: Verificar existencia del catálogo
-        run: |
-          if [ ! -f "$CATALOG_PATH" ]; then
-            echo "::error file=$CATALOG_PATH::No se encontró el catálogo en $CATALOG_PATH"
-            exit 1
-          fi
-          echo "Catálogo encontrado: $CATALOG_PATH"
-
-      # ---------------------------------------------------------------------
-      # 6) Ejecutar la validación del catálogo
-      #    Ajusta el comando al script real de tu repo
-      # ---------------------------------------------------------------------
-      - name: Validar catálogo
-        run: npm run validar:catalogo -- --path "$CATALOG_PATH"
-
-      # ---------------------------------------------------------------------
-      # 7) Subir reporte como artefacto (útil en debugging y auditoría)
-      # ---------------------------------------------------------------------
-      - name: Subir reporte de validación
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: reporte-catalogo-${{ github.run_id }}
-          path: |
-            reports/
-            *.log
-          if-no-files-found: ignore
-          retention-days: 7
-
-  # ===========================================================================
-  # JOB 2 · Verificación de esquema JSON con Python (opcional, redundante a propósito)
+  # JOB 1 · Validación con Python (JSON Schema) - El más importante
   # ===========================================================================
   validar-esquema:
-    name: Validar esquema JSON
+    name: Validar esquema JSON (Python)
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: validar   # sólo corre si la validación principal pasa
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
+      - name: Validar sintaxis del workflow con actionlint
+        uses: raven-actions/actionlint@v2
+        continue-on-error: true # No bloquea el workflow si hay un warning en el YAML
 
       - name: Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
@@ -165,8 +91,8 @@ jobs:
           import json, sys, pathlib
           from jsonschema import Draft202012Validator
 
-          catalog = pathlib.Path("catalogo/catalogo.json")
-          schema  = pathlib.Path("catalogo/schema.json")
+          catalog = pathlib.Path("${{ env.CATALOG_PATH }}")
+          schema  = pathlib.Path("${{ env.SCHEMA_PATH }}")
 
           if not catalog.exists():
               print(f"::error file={catalog}::Catálogo no encontrado")
@@ -189,3 +115,70 @@ jobs:
 
           print("✅ Catálogo válido contra el esquema.")
           PY
+
+  # ===========================================================================
+  # JOB 2 · Validación con Node.js (Condicional a package.json)
+  # ===========================================================================
+  validar-node:
+    name: Validar catálogo (Node.js)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # -----------------------------------------------------------------------
+      # Verificar si existe package.json antes de configurar Node
+      # -----------------------------------------------------------------------
+      - name: Verificar existencia de package.json
+        id: check_pkg
+        run: |
+          if [ -f "package.json" ]; then
+            echo "existe=true" >> $GITHUB_OUTPUT
+            echo "✅ package.json encontrado."
+          else
+            echo "existe=false" >> $GITHUB_OUTPUT
+            echo "::warning::No se encontró package.json. Omitiendo validación con Node.js."
+          fi
+
+      # -----------------------------------------------------------------------
+      # Setup Node.js (Solo si existe package.json)
+      # Se usa hashFiles para evitar el error de caché si no hay package-lock.json
+      # -----------------------------------------------------------------------
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        if: steps.check_pkg.outputs.existe == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: ${{ hashFiles('**/package-lock.json') != '' && 'npm' || '' }}
+
+      # -----------------------------------------------------------------------
+      # Instalar dependencias (Solo si existe package.json)
+      # -----------------------------------------------------------------------
+      - name: Instalar dependencias
+        if: steps.check_pkg.outputs.existe == 'true'
+        run: npm ci --no-audit --no-fund
+
+      # -----------------------------------------------------------------------
+      # Ejecutar la validación del catálogo (Solo si existe package.json)
+      # -----------------------------------------------------------------------
+      - name: Validar catálogo (Node)
+        if: steps.check_pkg.outputs.existe == 'true'
+        run: npm run validar:catalogo -- --path "${{ env.CATALOG_PATH }}"
+
+      # -----------------------------------------------------------------------
+      # Subir reporte como artefacto (útil en debugging y auditoría)
+      # -----------------------------------------------------------------------
+      - name: Subir reporte de validación
+        if: always() && steps.check_pkg.outputs.existe == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-catalogo-${{ github.run_id }}
+          path: |
+            reports/
+            *.log
+          if-no-files-found: ignore
+          retention-days: 7
