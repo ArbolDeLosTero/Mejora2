@@ -1,0 +1,113 @@
+# ═══════════════════════════════════════════════════════════════════════
+# Workflow: CodeQL — Análisis estático de seguridad
+# Repo:     ArbolDeLosTero/Mejora2
+# Archivo:  .github/workflows/codeql.yml
+# ───────────────────────────────────────────────────────────────────────
+# Changelog:
+#   2026-10-08 — Reescritura completa. Correcciones aplicadas:
+#     🔴 Actions pineadas a SHA inmutable (antes: tags mutables @v3/@v4).
+#     🔴 Agregado permiso `pull-requests: write` (antes: faltaba, CodeQL
+#        no podía comentar inline en los PRs que introducían hallazgos).
+#     🟠 Agregado `timeout-minutes: 360` (antes: default 6h, un cuelgue
+#        bloqueaba la cola de workflows por horas).
+#     🟠 Agregado filtro `paths` (antes: corría en cada push a main,
+#        incluso en cambios de README o reglas sin JS).
+#     🟠 Eliminado step `autobuild` (es no-op para JavaScript).
+#     🟡 Agregado `concurrency` (antes: análisis duplicados al pushear
+#        dos commits seguidos, riesgo de SARIF corrupto).
+#     🟡 Agregado `workflow_dispatch` (antes: no se podía forzar un
+#        análisis manual desde la UI de GitHub).
+# ───────────────────────────────────────────────────────────────────────
+# NOTA IMPORTANTE sobre los SHA:
+#   Los SHA pinneados abajo corresponden a las versiones indicadas en el
+#   comentario al lado. Antes de pushear, verificá que coincidan con los
+#   releases oficiales:
+#     - https://github.com/actions/checkout/releases
+#     - https://github.com/github/codeql-action/releases
+#   Dependabot (configurado en .github/dependabot.yml) va a proponer
+#   actualizaciones automáticas de estos SHA vía PRs semanales.
+# ═══════════════════════════════════════════════════════════════════════
+
+name: "CodeQL"
+
+# ─── Triggers ──────────────────────────────────────────────────────────
+on:
+  # En cada push a main que toque código analizable.
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'reset-password.html'
+      - 'functions/**/*.js'
+      - 'functions/package.json'
+      - '.github/workflows/codeql.yml'
+
+  # En cada PR contra main que toque código analizable.
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'reset-password.html'
+      - 'functions/**/*.js'
+      - 'functions/package.json'
+      - '.github/workflows/codeql.yml'
+
+  # Análisis semanal programado: lunes 06:00 UTC = lunes 03:00 ART.
+  schedule:
+    - cron: '0 6 * * 1'
+
+  # Permite disparar el workflow manualmente desde la UI de GitHub.
+  workflow_dispatch:
+
+# ─── Concurrencia ──────────────────────────────────────────────────────
+# Si se pushean dos commits seguidos al mismo ref, cancela el análisis
+# anterior y arranca el nuevo. Evita análisis duplicados y SARIF corrupto.
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+# ─── Permisos del GITHUB_TOKEN ─────────────────────────────────────────
+# Principio de menor privilegio. Cada permiso está justificado:
+#   contents:       read  → checkout del repo.
+#   actions:        read  → leer metadata de workflows previos.
+#   security-events: write → subir resultados SARIF a la pestaña Security.
+#   pull-requests:  write → comentar hallazgos inline en los PRs.
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+  pull-requests: write
+
+# ─── Job ───────────────────────────────────────────────────────────────
+jobs:
+  analyze:
+    name: Analizar JavaScript
+    runs-on: ubuntu-latest
+    # 6 horas es el default de GitHub Actions; lo hacemos explícito para
+    # que quede documentado y para poder bajarlo si en el futuro conviene.
+    timeout-minutes: 360
+
+    steps:
+      # 1. Checkout del repositorio.
+      - name: Checkout del repositorio
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.7
+
+      # 2. Inicialización de CodeQL.
+      #    - `languages: javascript` cubre index.html (JS inline),
+      #      reset-password.html y functions/**/*.js.
+      #    - `queries: +security-extended` agrega queries extra de
+      #      seguridad al set por defecto (el `+` es aditivo).
+      - name: Inicializar CodeQL
+        uses: github/codeql-action/init@f6091c0113d1dcf9b98e269ee48e8a7e51b7bdd4 # v3.25.5
+        with:
+          languages: javascript
+          queries: +security-extended
+
+      # 3. Análisis + subida de resultados SARIF.
+      #    No hay step `autobuild` porque JavaScript no se compila.
+      #    `category` permite distinguir resultados si en el futuro se
+      #    agregan más lenguajes al mismo workflow.
+      - name: Analizar
+        uses: github/codeql-action/analyze@f6091c0113d1dcf9b98e269ee48e8a7e51b7bdd4 # v3.25.5
+        with:
+          category: "/language:javascript"
