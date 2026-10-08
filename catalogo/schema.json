@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Catálogo de Productos Mejora 2",
+  "description": "Esquema de validación para el catálogo de productos con códigos de barras EAN-13.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "ean": {
+        "type": "string",
+        "description": "Código de barras EAN-13. Debe contener exactamente 13 dígitos numéricos.",
+        "pattern": "^[0-9]{13}$"
+      },
+      "descripcion": {
+        "type": "string",
+        "description": "Nombre o descripción detallada del producto.",
+        "minLength": 1
+      },
+      "categoria": {
+        "type": "string",
+        "description": "Categoría a la que pertenece el producto (ej. Almacén, Bebidas, Limpieza).",
+        "minLength": 1
+      },
+      "precio_referencia": {
+        "type": "number",
+        "description": "Precio de referencia del producto. Debe ser un número positivo.",
+        "minimum": 0
+      }
+    },
+    "required": [
+      "ean",
+      "descripcion",
+      "categoria",
+      "precio_referencia"
+    ],
+    "additionalProperties": true
+  }
+}
