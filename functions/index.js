@@ -287,7 +287,7 @@ exports.arcaEmitirFactura = onCall(async (request) => {
 /* ═══════════════════════════════════════════════════════════ */
 /* Health check (para debugging)                              */
 /* ═══════════════════════════════════════════════════════════ */
-exports.health = onRequest((req, res) => {
+exports.health = onRequest((_req, res) => {
   res.json({
     ok: true,
     version: '1.1.0',
