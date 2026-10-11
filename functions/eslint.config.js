@@ -53,7 +53,7 @@ module.exports = [
 
     rules: {
       // Warnings, no errores: el predeploy no se bloquea por vars sin usar.
-      'no-unused-vars': 'warn',
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
 
       // Permitir console.* para debugging local.
       // El código de producción usa functions.logger, no console.
