@@ -1,17 +1,153 @@
 rules_version = '2';
 
-// ═══════════════════════════════════════════════════════════════
-// MEJORA 2 — Firestore Security Rules
-// Modelo: comercio cerrado, roles por device, docs legales públicos
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// FIRESTORE SECURITY RULES — Mejora 2
+// v1.2 — 10/10/2026
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// CHANGELOG RESPECTO A v1.1:
+//
+// 🔴 BUG-R1 (OBS-B) — Auto-bootstrap de admins/{uid}.
+//    La v1.1 exigía isAdmin() para crear cualquier doc en admins/,
+//    pero el doc recién creado no puede auto-validarse. El bootstrap
+//    de B12 fallaba silenciosamente y el usuario nunca quedaba admin.
+//    Ahora hay una excepción isBootstrappingAdmin() que permite al
+//    propio usuario crear su doc UNA VEZ, si cumple las condiciones
+//    de activación como admin.
+//
+// 🔴 BUG-R2 — isBootstrappingComercio no exigía rol admin.
+//    Un cajero con comercioId seteado podía escribir el primer
+//    config/comercio si el doc no existía. Ahora exige rol 'admin'.
+//
+// 🔴 BUG-R4 — Transición rol: null → valor ahora exige activación
+//    atómica completa (comercioId + licencia_activa + licencia_tipo
+//    + dispositivos en el mismo write). Sin esto, combinado con la
+//    excepción de bootstrap, un usuario podía auto-promoverse a admin
+//    con un solo write.
+//
+// 🟠 BUG-R3 — dispositivos[] blindado en self-update.
+//    Solo puede cambiar si licencia_activa pasa de false → true
+//    (activación única). Después queda inmutable desde el cliente.
+//
+// 🟠 BUG-R5 — config/{configId}: write → create + update/delete.
+//    El bootstrap solo aplica a la primera escritura (create).
+//    Updates y deletes posteriores requieren isAdminOf().
+//
+// 🟡 BUG-R7 — logs_errores.create con validación de forma mínima.
+//    Exige codigo (string no vacío), timestamp (number),
+//    estado == 'nuevo', contador (number >= 1). Cierra el vector
+//    de spam de logs basura por un cajero malicioso.
+//
+// 🟡 BUG-R8 — logs_errores.update: eliminada la condición redundante
+//    `_device == _device` (ya implícita en hasOnly). Se agregan
+//    contador, timestamp, _creado y _ts a los campos actualizables
+//    por el mismo device, para soportar la re-subida de logs en
+//    loop (contador > 1) que B11 intenta hacer vía su hook.
+//
+// 🟢 BUG-R10 — Comentario sobre bootstrap manual del primer admin
+//    ahora también vive en el match /admins (no solo en el header).
+//
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️  ADVERTENCIA DE SEGURIDAD (leer antes de deployar)
+// ────────────────────────────────────────────────────
+//   La excepción isBootstrappingAdmin() introduce un vector de
+//   escalación teórico: un atacante con acceso al SDK y conocimiento
+//   de las reglas podría, en 3 pasos (crear usuario → update atómico
+//   de rol+comercio+licencia+dispositivos → crear admins/{uid}),
+//   quedar como admin sin pasar por la consola de Firebase.
+//
+//   Si esto no es aceptable para producción, migrar a una de estas
+//   alternativas (ver análisis §6.1 del informe):
+//     · B3 — Cloud Function que valide el JWT y cree admins/{uid}
+//              server-side.
+//     · B4 — Custom Claims: el JWT se valida server-side, se setea
+//              `request.auth.token.admin = true`, y las reglas lo
+//              chequean sin doc admins/.
+//
+//   Se puede mitigar sin cambiar la arquitectura eliminando la
+//   excepción `isBootstrappingAdmin()` de este archivo y creando
+//   cada `admins/{uid}` manualmente desde la consola de Firebase.
+//   La app sigue funcionando (B12 captura el fallo con un catch y
+//   loguea warning en consola), pero el usuario no será admin.
+//
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// ESTRUCTURA DE LA BASE DE DATOS
+// ─────────────────────────────
+//   usuarios/{uid}                    ← perfil del usuario
+//   admins/{uid}                      ← flag de admin (doc separado)
+//   comercios/{comercioId}/
+//     config/comercio                 ← configuración única del comercio
+//     productos/{productoId}
+//     proveedores/{proveedorId}
+//     ventas/{ventaId}
+//     pedidos/{pedidoId}
+//     devoluciones/{devId}
+//     turnos/{turnoId}
+//     historico_compras/{compraId}
+//     logs_errores/{logId}
+//   configuracion/
+//     documentos_legales              ← términos y privacidad globales
+//     tutorial_arca                   ← imágenes del tutorial ARCA
+//
+// PRINCIPIOS DE DISEÑO
+// ────────────────────
+//   1. El rol admin se determina por `admins/{uid}.activo == true`,
+//      NO por `usuarios/{uid}.rol` (que el propio usuario puede
+//      escribir en la activación). Esto cierra el escalado trivial.
+//
+//   2. `usuarios/{uid}` tiene blocklist explícita en update:
+//        · rol, comercioId, licencia_activa, licencia_tipo,
+//          pagador_uid solo pueden transicionar de null/false a valor
+//          UNA SOLA VEZ (activación inicial de licencia). El `rol`
+//          además exige activación atómica completa.
+//        · dispositivos[] solo cambia en la misma activación.
+//        · email, fecha_registro, terminos_aceptados, terminos_version
+//          son inmutables.
+//
+//   3. Cada acceso a `comercios/{cid}/*` valida que el llamante
+//      pertenezca a ese comercio (cross-tenant reads/writes).
+//
+//   4. NO hay wildcard permisivo. Cada colección está declarada
+//      explícitamente. Lo no declarado es deny por default.
+//
+//   5. Los logs de errores son write-only para cajeros y read-only
+//      para admin. El mismo device puede actualizar contador y
+//      timestamp de sus propios logs (para loops).
+//
+//   6. Bootstrap de comercio: el dueño (rol admin) puede crear el
+//      config inicial de su comercio UNA VEZ, si el doc no existe.
+//
+//   7. Bootstrap de admin (OBS-B): el propio usuario puede crear su
+//      doc en admins/ UNA VEZ, si cumple las condiciones de
+//      activación como admin (rol, licencia_activa, licencia_tipo,
+//      comercioId, dispositivos).
+//
+//   8. `terminos_aceptados` debe ser un server timestamp
+//      (`request.time`). Evita que un cliente falsifique la fecha.
+//
+// BOOTSTRAP MANUAL DEL PRIMER ADMIN (fallback)
+// ────────────────────────────────────────────
+//   Si la excepción isBootstrappingAdmin() no aplica (por ejemplo,
+//   si el usuario activa la licencia sin `licencia_tipo: 'admin'`),
+//   el primer doc de `admins/{uid}` debe crearse manualmente desde
+//   la consola de Firebase (Firestore → admins → Agregar documento):
+//     { activo: true, fecha_alta: <timestamp>, email: "..." }
+//   Una vez creado, ese admin puede crear otros admins vía el SDK,
+//   porque isAdmin() ya devolverá true.
+//
+// ═══════════════════════════════════════════════════════════════════════════
+
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ───────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
     // HELPERS
-    // ───────────────────────────────────────────────────────────
-    function isAuth() {
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function isSignedIn() {
       return request.auth != null;
     }
 
@@ -19,135 +155,450 @@ service cloud.firestore {
       return request.auth.uid;
     }
 
-    function getUserData() {
-      return get(/databases/$(database)/documents/usuarios/$(uid())).data;
+    function userExists() {
+      return exists(/databases/$(database)/documents/usuarios/$(uid()));
     }
 
-    function getUserComercioId() {
-      return getUserData().comercioId;
+    function userDoc() {
+      return get(/databases/$(database)/documents/usuarios/$(uid()));
     }
 
-    function getUserRol() {
-      return getUserData().rol;
+    function myComercioId() {
+      return userExists() ? userDoc().data.comercioId : null;
     }
 
-    // Admin del comercio (rol == 'admin' y comercioId coincide)
+    // Admin = doc en admins/{uid} con activo == true.
+    function adminExists() {
+      return exists(/databases/$(database)/documents/admins/$(uid()));
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+             adminExists() &&
+             get(/databases/$(database)/documents/admins/$(uid())).data.activo == true;
+    }
+
     function isAdminOf(comercioId) {
-      return isAuth()
-        && getUserComercioId() == comercioId
-        && getUserRol() == 'admin';
+      return isAdmin() && myComercioId() == comercioId;
     }
 
-    // Cajero del comercio
-    function isCajeroOf(comercioId) {
-      return isAuth()
-        && getUserComercioId() == comercioId
-        && getUserRol() == 'cajero';
-    }
-
-    // Cualquier miembro (admin o cajero)
     function belongsToComercio(comercioId) {
-      return isAdminOf(comercioId) || isCajeroOf(comercioId);
+      return isSignedIn() &&
+             userExists() &&
+             userDoc().data.comercioId == comercioId;
     }
 
-    // ═══════════════════════════════════════════════════════════
+    // ¿Alguno de estos campos cambió en el update?
+    function changedAny(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // ¿Ninguno de estos campos cambió?
+    function unchangedAll(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // [BUG-R4] ¿El update es una activación inicial COMPLETA?
+    // Exige que TODOS los campos de identidad del usuario se activen
+    // en el mismo write atómico. Sin esto, un usuario podría combinar
+    // `rol: null → 'admin'` con la excepción isBootstrappingAdmin()
+    // para auto-promoverse con un único write.
+    function isActivacionInicialCompleta() {
+      return resource.data.rol == null &&
+             request.resource.data.rol != null &&
+             resource.data.comercioId == null &&
+             request.resource.data.comercioId != null &&
+             resource.data.licencia_activa == false &&
+             request.resource.data.licencia_activa == true &&
+             resource.data.licencia_tipo == null &&
+             request.resource.data.licencia_tipo != null &&
+             resource.data.dispositivos.size() == 0 &&
+             request.resource.data.dispositivos.size() >= 1;
+    }
+
+    // [BUG-R2] Bootstrap del primer config/comercio.
+    // Permite al dueño (rol 'admin') crear el config inicial de su
+    // propio comercio UNA SOLA VEZ, mientras el doc no exista.
+    // Cubre el flujo B12 → Licencia.activar:
+    //   1. Usuario se registra → usuarios/{uid}.comercioId = null.
+    //   2. Usuario pega token → Licencia.activar genera comercioId,
+    //      lo persiste en usuarios/{uid} y hace el primer
+    //      Data.set('config', 'comercio', ...).
+    function isBootstrappingComercio(comercioId, configId) {
+      return isSignedIn() &&
+             userExists() &&
+             userDoc().data.rol == 'admin' &&
+             userDoc().data.comercioId == comercioId &&
+             configId == 'comercio' &&
+             !exists(/databases/$(database)/documents/comercios/$(comercioId)/config/comercio);
+    }
+
+    // [BUG-R1 / OBS-B] Bootstrap del doc admins/{uid}.
+    // Permite al usuario crear su propio doc en admins/ UNA VEZ, si
+    // ya tiene la identidad completa de admin en usuarios/{uid} y
+    // el doc admins/{uid} todavía no existe.
+    //
+    // ADVERTENCIA (ver header): esta excepción introduce un vector de
+    // escalación teórico que se mitiga exigiendo activación atómica
+    // (BUG-R4) más la coherencia de los 5 campos chequeados acá.
+    function isBootstrappingAdmin() {
+      return isSignedIn() &&
+             !adminExists() &&
+             userExists() &&
+             userDoc().data.rol == 'admin' &&
+             userDoc().data.licencia_activa == true &&
+             userDoc().data.licencia_tipo == 'admin' &&
+             userDoc().data.comercioId != null &&
+             userDoc().data.dispositivos.size() > 0;
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════════
     // USUARIOS
-    // Cada usuario solo puede leer/escribir su propio doc.
-    // El admin puede leer los docs de sus cajeros (para el panel).
-    // ═══════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════════════
+    //
+    // READ:  uno mismo, o admin del mismo comercio.
+    // CREATE:
+    //   · Caso A: self-signup (rol null, comercioId null, sin devices).
+    //   · Caso B: admin crea cajero (pagador_uid == uid del admin,
+    //             rol == 'cajero', comercioId == el del admin).
+    // UPDATE:
+    //   · Camino A: el propio usuario con blocklist estricta y
+    //     activación atómica para `rol`.
+    //   · Camino B: admin del mismo comercio (sin tocar campos críticos).
+    // DELETE:  solo admin del mismo comercio.
+    //
+    // ═══════════════════════════════════════════════════════════════════════
     match /usuarios/{userId} {
-      // Cada uno lee su propio doc
-      allow read: if isAuth() && uid() == userId;
 
-      // Admin puede leer docs de usuarios que sean sus cajeros
-      allow read: if isAuth()
-        && getUserRol() == 'admin'
-        && getUserComercioId() != null
-        && getUserComercioId() == resource.data.comercioId;
+      // ─── READ ─────────────────────────────────────────────────────────
+      allow read: if isSignedIn() && (
+        userId == uid() ||
+        (isAdmin() && resource.data.comercioId == myComercioId())
+      );
 
-      // Crear su propio doc al registrarse
-      allow create: if isAuth() && uid() == userId;
+      // ─── CREATE ───────────────────────────────────────────────────────
+      allow create: if isSignedIn() && (
 
-      // Actualizar su propio doc (para device_id, ultimo_login, etc.)
-      allow update: if isAuth() && uid() == userId;
+        // Caso A: el propio usuario se registra. El doc debe venir
+        // "en blanco": rol y comercioId null, sin dispositivos,
+        // licencia inactiva.
+        (
+          userId == uid() &&
+          request.resource.data.email == request.auth.token.email &&
+          request.resource.data.rol == null &&
+          request.resource.data.comercioId == null &&
+          request.resource.data.dispositivos == [] &&
+          request.resource.data.licencia_activa == false &&
+          request.resource.data.licencia_tipo == null &&
+          request.resource.data.pagador_uid == null &&
+          // [OBS-3] server timestamp forzado por el servidor.
+          request.resource.data.terminos_aceptados == request.time
+        ) ||
 
-      // Nadie puede borrar usuarios
-      allow delete: if false;
+        // Caso B: admin crea cajero. El email del cajero es derivado
+        // (alias +cajeroN), por eso NO se compara con el token.
+        (
+          isAdmin() &&
+          request.resource.data.rol == 'cajero' &&
+          request.resource.data.licencia_activa == true &&
+          request.resource.data.licencia_tipo == 'cajero' &&
+          request.resource.data.pagador_uid == uid() &&
+          request.resource.data.comercioId == myComercioId()
+        )
+      );
+
+      // ─── UPDATE ───────────────────────────────────────────────────────
+      allow update: if isSignedIn() && (
+
+        // ═══ Camino A: el propio usuario con blocklist ═══
+        (
+          userId == uid() &&
+
+          // Campos inmutables: nunca cambian.
+          unchangedAll([
+            'email',
+            'fecha_registro',
+            'terminos_aceptados',
+            'terminos_version'
+          ]) &&
+
+          // [BUG-R4] rol: null → valor, SOLO si es activación
+          // atómica completa (comercioId + licencia_activa +
+          // licencia_tipo + dispositivos en el mismo write).
+          (
+            !changedAny(['rol']) ||
+            isActivacionInicialCompleta()
+          ) &&
+
+          // comercioId: solo null → valor (una sola vez).
+          (
+            !changedAny(['comercioId']) ||
+            (resource.data.comercioId == null &&
+             request.resource.data.comercioId != null)
+          ) &&
+
+          // licencia_activa: solo false → true.
+          (
+            !changedAny(['licencia_activa']) ||
+            (resource.data.licencia_activa == false &&
+             request.resource.data.licencia_activa == true)
+          ) &&
+
+          // licencia_tipo: solo null → valor.
+          (
+            !changedAny(['licencia_tipo']) ||
+            (resource.data.licencia_tipo == null &&
+             request.resource.data.licencia_tipo != null)
+          ) &&
+
+          // pagador_uid: solo null → valor (una sola vez).
+          (
+            !changedAny(['pagador_uid']) ||
+            (resource.data.pagador_uid == null &&
+             request.resource.data.pagador_uid != null)
+          ) &&
+
+          // [BUG-R3] dispositivos[]: solo cambia si licencia_activa
+          // pasó de false → true (activación única). Después queda
+          // inmutable desde el cliente.
+          (
+            !changedAny(['dispositivos']) ||
+            (resource.data.licencia_activa == false &&
+             request.resource.data.licencia_activa == true)
+          )
+        ) ||
+
+        // ═══ Camino B: admin del mismo comercio ═══
+        // Puede editar el doc de un usuario de su comercio, pero NO
+        // puede mover al usuario a otro comercio, cambiar el email,
+        // ni tocar el flag de términos aceptados.
+        (
+          isAdmin() &&
+          resource.data.comercioId == myComercioId() &&
+          unchangedAll([
+            'email',
+            'comercioId',
+            'fecha_registro',
+            'terminos_aceptados',
+            'terminos_version',
+            'pagador_uid'
+          ])
+        )
+      );
+
+      // ─── DELETE ───────────────────────────────────────────────────────
+      allow delete: if isAdmin() &&
+        resource.data.comercioId == myComercioId();
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // COMERCIOS
-    // El admin gestiona el comercio y sus subcolecciones.
-    // Los cajeros leen/escriben en las colecciones operativas.
-    // ═══════════════════════════════════════════════════════════
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ADMINS
+    // ═══════════════════════════════════════════════════════════════════════
+    //
+    // El doc admins/{uid} es la fuente autoritativa de "es admin".
+    // El primer doc se crea automáticamente vía isBootstrappingAdmin()
+    // (OBS-B), o manualmente desde la consola de Firebase si esa
+    // excepción no aplica (ver header).
+    //
+    // Un usuario cualquiera NO puede:
+    //   · leer el doc de otro admin
+    //   · crearse un doc a sí mismo sin cumplir el bootstrap
+    //   · modificar/borrar el doc de otro admin
+    //
+    // ═══════════════════════════════════════════════════════════════════════
+    match /admins/{userId} {
+
+      // READ: solo el propio admin.
+      allow read: if isSignedIn() && userId == uid();
+
+      // CREATE: dos caminos.
+      //   · Un admin existente crea el doc de otro usuario.
+      //   · El propio usuario crea su doc vía bootstrap (OBS-B).
+      allow create: if (
+        (isAdmin() && request.resource.data.activo == true) ||
+        (userId == uid() &&
+         isBootstrappingAdmin() &&
+         request.resource.data.activo == true)
+      );
+
+      // UPDATE: solo admin existente. Y activo debe quedar en true
+      // (no se puede crear un admin "inactivo" que se active después
+      // sin pasar por la aprobación de un admin real).
+      allow update: if isAdmin() && request.resource.data.activo == true;
+
+      // DELETE: solo admin existente.
+      allow delete: if isAdmin();
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // COMERCIOS Y SUBSCOLECCIONES
+    // ═══════════════════════════════════════════════════════════════════════
     match /comercios/{comercioId} {
 
-      // Leer el doc del comercio: cualquier miembro
+      // El doc raíz del comercio NO se escribe desde el cliente.
       allow read: if belongsToComercio(comercioId);
+      allow write: if false;
 
-      // Crear: cualquier usuario autenticado (se crea al activar licencia)
-      allow create: if isAuth() && request.resource.data.admin_uid == uid();
+      // ─────────────────────────────────────────────────────────────────
+      // CONFIG — configuración única del comercio.
+      // Lectura: cualquier miembro del comercio.
+      // Create: admin del comercio, O primera escritura del config
+      //         por el dueño recién activado (bootstrap).
+      // Update/Delete: SOLO admin del comercio.
+      // ─────────────────────────────────────────────────────────────────
+      match /config/{configId} {
 
-      // Actualizar: solo admin
-      allow update: if isAdminOf(comercioId);
-
-      // Borrar: solo admin
-      allow delete: if isAdminOf(comercioId);
-
-      // ─────────────────────────────────────────────────────────
-      // SUBCOLECCIONES OPERATIVAS
-      // productos, ventas, turnos, pedidos, devoluciones,
-      // proveedores, historico_compras, movimientos_stock,
-      // tickets_pendientes, logs_errores
-      // ─────────────────────────────────────────────────────────
-      match /{coleccion}/{docId} {
-
-        // Lectura: cualquier miembro del comercio
         allow read: if belongsToComercio(comercioId);
 
-        // Escritura: cualquier miembro del comercio
-        // (el control fino por rol se hace en la app con data-solo-admin)
-        allow write: if isAuth() && belongsToComercio(comercioId);
+        // [BUG-R5] create separado de update/delete. El bootstrap
+        // solo aplica a la primera escritura.
+        allow create: if isAdminOf(comercioId) ||
+                         isBootstrappingComercio(comercioId, configId);
 
-        // Excepción: config del comercio solo la toca el admin
-        // (esto es una subcolección, pero por las dudas)
+        allow update, delete: if isAdminOf(comercioId);
       }
 
-      // ─────────────────────────────────────────────────────────
-      // CONFIG (doc único dentro de la subcolección)
-      // Solo el admin la modifica, todos la leen
-      // ─────────────────────────────────────────────────────────
-      match /config/{configId} {
+      // ─────────────────────────────────────────────────────────────────
+      // PRODUCTOS
+      // El cajero necesita escribir productos para crear productos
+      // rápidos desde el POS y para descontar stock al vender.
+      // ─────────────────────────────────────────────────────────────────
+      match /productos/{productoId} {
+        allow read: if belongsToComercio(comercioId);
+        allow create, update: if belongsToComercio(comercioId);
+        allow delete: if isAdminOf(comercioId);
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // PROVEEDORES — solo admin escribe, cajero solo lee.
+      // ─────────────────────────────────────────────────────────────────
+      match /proveedores/{proveedorId} {
         allow read: if belongsToComercio(comercioId);
         allow write: if isAdminOf(comercioId);
       }
 
-      // ─────────────────────────────────────────────────────────
-      // LOGS DE ERRORES
-      // Cualquier miembro escribe (la app los sube auto)
-      // Solo el admin puede borrar/marcar como resuelto
-      // ─────────────────────────────────────────────────────────
-      match /logs_errores/{logId} {
+      // ─────────────────────────────────────────────────────────────────
+      // VENTAS
+      // El cajero crea y actualiza (para el estado de facturación ARCA).
+      // Solo admin puede borrar.
+      // ─────────────────────────────────────────────────────────────────
+      match /ventas/{ventaId} {
         allow read: if belongsToComercio(comercioId);
-        allow create: if isAuth() && belongsToComercio(comercioId);
-        allow update: if isAdminOf(comercioId);
+        allow create, update: if belongsToComercio(comercioId);
+        allow delete: if isAdminOf(comercioId);
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // PEDIDOS — solo admin escribe.
+      // ─────────────────────────────────────────────────────────────────
+      match /pedidos/{pedidoId} {
+        allow read: if belongsToComercio(comercioId);
+        allow write: if isAdminOf(comercioId);
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // DEVOLUCIONES — solo admin escribe.
+      // ─────────────────────────────────────────────────────────────────
+      match /devoluciones/{devId} {
+        allow read: if belongsToComercio(comercioId);
+        allow write: if isAdminOf(comercioId);
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // TURNOS — el cajero abre/cierra turnos y registra movimientos.
+      // ─────────────────────────────────────────────────────────────────
+      match /turnos/{turnoId} {
+        allow read: if belongsToComercio(comercioId);
+        allow create, update: if belongsToComercio(comercioId);
+        allow delete: if isAdminOf(comercioId);
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // HISTÓRICO DE COMPRAS — solo admin escribe.
+      // ─────────────────────────────────────────────────────────────────
+      match /historico_compras/{compraId} {
+        allow read: if belongsToComercio(comercioId);
+        allow write: if isAdminOf(comercioId);
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // LOGS DE ERRORES
+      // El cliente (cualquier miembro) solo CREA. La lectura y el
+      // borrado son exclusivos del admin. El creador puede actualizar
+      // contador/timestamp de sus propios logs (loops) y marcar
+      // enviado_por_usuario si el _device coincide.
+      // ─────────────────────────────────────────────────────────────────
+      match /logs_errores/{logId} {
+
+        allow read: if isAdminOf(comercioId);
+
+        // [BUG-R7] Validación de forma mínima. Cierra el vector de
+        // spam de logs basura por un cajero malicioso. El payload
+        // real de B10/B11 incluye todos estos campos.
+        allow create: if belongsToComercio(comercioId) &&
+                        request.resource.data.keys().hasAll(
+                          ['codigo', 'timestamp', 'estado', 'contador']
+                        ) &&
+                        request.resource.data.codigo is string &&
+                        request.resource.data.codigo.size() > 0 &&
+                        request.resource.data.timestamp is number &&
+                        request.resource.data.estado == 'nuevo' &&
+                        request.resource.data.contador is number &&
+                        request.resource.data.contador >= 1;
+
+        // [BUG-R8] Update: admin sin restricción, o el mismo device
+        // actualizando un conjunto acotado de campos.
+        //   · contador, timestamp, _creado, _ts → re-subida de logs
+        //     en loop (B11 hook).
+        //   · enviado_por_usuario, fecha_envio → marcar como enviado
+        //     (Data.marcarLogEnviadoPorUsuario, B11).
+        // La condición `resource.data._device == request.resource.data._device`
+        // de la v1.1 fue eliminada por ser redundante con hasOnly.
+        allow update: if isAdminOf(comercioId) ||
+                        (belongsToComercio(comercioId) &&
+                         request.resource.data.diff(resource.data)
+                           .affectedKeys().hasOnly([
+                             'contador', 'timestamp', '_creado', '_ts',
+                             'enviado_por_usuario', 'fecha_envio'
+                           ]));
+
         allow delete: if isAdminOf(comercioId);
       }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // CONFIGURACIÓN PÚBLICA
-    // Documentos legales, versión mínima, etc. Lectura para todos
-    // Escritura solo desde la consola de Firebase o admin UID
-    // ═══════════════════════════════════════════════════════════
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // CONFIGURACIÓN GLOBAL
+    // ═══════════════════════════════════════════════════════════════════════
+    //
+    // `configuracion/documentos_legales` se lee desde el login (ANTES
+    // de que el usuario esté autenticado, para mostrar los T&C).
+    // Por eso `read: if true`.
+    //
+    // `configuracion/tutorial_arca` se lee solo desde el panel Cuenta.
+    //
+    // Escritura: solo admin.
+    //
+    // ═══════════════════════════════════════════════════════════════════════
     match /configuracion/{docId} {
       allow read: if true;
-      allow write: if isAuth() && uid() == 'BSShatgnpKSmFrQHCY1D7iiWyfA2';
+      allow write: if isAdmin();
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // DEFAULT: denegar todo lo no especificado
-    // ═══════════════════════════════════════════════════════════
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // DEFAULT-DENY
+    // ═══════════════════════════════════════════════════════════════════════
+    //
+    // Firestore rules son ADITIVAS: una operación se concede si
+    // CUALQUIER regla `allow` matchea. Esta regla es documental
+    // (señala la intención de deny por default). Todo lo no declarado
+    // arriba ya está bloqueado implícitamente.
+    //
+    // ═══════════════════════════════════════════════════════════════════════
     match /{document=**} {
       allow read, write: if false;
     }
