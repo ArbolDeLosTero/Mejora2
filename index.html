@@ -288,7 +288,7 @@
   <!-- app-version: leída por App.getVersion() (B10) y por el
        VersionChecker del bloque final. Sincronizable desde
        version.json vía GitHub Action (§5.2 auditoría). -->
-  <meta name="app-version" content="1.0.33">
+  <meta name="app-version" content="1.0.31">
 
   <title>Sistema de Gestión para Kioscos y Almacenes</title>
 
@@ -14370,18 +14370,34 @@
     catch (e) { return true; }
   };
 
-  /* [FIX-10-A, preservado] Priorizar meta > localStorage > APP_VERSION. */
+  /* [FIX-10-A v2] Priorizar localStorage > meta > APP_VERSION.
+   *
+   * Cambio respecto a la versión anterior (meta primero): el
+   * VersionChecker del Bloque Final escribe el valor remoto real en
+   * localStorage.app_version_v1 tras cada chequeo. El meta, en
+   * cambio, solo se actualiza cuando el workflow deploy.yml corre
+   * (o cuando el propio VersionChecker lo sincroniza en runtime).
+   *
+   * Si el workflow tardó en correr o el cliente está offline, el
+   * meta puede estar desactualizado, pero localStorage siempre
+   * refleja lo que el chequeo más reciente determinó.
+   *
+   * Orden final: localStorage (runtime) > meta (workflow) > APP_VERSION
+   * (fallback hardcodeado por si todo lo demás falla).
+   */
   App.getVersion = function () {
+    try {
+      var cached = localStorage.getItem('app_version_v1');
+      if (cached && /^\d+\.\d+\.\d+/.test(String(cached))) {
+        return String(cached);
+      }
+    } catch (e) {}
     try {
       var meta = document.querySelector('meta[name="app-version"]');
       if (meta && meta.getAttribute('content')) {
         var v = String(meta.getAttribute('content')).trim();
         if (v) return v;
       }
-    } catch (e) {}
-    try {
-      var cached = localStorage.getItem('app_version_v1');
-      if (cached) return cached;
     } catch (e) {}
     return APP_VERSION;
   };
@@ -31996,10 +32012,11 @@ _safeSetTimeout(_actualizarBadgeLogsMenu, 3000);
       return;
     }
 
-    var VERSION_KEY       = 'app_version_v1';
-    var VERSION_URL       = 'version.json';
-    var CHECK_INTERVAL_MS = 5 * 60 * 1000;
-    var DELAY_INICIAL_MS  = 3000;
+    var VERSION_KEY           = 'app_version_v1';
+    var VERSION_PENDIENTE_KEY = 'version_reload_pendiente_v1';
+    var VERSION_URL           = 'version.json';
+    var CHECK_INTERVAL_MS     = 5 * 60 * 1000;
+    var DELAY_INICIAL_MS      = 3000;
 
     var _reloadEnCurso = false;
     var _intervalId    = null;
@@ -32027,9 +32044,49 @@ _safeSetTimeout(_actualizarBadgeLogsMenu, 3000);
       catch (e) { return null; }
     }
 
+    /* Sincroniza el <meta name="app-version"> en runtime. Sirve de
+     * red de seguridad si el workflow deploy.yml todavía no corrió
+     * o si el usuario llegó a un HTML viejo por caché. */
+    function _actualizarMetaVersion(v) {
+      try {
+        var meta = document.querySelector('meta[name="app-version"]');
+        if (meta) meta.setAttribute('content', String(v));
+      } catch (e) {}
+    }
+
     function _setVersionLocal(v) {
       try { localStorage.setItem(VERSION_KEY, v); }
       catch (e) {}
+      _actualizarMetaVersion(v);
+    }
+
+    /* Marca que hay un reload pendiente. Si el usuario cierra la
+     * pestaña entre _setVersionLocal() y location.replace(), el flag
+     * sobrevive en localStorage y fuerza el reload en el próximo
+     * arranque. Sin esto, el usuario quedaba atascado con HTML viejo
+     * en caché hasta que limpiaba el navegador manualmente. */
+    function _marcarReloadPendiente(v) {
+      try { localStorage.setItem(VERSION_PENDIENTE_KEY, String(v)); }
+      catch (e) {}
+    }
+
+    function _hayReloadPendiente() {
+      try { return !!localStorage.getItem(VERSION_PENDIENTE_KEY); }
+      catch (e) { return false; }
+    }
+
+    function _limpiarReloadPendiente() {
+      try { localStorage.removeItem(VERSION_PENDIENTE_KEY); }
+      catch (e) {}
+    }
+
+    function _forzarReload(version) {
+      _limpiarReloadPendiente();
+      var url = location.pathname +
+                '?v=' + encodeURIComponent(version) +
+                '&t=' + Date.now() +
+                (location.hash || '');
+      location.replace(url);
     }
 
     async function _chequearVersion(silencioso) {
@@ -32037,6 +32094,16 @@ _safeSetTimeout(_actualizarBadgeLogsMenu, 3000);
 
       var versionRemota = await _fetchVersionRemota();
       if (!versionRemota) return;
+
+      /* Caso 1: quedó un reload pendiente de una sesión anterior.
+       * Pasó que el usuario cerró la pestaña entre _setVersionLocal
+       * y location.replace(). Recargamos YA, sin esperar. */
+      if (_hayReloadPendiente()) {
+        console.info('[Version] Reload pendiente detectado. Forzando recarga inmediata.');
+        _reloadEnCurso = true;
+        _forzarReload(versionRemota);
+        return;
+      }
 
       var versionLocal = _getVersionLocal();
 
@@ -32049,7 +32116,12 @@ _safeSetTimeout(_actualizarBadgeLogsMenu, 3000);
       if (versionRemota !== versionLocal) {
         console.info('[Version] Nueva versión detectada: ' + versionRemota +
                      ' (teníamos ' + versionLocal + ')');
+
         _reloadEnCurso = true;
+
+        /* Marcamos el flag ANTES de actualizar localStorage, para
+         * que sobreviva a un cierre de pestaña abrupto. */
+        _marcarReloadPendiente(versionRemota);
         _setVersionLocal(versionRemota);
 
         if (window.App && typeof App.toast === 'function') {
@@ -32057,11 +32129,7 @@ _safeSetTimeout(_actualizarBadgeLogsMenu, 3000);
         }
 
         setTimeout(function () {
-          var url = location.pathname +
-                    '?v=' + encodeURIComponent(versionRemota) +
-                    '&t=' + Date.now() +
-                    (location.hash || '');
-          location.replace(url);
+          _forzarReload(versionRemota);
         }, 2500);
 
         return;
@@ -32078,7 +32146,13 @@ _safeSetTimeout(_actualizarBadgeLogsMenu, 3000);
         return;
       }
 
-      setTimeout(function () { _chequearVersion(false); }, DELAY_INICIAL_MS);
+      /* Si hay un reload pendiente de la sesión anterior, no esperamos
+       * los 3 s del delay inicial: disparamos el chequeo en el próximo
+       * tick para minimizar la ventana en la que el usuario ve HTML
+       * viejo. */
+      var delayInicial = _hayReloadPendiente() ? 100 : DELAY_INICIAL_MS;
+
+      setTimeout(function () { _chequearVersion(false); }, delayInicial);
 
       _intervalId = setInterval(function () {
         _chequearVersion(true);
