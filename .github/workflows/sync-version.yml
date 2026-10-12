@@ -1,0 +1,277 @@
+# ═══════════════════════════════════════════════════════════════════════
+# Sincronizador version.json → <meta name="app-version"> de index.html
+# ═══════════════════════════════════════════════════════════════════════
+#
+# RESPONSABILIDAD (una sola):
+#
+#   Garantizar que el `<meta name="app-version">` en index.html siempre
+#   refleje el `.version` de version.json. Es una RED DE SEGURIDAD
+#   IDEMPOTENTE que se ejecuta después de deploy.yml y, si encuentra
+#   divergencia, la corrige.
+#
+# POR QUÉ EXISTE ESTE WORKFLOW SI deploy.yml YA SINCRONIZA EL META:
+#
+#   deploy.yml sincroniza el meta en el mismo commit del bump (paso 2.4
+#   + verificación con grep en 2.5). Es la vía primaria y suficiente.
+#
+#   Este workflow existe como vía SECUNDARIA para cubrir tres casos
+#   borde que deploy.yml no puede manejar por diseño:
+#
+#     1. Edición manual del meta en index.html sin tocar version.json
+#        (ej: resolver un merge conflict a mano mal resuelto).
+#     2. Edición manual de version.json sin pasar por deploy.yml
+#        (ej: cambio de major/minor que requiere intervención humana).
+#     3. Fallo parcial de deploy.yml donde el commit del bump quedó
+#        pusheado pero el `_site/` deployado tiene un meta viejo por
+#        caché de Pages (mitigado pero no eliminado por completo).
+#
+#   En el flujo normal, este workflow corre tras cada deploy exitoso y
+#   NO HACE NADA (idempotente: meta == version → exit 0 sin commit).
+#
+# POR QUÉ workflow_run Y NO push:
+#
+#   Si disparara en `push`, competiría con deploy.yml por el mismo
+#   commit de bot y podría generar loop:
+#     push usuario → deploy.yml (bump + commit) → push bot →
+#     sync-version (detecta diff) → commit → push bot → ...
+#
+#   Con `workflow_run` encadenado a deploy.yml:
+#     · Solo corre DESPUÉS de que deploy.yml terminó con éxito.
+#     · Si deploy.yml ya sincronizó el meta, es no-op.
+#     · Si algo quedó desincronizado, lo arregla con un commit
+#       marcado [skip ci] que no dispara workflows adicionales.
+#
+#   El `types: [completed]` + la condición de conclusión exitosa
+#   evitan que el workflow corra cuando deploy.yml falla (en ese caso
+#   deploy.yml es quien debe arreglarse, no este workflow).
+#
+# REQUISITO DE BRANCH PROTECTION:
+#
+#   Si `main` está protegida, `github-actions[bot]` debe estar en la
+#   Bypass list. Sin eso, el `git push` del commit correctivo falla.
+#
+# ═══════════════════════════════════════════════════════════════════════
+
+name: Sincronizar versión (version.json → index.html)
+
+on:
+  # Red de seguridad: corre tras cada deploy exitoso.
+  workflow_run:
+    workflows: ["Deploy a GitHub Pages (con auto-versionado)"]
+    types: [completed]
+    branches: [main]
+
+  # Trigger manual para intervenciones puntuales.
+  workflow_dispatch:
+
+permissions:
+  contents: write     # para el commit correctivo (si hubiera que hacerlo)
+
+concurrency:
+  group: "sync-version"
+  cancel-in-progress: true
+
+jobs:
+  sincronizar:
+    name: Sincronizar meta app-version
+
+    # Corre solo si:
+    #   · Fue disparado manualmente, O
+    #   · Fue disparado por workflow_run Y deploy.yml terminó OK.
+    # Si deploy.yml falló, no tiene sentido correr: deploy.yml es quien
+    # debe arreglarse.
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success')
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      # ─────────────────────────────────────────────────────────────
+      # 0. Checkout
+      # ─────────────────────────────────────────────────────────────
+      - name: Checkout del repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      # ─────────────────────────────────────────────────────────────
+      # 1. Verificar prerequisitos
+      # ─────────────────────────────────────────────────────────────
+      - name: Verificar prerequisitos
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for f in version.json index.html; do
+            if [ ! -f "$f" ]; then
+              echo "::error::$f no encontrado en la raíz del repositorio."
+              exit 1
+            fi
+          done
+
+          if ! grep -q 'name="app-version"' index.html; then
+            echo "::error file=index.html::No hay <meta name=\"app-version\"> en index.html."
+            exit 1
+          fi
+
+          echo "::notice::Prerequisitos OK."
+
+      # ─────────────────────────────────────────────────────────────
+      # 2. Leer version.json y compararlo con el meta
+      # ─────────────────────────────────────────────────────────────
+      - name: Detectar divergencia
+        id: diff
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION_JSON=$(jq -r '.version // empty' version.json)
+
+          if [ -z "$VERSION_JSON" ]; then
+            echo "::error file=version.json::Campo 'version' ausente, null o vacío."
+            exit 1
+          fi
+
+          if ! echo "$VERSION_JSON" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error file=version.json::La versión '$VERSION_JSON' no cumple X.Y.Z numérico."
+            exit 1
+          fi
+
+          # Extraer el valor actual del meta.
+          # Estrategia 1: name antes que content.
+          VERSION_META=$(python3 - <<'PYEOF'
+          import re, sys
+          with open("index.html", "r", encoding="utf-8") as f:
+              content = f.read()
+          # name antes de content
+          m = re.search(r'<meta\s+name="app-version"[^>]*content="([^"]+)"', content)
+          if not m:
+              # content antes de name
+              m = re.search(r'<meta\s+content="([^"]+)"[^>]*name="app-version"', content)
+          print(m.group(1) if m else "")
+          PYEOF
+          )
+
+          if [ -z "$VERSION_META" ]; then
+            echo "::error file=index.html::No se pudo extraer el valor del meta app-version."
+            exit 1
+          fi
+
+          echo "::notice::version.json → $VERSION_JSON"
+          echo "::notice::meta actual  → $VERSION_META"
+
+          if [ "$VERSION_JSON" = "$VERSION_META" ]; then
+            echo "::notice::Sin divergencia. No hay nada que hacer."
+            echo "cambios=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Divergencia detectada. Se corregirá el meta."
+            echo "cambios=true" >> "$GITHUB_OUTPUT"
+            echo "VERSION_NUEVA=$VERSION_JSON" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ─────────────────────────────────────────────────────────────
+      # 3. Corregir el meta si hay divergencia
+      # ─────────────────────────────────────────────────────────────
+      - name: Corregir meta en index.html
+        if: steps.diff.outputs.cambios == 'true'
+        env:
+          V: ${{ steps.diff.outputs.VERSION_NUEVA }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Misma estrategia multi-fallback que deploy.yml: no asumimos
+          # orden de atributos ni formato exacto.
+          VERSION_NUEVA="$V" python3 <<'PYEOF'
+          import os, re, sys
+
+          version = os.environ["VERSION_NUEVA"]
+
+          with open("index.html", "r", encoding="utf-8") as f:
+              content = f.read()
+
+          # Estrategia 1: name antes que content
+          new_content, count = re.subn(
+              r'(<meta\s+name="app-version"[^>]*content=")[^"]+(")',
+              rf'\g<1>{version}\g<2>',
+              content, count=1)
+
+          # Estrategia 2: content antes que name
+          if count == 0:
+              new_content, count = re.subn(
+                  r'(<meta\s+content=")[^"]+("[^>]*name="app-version"[^>]*>)',
+                  rf'\g<1>{version}\g<2>',
+                  content, count=1)
+
+          if count == 0:
+              print("::error file=index.html::No se pudo reemplazar el meta app-version.")
+              sys.exit(1)
+
+          with open("index.html", "w", encoding="utf-8") as f:
+              f.write(new_content)
+
+          print(f"OK: meta app-version → {version}")
+          PYEOF
+
+          # Verificación post-reemplazo (paridad con deploy.yml).
+          if ! grep -q "content=\"$V\"" index.html; then
+            echo "::error file=index.html::Verificación falló tras el reemplazo."
+            exit 1
+          fi
+
+          echo "::notice::index.html sincronizado a $V."
+
+      # ─────────────────────────────────────────────────────────────
+      # 4. Commit + push del fix
+      # ─────────────────────────────────────────────────────────────
+      - name: Commit y push del fix
+        if: steps.diff.outputs.cambios == 'true'
+        env:
+          V: ${{ steps.diff.outputs.VERSION_NUEVA }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet -- index.html; then
+            echo "::notice::Sin cambios efectivos en index.html. Nada que commitear."
+            exit 0
+          fi
+
+          git add index.html
+
+          # [skip ci] IMPRESCINDIBLE: evita que este commit del bot
+          # dispare deploy.yml y se cree un loop.
+          git commit -m "chore: sincronizar app-version a ${V} [skip ci]"
+
+          # Pull-rebase defensivo por si un humano pusheó entre el
+          # checkout y ahora.
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+          echo "::notice::Commit correctivo pusheado con versión ${V}."
+
+      # ─────────────────────────────────────────────────────────────
+      # 5. Resumen del run
+      # ─────────────────────────────────────────────────────────────
+      - name: Resumen
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## 🔄 Sincronización de versión"
+            echo ""
+            echo "| Campo | Valor |"
+            echo "|---|---|"
+            echo "| Divergencia detectada | ${{ steps.diff.outputs.cambios == 'true' && '⚠️ Sí, corregida' || '✅ No, todo alineado' }} |"
+            echo "| Versión sincronizada | \`${{ steps.diff.outputs.VERSION_NUEVA || '—' }}\` |"
+            echo "| Evento | \`${{ github.event_name }}\` |"
+            echo "| Ejecutado por | \`${{ github.actor }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
