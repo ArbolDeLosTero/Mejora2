@@ -2,7 +2,7 @@
 name: Bug report
 about: Reportar un error o comportamiento inesperado en Mejora2
 title: "[BUG] "
-labels: ["bug", "triage"]
+labels: ["bug"]
 assignees: ["ArbolDeLosTero"]
 ---
 
