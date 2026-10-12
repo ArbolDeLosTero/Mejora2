@@ -1,0 +1,262 @@
+---
+name: Bug report
+about: Reportar un error o comportamiento inesperado en Mejora2
+title: "[BUG] "
+labels: ["bug", "triage"]
+assignees: ["ArbolDeLosTero"]
+---
+
+<!--
+  ============================================================
+  Template de bug report para Mejora2
+  ------------------------------------------------------------
+  Formato: GitHub Issue Forms (body estructurado)
+  Docs: https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms
+  ------------------------------------------------------------
+  Changelog:
+  - v1.0.0 — Versión inicial. Reemplaza el borrador en Markdown
+    libre por un formulario estructurado con campos obligatorios,
+    dropdowns cerrados y pre-rellenado del título.
+  ============================================================
+-->
+
+## 👋 Antes de arrancar
+
+Gracias por tomarte el tiempo de reportar un bug. Para poder reproducirlo y arreglarlo rápido, **necesito que completes todos los campos obligatorios** (los marcados con asterisco rojo). Si falta alguno, el issue no se va a poder crear.
+
+Un par de aclaraciones:
+
+- **Un bug por issue.** Si encontraste dos problemas distintos, abrí dos issues separados.
+- **No reportes vulnerabilidades de seguridad acá.** Para eso está [`SECURITY.md`](https://github.com/ArbolDeLosTero/Mejora2/blob/main/SECURITY.md).
+- **No borres las instrucciones** de cada campo: ayudan a que sepas qué poner.
+
+---
+
+- type: checkboxes
+  id: chequeos-previos
+  attributes:
+    label: Chequeos previos
+    description: Marcá las casillas antes de continuar. Las dos primeras son obligatorias.
+    options:
+      - label: Busqué en los [issues existentes](https://github.com/ArbolDeLosTero/Mejora2/issues) y no encontré uno igual.
+        required: true
+      - label: Estoy usando la última versión de Mejora2 (revisé que la versión coincida con la que se ve en la app).
+        required: true
+      - label: Reinicié la app (recargué la página) antes de reportar, y el bug sigue pasando.
+        required: false
+      - label: Verifiqué que el problema no sea de mi conexión a internet.
+        required: false
+
+---
+
+- type: textarea
+  id: descripcion
+  attributes:
+    label: Descripción del bug
+    description: Contame en una o dos oraciones qué está mal. Sin entrar en detalles técnicos, eso viene después.
+    placeholder: "Ejemplo: cuando escaneo un código de barras que ya existe en el catálogo, el POS agrega el producto duplicado en vez de sumar cantidad."
+  validations:
+    required: true
+
+---
+
+- type: textarea
+  id: pasos
+  attributes:
+    label: Pasos para reproducir
+    description: |
+      Contame paso a paso cómo llegar al bug, desde que abrís la app.
+      Sé lo más específico posible: qué botones tocaste, qué escribiste, en qué orden.
+      Si el bug depende de un producto o proveedor puntual, decime cuál.
+    value: |
+      1. Abrí la app y fui a ...
+      2. Toqué el botón ...
+      3. Escribí / escaneé ...
+      4. Vi el error
+    render: markdown
+  validations:
+    required: true
+
+---
+
+- type: textarea
+  id: comportamiento-esperado
+  attributes:
+    label: ¿Qué esperabas que pase?
+    description: Describí el comportamiento correcto. ¿Qué debería haber pasado si todo funcionara bien?
+    placeholder: "Ejemplo: esperaba que el POS sumara 1 a la cantidad del producto ya existente en el carrito."
+  validations:
+    required: true
+
+---
+
+- type: textarea
+  id: comportamiento-actual
+  attributes:
+    label: ¿Qué pasó en realidad?
+    description: Describí el comportamiento que viste. Si hay un mensaje de error visible, copialo tal cual (sin parafrasear).
+    placeholder: "Ejemplo: el POS agregó una segunda línea con el mismo producto, y ahora el total aparece duplicado."
+  validations:
+    required: true
+
+---
+
+- type: dropdown
+  id: severidad
+  attributes:
+    label: ¿Qué tan grave es?
+    description: Elegí la opción que mejor describa el impacto en tu día a día.
+    options:
+      - Bloqueante — no puedo usar la app para trabajar
+      - Grave — puedo seguir trabajando pero con errores o datos mal
+      - Molesto — funciona, pero es incómodo o poco claro
+      - Cosmético — solo estética, texto mal escrito o alineación
+  validations:
+    required: true
+
+---
+
+- type: dropdown
+  id: frecuencia
+  attributes:
+    label: ¿Pasa siempre o solo a veces?
+    description: Si es intermitente, contame si notaste algún patrón (hora del día, tipo de producto, etc.) en el campo de comentarios finales.
+    options:
+      - Siempre (lo puedo reproducir todas las veces)
+      - Casi siempre
+      - Solo a veces (intermitente)
+      - Me pasó una sola vez
+      - No estoy seguro
+  validations:
+    required: true
+
+---
+
+- type: dropdown
+  id: modo
+  attributes:
+    label: ¿En qué modo estabas cuando pasó?
+    description: Mejora2 funciona online pero tiene modo offline parcial para operaciones críticas.
+    options:
+      - Online (con conexión a internet estable)
+      - Online pero con mala conexión (se cortaba y volvía)
+      - Offline (sin conexión a internet)
+      - Cambió de online a offline (o al revés) mientras operaba
+      - No estoy seguro
+  validations:
+    required: true
+
+---
+
+- type: input
+  id: version-app
+  attributes:
+    label: Versión de Mejora2
+    description: |
+      [AJUSTAR SI HACE FALTA — confirmar ubicación exacta]
+      La encontrás en Menú → Cuenta → al pie de la vista, dice "Versión: X.Y.Z".
+      Si no la ves ahí, también aparece en el footer global de cualquier pantalla.
+    placeholder: "1.0.8"
+  validations:
+    required: true
+
+---
+
+- type: input
+  id: device-id
+  attributes:
+    label: Device ID
+    description: |
+      [AJUSTAR SI HACE FALTA — confirmar ubicación exacta]
+      Lo encontrás en Menú → Cuenta → sección "Dispositivo".
+      Tiene formato XXXX-XXXX-XXXX-XXXX. Copialo y pegalo tal cual, con los guiones.
+      Es lo que uso para cruzarlo con los logs del sistema y ver qué pasó en tu dispositivo puntual.
+    placeholder: "A1B2-C3D4-E5F6-G7H8"
+  validations:
+    required: true
+
+---
+
+- type: input
+  id: browser-so
+  attributes:
+    label: Navegador y sistema operativo
+    description: |
+      Contame en qué navegador y en qué dispositivo estabas usando la app.
+      Ejemplo: "Chrome 121 en Windows 11", "Safari en iPhone 14 (iOS 17.4)", "Chrome en Android 14".
+    placeholder: "Chrome 121 en Windows 11"
+  validations:
+    required: true
+
+---
+
+- type: input
+  id: codigo-error
+  attributes:
+    label: Código de error (si la app te mostró uno)
+    description: |
+      Si la app te mostró un mensaje con un código tipo E-AUTH-001, E-DATA-009 o E-SYS-003, pegalo acá.
+      Es opcional, pero ayuda muchísimo a diagnosticar rápido.
+    placeholder: "E-DATA-001"
+  validations:
+    required: false
+
+---
+
+- type: textarea
+  id: screenshots
+  attributes:
+    label: Capturas de pantalla o video
+    description: |
+      Si podés, pegá una captura del bug. Podés:
+      - Arrastrar la imagen acá adentro directamente.
+      - Copiar la imagen (Ctrl+C / Cmd+C) y pegarla con Ctrl+V / Cmd+V.
+      - Grabar un video corto si el bug es de interacción y adjuntarlo.
+
+      Si el bug es visual, esto vale oro. Si es de datos, no hace falta.
+    placeholder: Arrastrá las imágenes acá o pegá con Ctrl+V...
+  validations:
+    required: false
+
+---
+
+- type: textarea
+  id: logs-consola
+  attributes:
+    label: Logs de la consola del navegador (opcional, para usuarios técnicos)
+    description: |
+      Si sabés cómo abrir la consola del navegador (F12 → pestaña "Console") y ves errores en rojo cuando el bug ocurre, copialos acá.
+      No es obligatorio, pero si los tenés, ahorra muchísimo tiempo.
+    placeholder: |
+      [Pegá acá los errores de la consola, tal cual aparecen]
+    render: shell
+  validations:
+    required: false
+
+---
+
+- type: textarea
+  id: contexto-adicional
+  attributes:
+    label: Contexto adicional
+    description: |
+      Cualquier cosa más que creas relevante. Por ejemplo:
+      - Si el bug pasa solo con un producto o proveedor puntual, decime cuál.
+      - Si empezó después de una actualización, decime cuándo.
+      - Si pasa en varios dispositivos de tu comercio o solo en uno.
+      - Si notaste algún patrón (hora del día, cantidad de productos, etc.).
+    placeholder: "Cualquier dato extra que ayude a reproducirlo..."
+  validations:
+    required: false
+
+---
+
+- type: checkboxes
+  id: confirmacion-final
+  attributes:
+    label: Confirmación final
+    options:
+      - label: Entiendo que si no puedo reproducir el bug o falta información clave, el issue puede ser cerrado por "no reproducible".
+        required: true
+      - label: Revisé todo lo que completé y no incluí datos sensibles (contraseñas, tokens, datos personales de terceros).
+        required: true
