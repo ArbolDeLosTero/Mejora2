@@ -1,0 +1,112 @@
+# ============================================================
+# CODEOWNERS — Proyecto Mejora2
+# ============================================================
+#
+# Qué es esto:
+#   Define quién es responsable de revisar cada parte del repo.
+#   GitHub asigna automáticamente al owner como reviewer cuando
+#   se abre un PR que toca los archivos cubiertos por cada regla.
+#
+# Recordatorio importante:
+#   Este archivo NO bloquea merges por sí solo. Solo *solicita*
+#   reviews. Para que sea bloqueante, hay que activar
+#   "Require review from Code Owners" en la branch ruleset de
+#   `main` (Settings → Rules → Rulesets → main-protection).
+#
+# Reglas de sintaxis:
+#   - La ÚLTIMA regla que matchea gana (no la primera, no la más
+#     específica). Por eso el catch-all `*` va PRIMERO.
+#   - El `/` inicial ancla el patrón a la raíz del repo.
+#   - El `/` final indica "directorio y todo su contenido".
+#   - Los patrones son sensibles a mayúsculas.
+#
+# Owners:
+#   `@ArbolDeLosTero` es un usuario, no un team. Funciona, pero
+#   si en algún momento sumás colaboradores, conviene migrar a
+#   `@ArbolDeLosTero/mantenedores` (requiere crear el team en la
+#   organización y darle acceso de escritura al repo).
+#
+# Changelog:
+#   v1 — Versión inicial. Cubre catch-all + archivos críticos
+#        (index.html, reset-password.html, catalogo/, functions/),
+#        infraestructura Firebase, GitHub config, version.json
+#        y documentación raíz.
+# ============================================================
+
+
+# ------------------------------------------------------------
+# Catch-all: cualquier archivo no cubierto por una regla
+# posterior queda asignado al owner principal.
+# ------------------------------------------------------------
+*                                       @ArbolDeLosTero
+
+
+# ------------------------------------------------------------
+# Archivos críticos del frontend
+# index.html contiene los 17 bloques, el POS, la Caja, Stock,
+# Auth, ARCA, Impresora e Impuestos. Es el activo central del
+# proyecto y cualquier cambio impacta a todos los usuarios.
+# reset-password.html tiene su propia config de Firebase y la
+# lógica de reset de contraseña (oobCode, deviceId de licencias).
+# ------------------------------------------------------------
+/index.html                             @ArbolDeLosTero
+/reset-password.html                    @ArbolDeLosTero
+
+
+# ------------------------------------------------------------
+# Catálogo de productos
+# El .gz es consumido en producción por el POS vía
+# Stock.importarCatalogoDesdeURL(). schema.json valida la
+# estructura en el workflow `Validar catálogo`.
+# ------------------------------------------------------------
+/catalogo/                              @ArbolDeLosTero
+
+
+# ------------------------------------------------------------
+# Cloud Functions (ARCA + health check)
+# Incluye functions/index.js, package.json, arca/ y cualquier
+# helper auxiliar. También la config del predeploy.
+# ------------------------------------------------------------
+/functions/                             @ArbolDeLosTero
+
+
+# ------------------------------------------------------------
+# Seguridad e infraestructura Firebase
+# firestore.rules define los permisos de escritura.
+# firebase.json define qué reglas se deployan y el predeploy
+# de Functions (un cambio acá puede apuntar las reglas a un
+# archivo distinto sin tocar firestore.rules).
+# firestore.indexes.json afecta qué queries son válidas en
+# runtime (un cambio rompe B11/B15/B16 si no se revisa).
+# ------------------------------------------------------------
+/firestore.rules                        @ArbolDeLosTero
+/firestore.indexes.json                 @ArbolDeLosTero
+/firebase.json                          @ArbolDeLosTero
+
+
+# ------------------------------------------------------------
+# Fuente de verdad de la versión
+# Cambiar version.json dispara sync-version.yml → commit del
+# bot → deploy. Un cambio sin review puede forzar un bump
+# inconsistente con el contenido real del repo.
+# ------------------------------------------------------------
+/version.json                           @ArbolDeLosTero
+
+
+# ------------------------------------------------------------
+# Configuración de GitHub
+# Cubre TODO .github/: workflows, dependabot, ISSUE_TEMPLATE,
+# este mismo CODEOWNERS, y cualquier archivo futuro que agregues
+# dentro de .github/.
+# ------------------------------------------------------------
+/.github/                               @ArbolDeLosTero
+
+
+# ------------------------------------------------------------
+# Documentación y licencia
+# No son código, pero definen la cara pública del repo y el
+# marco legal del proyecto.
+# ------------------------------------------------------------
+/SECURITY.md                            @ArbolDeLosTero
+/README.md                              @ArbolDeLosTero
+/LICENSE                                @ArbolDeLosTero
