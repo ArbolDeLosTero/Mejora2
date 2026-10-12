@@ -1,10 +1,10 @@
 {
-  "version": "1.0.37",
-  "fecha": "2026-10-11T21:39:47-03:00",
+  "version": "1.0.38",
+  "fecha": "2026-10-11T21:56:06-03:00",
   "notas": "Versión inicial del sistema de auto-actualización",
   "semver": {
     "mayor": 1,
     "menor": 0,
-    "parche": 37
+    "parche": 38
   }
 }
