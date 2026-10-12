@@ -1,12 +1,28 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Catálogo de Productos Mejora 2",
-  "description": "Esquema de validación para el catálogo de productos con códigos de barras de distintos formatos (EAN-8, UPC-12, EAN-13, ITF-14).",
+  "description": "Esquema de validación para el catálogo de productos con códigos de barras de distintos formatos (EAN-8, UPC-12, EAN-13, ITF-14). Tolera null en campos opcionales y strings numéricos en dias_caducidad para absorber datos crudos de CSV/Excel.",
   "type": "object",
   "properties": {
     "meta": {
       "type": "object",
       "description": "Metadatos sobre la generación del catálogo (fecha, fuente, filtros, etc.).",
+      "properties": {
+        "fecha_generacion": {
+          "type": "string",
+          "description": "Fecha de generación del catálogo (formato libre, idealmente ISO 8601)."
+        },
+        "fuente": {
+          "type": ["string", "null"],
+          "description": "Fuente u origen de los datos del catálogo."
+        },
+        "total_productos": {
+          "type": "integer",
+          "description": "Cantidad total de productos incluidos en el catálogo. Se usa para validación cruzada contra productos.length en el workflow.",
+          "minimum": 0
+        }
+      },
+      "required": ["fecha_generacion", "total_productos"],
       "additionalProperties": true
     },
     "productos": {
@@ -17,25 +33,26 @@
         "properties": {
           "ean": {
             "type": "string",
-            "description": "Código de barras. Acepta entre 8 y 14 dígitos (EAN-8, UPC-12, EAN-13, ITF-14).",
+            "description": "Código de barras. Acepta entre 8 y 14 dígitos (EAN-8, UPC-12, EAN-13, ITF-14). Se espera normalizado (solo dígitos, sin espacios ni guiones).",
             "pattern": "^[0-9]{8,14}$"
           },
           "descripcion": {
             "type": "string",
-            "description": "Nombre o descripción del producto.",
+            "description": "Nombre o descripción del producto. No puede estar vacío.",
             "minLength": 1
           },
           "marca": {
-            "type": "string",
-            "description": "Marca del producto."
+            "type": ["string", "null"],
+            "description": "Marca del producto. Puede ser null si el dato no está disponible."
           },
           "categoria": {
-            "type": "string",
-            "description": "Categoría del producto (puede estar vacía)."
+            "type": ["string", "null"],
+            "description": "Categoría del producto. Puede ser string vacío o null si no está asignada."
           },
           "dias_caducidad": {
-            "type": "number",
-            "description": "Días estimados de caducidad."
+            "type": ["number", "string", "null"],
+            "description": "Días estimados de caducidad. Acepta number (ideal), string numérico (tolerancia a datos de CSV/Excel) o null (producto no perecedero o dato faltante).",
+            "minimum": 0
           }
         },
         "required": ["ean", "descripcion"],
