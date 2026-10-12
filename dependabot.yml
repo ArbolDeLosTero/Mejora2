@@ -9,13 +9,30 @@
 #   · Agrupe las actualizaciones para no generar decenas de PRs sueltos.
 #   · Etiquete cada PR con labels útiles para filtrar.
 #
-# PREREQUISITOS OPERATIVOS (hacer ANTES del push):
-#   1. Crear la label "security" (color #b60205) en Settings → Labels.
-#   2. Crear la label "github-actions" (color #0075ca) en Settings → Labels.
-#   3. Verificar que "dependencies" existe (GitHub la crea por defecto).
+# CÓMO FUNCIONAN LOS GRUPOS (leer antes de tocar):
+#   · Un grupo captura dependencias que matchean sus filtros.
+#   · Si una dependencia matchea MÁS DE UN GRUPO, va al PRIMERO
+#     declarado en este archivo (orden de aparición).
+#   · Por eso el grupo `firebase` filtra por dependency-type
+#     "production": así `firebase-functions-test` (devDependency)
+#     NO cae acá y sí cae en `dev-deps` como corresponde.
 #
-# Si las labels no existen, Dependabot NO falla: simplemente no las
-# aplica, y los PRs quedan sin categoría.
+# PREREQUISITOS OPERATIVOS (hacer ANTES del primer run de Dependabot):
+#   Las labels se aplican en el momento en que Dependabot abre el PR,
+#   no cuando se pushea este archivo. Si no existen, Dependabot NO
+#   falla: simplemente no las aplica y los PRs quedan sin categoría.
+#
+#   1. Crear la label "backend" (color #1d76db) en Settings → Labels.
+#   2. Crear la label "github-actions" (color #0075ca) en Settings → Labels.
+#   3. Verificar que "dependencies" existe (GitHub la crea por defecto
+#      cuando Dependabot abre el primer PR, no hace falta crearla a mano).
+#
+# NOTA SOBRE LA LABEL "security":
+#   No se declara acá a propósito. Etiquetar TODOS los PRs como
+#   "security" es engañoso: un bump de minor no es un parche de
+#   vulnerabilidad. Si querés marcar seguridad de verdad, hacerlo
+#   con un workflow paralelo que inspeccione el cuerpo del PR
+#   buscando "GHSA-" o "CVE-" y aplique la label solo en esos casos.
 #
 # Referencia: https://docs.github.com/en/code-security/dependabot
 # ═══════════════════════════════════════════════════════════════════
@@ -37,24 +54,29 @@ updates:
       timezone: "America/Argentina/Buenos_Aires"
 
     open-pull-requests-limit: 5
-    rebase-strategy: "auto"
+
+    assignees:
+      - "ArbolDeLosTero"
 
     commit-message:
       prefix: "chore(deps)"
       prefix-development: "chore(deps-dev)"
-      include: "scope"
 
     labels:
       - "dependencies"
-      - "security"
+      - "backend"
 
     groups:
-      # Paquetes de Firebase (firebase-* y @firebase/*).
+      # Runtime de Firebase (firebase-admin, firebase-functions, etc.).
+      # Filtra por dependency-type "production" para NO capturar
+      # `firebase-functions-test` (que es devDependency y debe caer
+      # en el grupo `dev-deps` de abajo).
       # Solo minor/patch: majors quedan como PR individual para revisión.
       firebase:
         patterns:
           - "firebase-*"
           - "@firebase/*"
+        dependency-type: "production"
         update-types:
           - "minor"
           - "patch"
@@ -62,8 +84,6 @@ updates:
       # DevDependencies (eslint, firebase-functions-test, etc.).
       # Solo minor/patch: majors suelen requerir cambios de config.
       dev-deps:
-        patterns:
-          - "*"
         dependency-type: "development"
         update-types:
           - "minor"
@@ -83,11 +103,12 @@ updates:
       timezone: "America/Argentina/Buenos_Aires"
 
     open-pull-requests-limit: 5
-    rebase-strategy: "auto"
+
+    assignees:
+      - "ArbolDeLosTero"
 
     commit-message:
       prefix: "chore(actions)"
-      include: "scope"
 
     labels:
       - "dependencies"
