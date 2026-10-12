@@ -125,16 +125,28 @@ jobs:
             exit 1
           fi
 
-          # ── 2.2 Incrementar PATCH + fecha UTC ────────────────
+          # ── 2.2 Incrementar PATCH + fecha ISO 8601 con offset ─
           IFS='.' read -r MAJ MIN PATCH <<< "$VERSION_ACTUAL"
-          VERSION_NUEVA="${MAJ}.${MIN}.$((PATCH + 1))"
-          FECHA=$(date -u +%Y-%m-%d)
+          PATCH_NUEVO=$((PATCH + 1))
+          VERSION_NUEVA="${MAJ}.${MIN}.${PATCH_NUEVO}"
+
+          # Fecha ISO 8601 completa con offset argentino (-03:00).
+          # Antes ponía "YYYY-MM-DD" pelado, que rompía la validación
+          # del version.json y generaba desfase de huso en el cliente.
+          FECHA=$(TZ=America/Argentina/Buenos_Aires date +%Y-%m-%dT%H:%M:%S-03:00)
 
           echo "::notice::Versión: $VERSION_ACTUAL → $VERSION_NUEVA ($FECHA)"
 
-          # ── 2.3 Actualizar version.json (preserva .notas) ────
+          # ── 2.3 Actualizar version.json (preserva .canal, .notas, etc.) ─
+          # Se reescribe también .semver para mantener consistencia total
+          # con .version tras el bump.
           jq --arg v "$VERSION_NUEVA" --arg f "$FECHA" \
-             '.version = $v | .fecha = $f' \
+             --argjson maj "$MAJ" \
+             --argjson min "$MIN" \
+             --argjson patch "$PATCH_NUEVO" \
+             '.version = $v
+              | .fecha = $f
+              | .semver = { mayor: $maj, menor: $min, parche: $patch }' \
              version.json > version.json.tmp
           mv version.json.tmp version.json
 
