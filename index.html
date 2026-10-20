@@ -288,7 +288,7 @@
   <!-- app-version: leída por App.getVersion() (B10) y por el
        VersionChecker del bloque final. Sincronizable desde
        version.json vía GitHub Action (§5.2 auditoría). -->
-  <meta name="app-version" content="1.0.42">
+  <meta name="app-version" content="1.0.31">
 
   <title>Sistema de Gestión para Kioscos y Almacenes</title>
 
@@ -28492,26 +28492,40 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
     return DOMINIOS_ALIAS_SOPORTADOS.indexOf(d) !== -1;
   }
 
-  Cuenta.generarEmailCajero = function () {
+  Cuenta.generarEmailCajero = function (force) {
     var num = _valorInput('p10-cajero-numero', '1');
     var user = _getUser();
-    var emailBase = String(user.email || '');
+    var emailBase = String(user.email || '').trim();
+    var inputEmail = _el('p10-cajero-email-preview');
+
+    // Si el usuario ya ha escrito manualmente, no lo sobrescribimos (a menos que force sea true)
+    if (!force && inputEmail && inputEmail.dataset.manual === '1') {
+      return inputEmail.value;
+    }
+
+    if (!emailBase) {
+      _toast('No hay email de administrador configurado. Reingresá a tu cuenta.', 'error', 5000);
+      _setVal('p10-cajero-email-preview', '');
+      return '';
+    }
+
     var base = emailBase.split('+')[0].split('@')[0];
     var dominio = emailBase.split('@')[1] || 'gmail.com';
     var emailPreview = base + '+cajero' + num + '@' + dominio;
-    _setVal('p10-cajero-email-preview', emailPreview);
+    
+    if (inputEmail) {
+      inputEmail.value = emailPreview;
+      inputEmail.dataset.manual = '0'; // Resetear la bandera de edición manual
+    }
 
     var aviso = _el('p10-cajero-email-aviso');
-    if (!aviso) {
-      var input = _el('p10-cajero-email-preview');
-      if (input && input.parentNode) {
-        aviso = document.createElement('small');
-        aviso.id = 'p10-cajero-email-aviso';
-        aviso.className = 'text-small';
-        aviso.style.display = 'block';
-        aviso.style.marginTop = '4px';
-        input.parentNode.appendChild(aviso);
-      }
+    if (!aviso && inputEmail && inputEmail.parentNode) {
+      aviso = document.createElement('small');
+      aviso.id = 'p10-cajero-email-aviso';
+      aviso.className = 'text-small';
+      aviso.style.display = 'block';
+      aviso.style.marginTop = '4px';
+      inputEmail.parentNode.appendChild(aviso);
     }
     if (aviso) {
       if (!_dominioSoportaAlias(dominio)) {
@@ -28534,43 +28548,46 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
     var password = _valorInput('p10-cajero-password', '');
     var email    = _valorInput('p10-cajero-email-preview', '').trim();
 
-    if (!nombre || !apellido || !password || !email) {
-      _toast('Completá todos los campos', 'error');
+    if (!nombre || !apellido || !email) {
+      _toast('Completá nombre, apellido y email', 'error');
       return;
     }
     if (!App.validarEmail(email)) {
       _toast('El email no es válido. Revisá el campo antes de crear.', 'error', 5000);
       return;
     }
-    if (!(
-      password.length >= 8 &&
-      /[A-Z]/.test(password) &&
-      /[a-z]/.test(password) &&
-      /[0-9]/.test(password) &&
-      /[@$!%*?&]/.test(password)
-    )) {
-      _toast(
-        'La contraseña debe tener mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo (@$!%*?&).',
-        'error', 6000
-      );
-      return;
-    }
 
     var btn = _el('p10-btn-crear-cajero');
-    if (btn) { btn.disabled = true; btn.textContent = 'Creando...'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Procesando...'; }
 
     var secondaryApp = null, secondaryAuth = null, cajeroUid = null, cajeroUser = null;
     var perfilCreado = false, vinculadoAlComercio = false;
-    var esCuentaExistente = false; // Bandera para saber si la cuenta ya existía
-    var user = _getUser();
+    var esCuentaExistente = false;
 
     try {
-      // [CORRECCIÓN] 1. Verificar si el cajero ya existe en Firestore
+      // 1. Verificar si ya existe en Firestore
       var qSnap = await App.getDb().collection('usuarios').where('email', '==', email).get();
-      
-      if (!qSnap.empty) {
-        // La cuenta ya existe. La vinculamos al admin actual en lugar de crearla.
-        esCuentaExistente = true;
+      esCuentaExistente = !qSnap.empty;
+
+      if (!esCuentaExistente) {
+        // Validar contraseña SOLO si es una cuenta nueva
+        if (!(
+          password.length >= 8 &&
+          /[A-Z]/.test(password) &&
+          /[a-z]/.test(password) &&
+          /[0-9]/.test(password) &&
+          /[@$!%*?&]/.test(password)
+        )) {
+          _toast('Para cuentas nuevas, la contraseña debe tener mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.', 'error', 6000);
+          if (btn) { btn.disabled = false; btn.textContent = '✅ Crear Cuenta'; }
+          return;
+        }
+      }
+
+      var user = _getUser();
+
+      if (esCuentaExistente) {
+        // VINCULAR CUENTA EXISTENTE
         var existingDoc = qSnap.docs[0];
         var existingData = existingDoc.data();
         
@@ -28589,26 +28606,16 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
           fecha_registro: firebase.firestore.FieldValue.serverTimestamp()
         });
         perfilCreado = true;
-        vinculadoAlComercio = true; // Se asume vinculado al actualizar comercioId
+        vinculadoAlComercio = true;
         
-        _toast('Cajero existente vinculado a tu cuenta exitosamente.', 'success', 5000);
+        _toast('Cajero existente vinculado exitosamente.', 'success', 5000);
       } else {
-        // 2. La cuenta no existe. Crear Auth user + Firestore doc.
+        // CREAR CUENTA NUEVA
         var config = App.getFirebaseConfig();
-        var sufijoRand;
-        try {
-          sufijoRand = (typeof crypto.randomUUID === 'function')
-            ? crypto.randomUUID().replace(/-/g, '').slice(0, 8)
-            : (function () {
-                var buf = new Uint8Array(4);
-                crypto.getRandomValues(buf);
-                return Array.from(buf, function (b) {
-                  return ('0' + b.toString(36)).slice(-2);
-                }).join('').slice(0, 8);
-              })();
-        } catch (e) {
-          sufijoRand = String(Date.now()).slice(-8);
-        }
+        var sufijoRand = (typeof crypto.randomUUID === 'function')
+          ? crypto.randomUUID().replace(/-/g, '').slice(0, 8)
+          : String(Date.now()).slice(-8);
+          
         var appName = 'CajeroCreator_' + Date.now() + '_' + sufijoRand;
         secondaryApp = firebase.initializeApp(config, appName);
         secondaryAuth = secondaryApp.auth();
@@ -28639,7 +28646,7 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
         perfilCreado = true;
       }
 
-      // 3. Actualizar config del comercio (común para ambos casos)
+      // Vincular en el documento de configuración del comercio
       try {
         var comercio = await Data.get('config', 'comercio');
         var cajerosActuales = (comercio && Array.isArray(comercio.cajeros))
@@ -28658,16 +28665,6 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
           perfilCreado = false;
         } catch (errDel) {
           console.warn('[Cuenta] No se pudo borrar el doc del cajero en rollback:', errDel);
-          _reportarError('E-DATA-001', {
-            detalles: {
-              contexto: 'crear_cajero_rollback_doc_fallido',
-              cajero_uid: cajeroUid,
-              cajero_email: email,
-              mensaje: errDel && errDel.message,
-              doc_huerfano: true,
-              requiere_limpieza_manual: true
-            }
-          });
         }
         throw new Error('No se pudo vincular el cajero al comercio. Intentá de nuevo.');
       }
@@ -28675,53 +28672,27 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
       var panel = _el('p10-cajero-creado');
       if (panel) panel.style.display = 'block';
       _setText('p10-cajero-email-final', email);
+      
       await _renderListaCajeros();
     } catch (e) {
-      console.error('[Cuenta] Error al crear cajero:', e);
+      console.error('[Cuenta] Error al crear/vincular cajero:', e);
       var code = (e && e.code) ? String(e.code) : '';
       var msg  = (e && e.message) ? String(e.message) : '';
 
       if (cajeroUser && (!perfilCreado || !vinculadoAlComercio)) {
-        try {
-          await cajeroUser.delete();
-          console.info('[Cuenta] Auth user huérfano eliminado:', cajeroUid);
-        } catch (errDel) {
-          console.warn('[Cuenta] No se pudo eliminar auth user huérfano:', errDel);
-        }
+        try { await cajeroUser.delete(); } catch (errDel) {}
       }
 
       if (code === 'auth/email-already-in-use') {
         _toast('Ese email ya existe en Firebase Auth. Contactá a soporte para limpiarlo.', 'error', 6000);
       } else if (code === 'auth/weak-password') {
-        _toast('Contraseña muy débil. Usá mayúscula, minúscula, número y símbolo.', 'error', 5000);
-      } else if (code === 'auth/invalid-email') {
-        _toast('El email no es válido. Revisá el campo antes de crear.', 'error', 5000);
-      } else if (code.indexOf('permission-denied') !== -1 ||
-                 msg.indexOf('permission-denied') !== -1 ||
-                 msg.indexOf('Missing or insufficient permissions') !== -1) {
-        _reportarError('E-DATA-001', {
-          detalles: {
-            mensaje: 'Firestore denegó la creación del perfil del cajero.',
-            code: code || 'permission-denied',
-            cajeroUid: cajeroUid
-          }
-        });
-        _toast('No se pudo crear el cajero por permisos de Firestore.', 'error', 6000);
-      } else if (code.indexOf('unavailable') !== -1 ||
-                 code.indexOf('network') !== -1 ||
-                 code === 'auth/network-request-failed') {
-        _reportarError('E-DATA-002', { detalles: { mensaje: msg, code: code, cajeroUid: cajeroUid } });
-        _toast('Sin conexión. Reintentá en unos segundos.', 'error', 5000);
+        _toast('Contraseña muy débil.', 'error', 5000);
       } else {
-        _reportarError('E-SYS-001', { detalles: { mensaje: msg, code: code, cajeroUid: cajeroUid } });
-        _toast(msg || 'Error al crear el cajero', 'error', 5000);
+        _toast(msg || 'Error al procesar el cajero', 'error', 5000);
       }
     } finally {
       if (secondaryAuth) { try { await secondaryAuth.signOut(); } catch (e) {} }
-      if (secondaryApp) {
-        try { await secondaryApp.delete(); }
-        catch (e) { console.warn('[Cuenta] No se pudo eliminar app secundaria:', e); }
-      }
+      if (secondaryApp) { try { await secondaryApp.delete(); } catch (e) {} }
       if (btn) { btn.disabled = false; btn.textContent = '✅ Crear Cuenta'; }
     }
   };
@@ -28806,10 +28777,45 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
         App.abrirModal('modal-p10-crear-cajero');
       });
     }
-    var selNum = _el('p10-cajero-numero');
-    if (selNum && selNum.dataset.b16p2Bound !== '1') {
-      selNum.dataset.b16p2Bound = '1';
-      selNum.addEventListener('change', Cuenta.generarEmailCajero);
+    var inputEmail = _el('p10-cajero-email-preview');
+    if (inputEmail && inputEmail.dataset.b16p2Bound !== '1') {
+      inputEmail.dataset.b16p2Bound = '1';
+      
+      // Marcar como editado manualmente
+      inputEmail.addEventListener('input', function() {
+        inputEmail.dataset.manual = '1';
+      });
+
+      // Verificar si la cuenta ya existe al salir del campo
+      inputEmail.addEventListener('blur', async function() {
+        var email = inputEmail.value.trim();
+        if (!email || !App.validarEmail(email)) return;
+        
+        try {
+          var qSnap = await App.getDb().collection('usuarios').where('email', '==', email).get();
+          var aviso = _el('p10-cajero-email-aviso');
+          var passInput = _el('p10-cajero-password');
+          var passGroup = passInput ? passInput.closest('.input-group') : null;
+
+          if (!qSnap.empty) {
+            // Cuenta existente
+            if (aviso) {
+              aviso.textContent = '⚠️ Cuenta existente. Se vinculará a tu comercio (no requiere contraseña).';
+              aviso.className = 'text-small text-warning';
+            }
+            if (passGroup) passGroup.style.display = 'none';
+          } else {
+            // Cuenta nueva
+            if (aviso) {
+              aviso.textContent = 'Cuenta nueva. Se creará con la contraseña indicada abajo.';
+              aviso.className = 'text-small text-success';
+            }
+            if (passGroup) passGroup.style.display = '';
+          }
+        } catch (e) {
+          console.warn('Error al verificar email:', e);
+        }
+      });
     }
     bind('p10-btn-crear-cajero', Cuenta.crearCajero);
     bind('p10-btn-copiar-datos-cajero', Cuenta.copiarDatosCajero);
