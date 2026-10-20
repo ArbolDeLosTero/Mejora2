@@ -288,7 +288,7 @@
   <!-- app-version: leída por App.getVersion() (B10) y por el
        VersionChecker del bloque final. Sincronizable desde
        version.json vía GitHub Action (§5.2 auditoría). -->
-  <meta name="app-version" content="1.0.40">
+  <meta name="app-version" content="1.0.31">
 
   <title>Sistema de Gestión para Kioscos y Almacenes</title>
 
@@ -6211,7 +6211,7 @@
 
       <div class="input-group">
         <label for="p10-cajero-email-preview">Email asignado</label>
-        <input type="text" id="p10-cajero-email-preview" readonly>
+        <input type="text" id="p10-cajero-email-preview">
       </div>
 
       <div class="form-row">
@@ -25493,6 +25493,61 @@
 <!--   🟢 B16-13 — Comentarios HTML fuera de <script>                    -->
 <!--   🟢 B16-14 — _leerColeccionDeCache sin guión bajo                  -->
 <!--   🟢 B16-15 — Dominios con alias extraídos a array                  -->
+<!--   🟠 B16-16 — _cloneConfigImpresora() deep-clone. Antes            -->
+<!--               Object.assign() era shallow y `config.horarios`      -->
+<!--               compartía referencia con `_defaultsImpresora`        -->
+<!--               (congelado). Mutar la config lanzaba TypeError en     -->
+<!--               strict mode y contaminaba los defaults globales.     -->
+<!--   🟠 B16-17 — _crearRetry auto-cleanup del handle. Antes los       -->
+<!--               handles se acumulaban en _STATE.retries hasta        -->
+<!--               destroy(). Ahora se auto-remueven al terminar el     -->
+<!--               retry (éxito o agotamiento).                         -->
+<!--   🟠 B16-18 — _popupDetectionChain serializada. Antes dos          -->
+<!--               _conDeteccionPopup concurrentes pisaban el parche    -->
+<!--               de window.open (la segunda capturaba la versión     -->
+<!--               parchada por la primera y contaba popups ajenos).   -->
+<!--   🟠 B16-19 — _leerTurnoActivoSeguro() lectura defensiva. Antes   -->
+<!--               un JSON corrupto en turno_activo_v1 rompía el        -->
+<!--               handler del click con SyntaxError y el usuario       -->
+<!--               quedaba sin poder navegar al POS.                   -->
+<!--   🟠 B16-20 — _navController AbortController separado. Antes los  -->
+<!--               listeners de [data-panel] sobrevivían a destroy()    -->
+<!--               y podían llamar .init() en módulos destruidos.      -->
+<!--   🟠 B16-21 — Rollback de crearCajero con reporte explícito.      -->
+<!--               Si doc.delete() fallaba en el rollback, el doc       -->
+<!--               huérfano quedaba sin rastro. Ahora se reporta con   -->
+<!--               `requiere_limpieza_manual: true`.                    -->
+<!--   🟠 B16-22 — Config impresora namespaced por comercioId. Antes   -->
+<!--               `ticket_config_v1` era global y filtraba config      -->
+<!--               entre cuentas en el mismo dispositivo. Ahora        -->
+<!--               `ticket_config_v1::<cid>` + migración one-shot.      -->
+<!--   🟡 B16-23 — _navController null-out en destroy. Si B16 se      -->
+<!--               reinstala, se crea un controller nuevo en vez de    -->
+<!--               reutilizar el abortado.                              -->
+<!--   🟡 B16-24 — Impresora.obtenerConfig() deep-clone. Antes         -->
+<!--               devolvía shallow copy con referencias a los arrays  -->
+<!--               y objetos internos; mutar el retorno corrompía el   -->
+<!--               estado de Impresora.                                 -->
+<!--   🟡 B16-25 — Timer de mantenimiento unificado. Antes dos          -->
+<!--               _safeSetInterval de 5s (badge logs + render cola)   -->
+<!--               despertaban al navegador dos veces por ciclo.       -->
+<!--               Ahora un tick de 15s ejecuta ambos chequeos.        -->
+<!--   🟡 B16-26 — Verificador de hook ARCA acotado. Antes corría      -->
+<!--               indefinidamente aunque ARCA no estuviera disponible. -->
+<!--               Ahora: no se instala si ARCA off; corre 20 ciclos   -->
+<!--               (5 min) y se auto-detiene si nadie reasigna el      -->
+<!--               método; si detecta reasignación, reinstala y        -->
+<!--               reinicia los 20 ciclos.                              -->
+<!--   🟡 B16-27 — _genId() CSPRNG. Antes usaba Math.random() en el    -->
+<!--               fallback (CodeQL js/insecure-randomness). Ahora    -->
+<!--               crypto.getRandomValues() con 6 bytes.               -->
+<!--   🟡 B16-28 — AppName secundario CSPRNG. Antes Math.random()     -->
+<!--               en el sufijo del appName de Firebase. Ahora         -->
+<!--               crypto.randomUUID() con fallback timestamp.         -->
+<!--   🟡 B16-29 — actualizarPreview() DOM-based. Antes construía      -->
+<!--               innerHTML con datos que fluían de Firestore         -->
+<!--               (CodeQL js/xss-through-dom). Ahora createElement +  -->
+<!--               textContent con _nodoContenidoElemento().           -->
 <!--                                                                    -->
 <!-- Contratos preservados: ver §5 del análisis.                        -->
 <!-- ═══════════════════════════════════════════════════════════════════ -->
@@ -25670,6 +25725,28 @@
 
   function _safeAddAbortController() {
     var ctrl = new AbortController();
+
+    /* [FIX-B16-N5] Guard de post-destroy.
+     *
+     * Si destroy() ya corrió, _STATE.abortables está vacío y no
+     * volverá a limpiarse (destroy es idempotente). Trackear este
+     * controller lo dejaría "vivo" para siempre: sus listeners
+     * nunca se abortarían → leak silencioso.
+     *
+     * En su lugar, abortamos el signal y devolvemos el controller.
+     * Cualquier addEventListener(ev, fn, { signal: ctrl.signal })
+     * ejecutado con esta signal será un no-op silencioso
+     * (per spec HTML5: addEventListener con signal ya abortada
+     * no añade el listener y no lanza). Fail-safe.
+     *
+     * Callers que usen el signal para fetch(..., { signal })
+     * verán el fetch rechazado con AbortError, que es el
+     * comportamiento esperado post-destroy. */
+    if (_STATE.destroyed) {
+      try { ctrl.abort(); } catch (e) {}
+      return ctrl;
+    }
+
     _STATE.abortables.push(ctrl);
     return ctrl;
   }
@@ -25902,10 +25979,42 @@ function _genId(prefix) {
       if (w) abiertas++;
       return w;
     };
+    var timeoutId = null;
     try {
-      await fn();
+      /* [B16-30] Timeout de seguridad de 15 s.
+       *
+       * Antes, si fn() devolvía una promesa que nunca resolvía
+       * (por ejemplo, un `fetch` colgado o un `document.write`
+       * bloqueado en un popup), la promesa se quedaba pendiente
+       * PARA SIEMPRE. Como _popupDetectionChain encadena cada
+       * llamada con `.then`, la cadena completa quedaba bloqueada
+       * y TODAS las detecciones futuras de popups se encolaban
+       * detrás sin ejecutarse nunca.
+       *
+       * Con este race, el timeout rechaza a los 15 s, lo cual:
+       *   · desbloquea la cadena (el .catch de la chain loguea
+       *     y sigue);
+       *   · propaga el rechazo al caller, que ya lo maneja con
+       *     su try/catch externo (reporta E-IMP-001 y encola);
+       *   · restaura window.open en el finally.
+       *
+       * Usamos `setTimeout` crudo (no _safeSetTimeout) porque el
+       * tracking global no es necesario aquí: el timeout se
+       * limpia en el finally en todos los caminos. */
+      await Promise.race([
+        Promise.resolve(fn()),
+        new Promise(function (_, reject) {
+          timeoutId = setTimeout(function () {
+            reject(new Error('popup_detection_timeout (15s)'));
+          }, 15000);
+        })
+      ]);
     } finally {
       window.open = original;
+      if (timeoutId !== null) {
+        try { clearTimeout(timeoutId); } catch (e) {}
+        timeoutId = null;
+      }
     }
     return abiertas > 0;
   }
@@ -28403,56 +28512,63 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
         .catch(function () { _toast('No se pudo copiar', 'error'); });
     }
   };
-
   async function _renderListaCajeros() {
     var cont = _el('p10-lista-cajeros');
     if (!cont) return;
     var user = _getUser();
-    if (!user.comercioId) {
+    
+    if (!user.comercioId || !user.uid) {
       cont.innerHTML = '<p class="text-center text-muted">Sin comercio asignado</p>';
       return;
     }
+
     try {
-      var comercio = await Data.get('config', 'comercio');
-      var cajerosUids = (comercio && comercio.cajeros) || [];
-      if (cajerosUids.length === 0) {
+      cont.innerHTML = '<p class="text-center text-muted">Cargando cajeros...</p>';
+      
+      // Buscamos directamente en la colección de usuarios a los que dependen de este admin
+      var snap = await App.getDb().collection('usuarios')
+        .where('pagador_uid', '==', user.uid)
+        .get();
+        
+      var cajeros = [];
+      snap.forEach(function(doc) {
+        var data = doc.data();
+        var devices = Array.isArray(data.dispositivos) ? data.dispositivos : [];
+        // Ocultar cajeros con TODOS sus dispositivos desactivados (revocados).
+        // Si tiene 0 dispositivos (recién creado) o alguno activo, se muestra.
+        // Array.isArray protege contra datos corruptos (dispositivos = 5,
+        // un string, un objeto). Sin este check, .some() lanzaría TypeError
+        // y toda la lista de cajeros fallaría con "Error al cargar cajeros".
+        var tieneAlgunoActivo = devices.length === 0 ||
+          devices.some(function(d) { return d && d.activa !== false; });
+        if (tieneAlgunoActivo) {
+          cajeros.push(Object.assign({ uid: doc.id }, data));
+        }
+      });
+
+      if (cajeros.length === 0) {
         cont.innerHTML = '<p class="text-center text-muted">Sin cajeros vinculados</p>';
         return;
       }
 
-      var promesas = cajerosUids.map(function (uid) {
-        return App.getDb().collection('usuarios').doc(uid).get()
-          .then(function (doc) {
-            return doc.exists ? Object.assign({ uid: uid }, doc.data()) : null;
-          })
-          .catch(function (e) {
-            console.warn('[Cuenta] Error al leer cajero ' + uid + ':', e);
-            return null;
-          });
-      });
-      var resultados = await Promise.all(promesas);
-      var cajeros = resultados.filter(Boolean);
-
-      if (cajeros.length === 0) {
-        cont.innerHTML = '<p class="text-center text-muted">Sin cajeros activos</p>';
-        return;
-      }
       cont.innerHTML = cajeros.map(function (c) {
         return '<div class="p10-cajero-card">' +
           '<div class="p10-cajero-header">' +
           '<span class="p10-cajero-nombre">' +
-          _escapeHtml(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) +
+          _escapeHtml(((c.nombre || '') + ' ' + (c.apellido || '')).trim() || c.email) +
           '</span></div>' +
           '<div class="text-small text-muted">' + _escapeHtml(c.email || '') + '</div>' +
           '<button class="btn btn-danger btn-small mt-sm" data-revocar="' +
           _escapeAttr(c.uid) + '">🗑️ Revocar</button>' +
           '</div>';
       }).join('');
+
       cont.querySelectorAll('[data-revocar]').forEach(function (btn) {
         btn.addEventListener('click', function () { Cuenta.revocarCajero(btn.dataset.revocar); });
       });
     } catch (e) {
       console.warn('[Cuenta] Error al cargar cajeros:', e);
+      cont.innerHTML = '<p class="text-center text-muted">Error al cargar cajeros. Verificá la conexión.</p>';
     }
   }
 
@@ -28464,13 +28580,25 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
       var doc = await docRef.get();
       if (!doc.exists) { _toast('Cajero no encontrado', 'error'); return; }
       var data = doc.data();
-      var dispositivos = (data.dispositivos || []).map(function (d) {
-        return Object.assign({}, d, { activa: false, fecha_desactivacion: Date.now() });
-      });
+      // Array.isArray defensivo: si data.dispositivos fuera un número/string
+      // (corrupción de datos, migración fallida), `(5 || []).map(...)` lanzaría
+      // y el admin vería "Error al revocar cajero" aunque el problema real
+      // fuera un registro malformado.
+      var dispositivos = (Array.isArray(data.dispositivos) ? data.dispositivos : [])
+        .map(function (d) {
+          return Object.assign({}, d, { activa: false, fecha_desactivacion: Date.now() });
+        });
       await docRef.update({ dispositivos: dispositivos });
-      var comercio = await Data.get('config', 'comercio');
-      var nuevos = ((comercio && comercio.cajeros) || []).filter(function (u) { return u !== uid; });
-      await Data.update('config', 'comercio', { cajeros: nuevos });
+      // Nota: `config.cajeros[]` es legacy. `_renderListaCajeros` usa
+      // `pagador_uid`, por lo que este array ya no es la fuente de verdad.
+      // Se conserva por compatibilidad con otras pantallas que puedan leerlo.
+      try {
+        var comercio = await Data.get('config', 'comercio');
+        var nuevos = ((comercio && comercio.cajeros) || []).filter(function (u) { return u !== uid; });
+        await Data.update('config', 'comercio', { cajeros: nuevos });
+      } catch (eArr) {
+        console.warn('[Cuenta] No se pudo actualizar config.cajeros legacy (no bloqueante):', eArr);
+      }
       await _renderListaCajeros();
       _toast('Cajero revocado', 'success');
     } catch (e) {
@@ -28491,14 +28619,21 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
     return DOMINIOS_ALIAS_SOPORTADOS.indexOf(d) !== -1;
   }
 
-  Cuenta.generarEmailCajero = function () {
-    var num = _valorInput('p10-cajero-numero', '1');
-    var user = _getUser();
-    var emailBase = String(user.email || '');
-    var base = emailBase.split('+')[0].split('@')[0];
-    var dominio = emailBase.split('@')[1] || 'gmail.com';
-    var emailPreview = base + '+cajero' + num + '@' + dominio;
-    _setVal('p10-cajero-email-preview', emailPreview);
+Cuenta.generarEmailCajero = function () {
+  var num = _valorInput('p10-cajero-numero', '1');
+  var user = _getUser();
+  var emailBase = String(user.email || '').trim();
+
+  if (!emailBase) {
+    _toast('No hay email de administrador configurado. Reingresá a tu cuenta.', 'error', 5000);
+    _setVal('p10-cajero-email-preview', '');
+    return '';
+  }
+
+  var base = emailBase.split('+')[0].split('@')[0];
+  var dominio = emailBase.split('@')[1] || 'gmail.com';
+  var emailPreview = base + '+cajero' + num + '@' + dominio;
+  _setVal('p10-cajero-email-preview', emailPreview);
 
     var aviso = _el('p10-cajero-email-aviso');
     if (!aviso) {
@@ -28527,22 +28662,38 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
 
   Cuenta.crearCajero = async function () {
     if (!_esAdmin()) { _toast('Solo admin', 'error'); return; }
-    Cuenta.generarEmailCajero();
 
     var nombre   = _valorInput('p10-cajero-nombre', '').trim();
     var apellido = _valorInput('p10-cajero-apellido', '').trim();
     var password = _valorInput('p10-cajero-password', '');
-    var email    = _valorInput('p10-cajero-email-preview', '');
+    var email    = _valorInput('p10-cajero-email-preview', '').trim();
 
     if (!nombre || !apellido || !password || !email) {
       _toast('Completá todos los campos', 'error');
       return;
     }
     if (!App.validarEmail(email)) {
-      _toast('El email generado no es válido. Revisá el campo.', 'error', 5000);
+      _toast('El email no es válido. Revisá el campo antes de crear.', 'error', 5000);
       return;
     }
-    if (password.length < 8) { _toast('Contraseña muy corta', 'error'); return; }
+    // Validación completa: el hint del modal promete mayúscula, minúscula,
+    // número y símbolo. La validación previa solo chequeaba longitud, así
+    // que "aaaaaaaa" (8 minúsculas) pasaba al backend y Firebase lo
+    // aceptaba por su política mínima (≥6 chars). El usuario veía un toast
+    // "Contraseña débil" de Firebase sin entender por qué.
+    if (!(
+      password.length >= 8 &&
+      /[A-Z]/.test(password) &&
+      /[a-z]/.test(password) &&
+      /[0-9]/.test(password) &&
+      /[@$!%*?&]/.test(password)
+    )) {
+      _toast(
+        'La contraseña debe tener mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo (@$!%*?&).',
+        'error', 6000
+      );
+      return;
+    }
 
     var btn = _el('p10-btn-crear-cajero');
     if (btn) { btn.disabled = true; btn.textContent = 'Creando...'; }
@@ -28659,7 +28810,7 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
       } else if (code === 'auth/weak-password') {
         _toast('Contraseña muy débil. Usá mayúscula, minúscula, número y símbolo.', 'error', 5000);
       } else if (code === 'auth/invalid-email') {
-        _toast('El email generado no es válido.', 'error', 5000);
+        _toast('El email no es válido. Revisá el campo antes de crear.', 'error', 5000);
       } else if (code.indexOf('permission-denied') !== -1 ||
                  msg.indexOf('permission-denied') !== -1 ||
                  msg.indexOf('Missing or insufficient permissions') !== -1) {
