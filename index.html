@@ -288,7 +288,7 @@
   <!-- app-version: leída por App.getVersion() (B10) y por el
        VersionChecker del bloque final. Sincronizable desde
        version.json vía GitHub Action (§5.2 auditoría). -->
-  <meta name="app-version" content="1.0.43">
+  <meta name="app-version" content="1.0.31">
 
   <title>Sistema de Gestión para Kioscos y Almacenes</title>
 
@@ -6211,7 +6211,11 @@
 
       <div class="input-group">
         <label for="p10-cajero-email-preview">Email asignado</label>
-        <input type="text" id="p10-cajero-email-preview" readonly>
+        <input type="text"
+               id="p10-cajero-email-preview"
+               inputmode="email"
+               autocomplete="off"
+               placeholder="cajero@email.com">
       </div>
 
       <div class="form-row">
@@ -28771,8 +28775,26 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
         _setVal('p10-cajero-nombre', '');
         _setVal('p10-cajero-apellido', '');
         _setVal('p10-cajero-password', '');
+
         var panel = _el('p10-cajero-creado');
         if (panel) panel.style.display = 'none';
+
+        var inputEmail = _el('p10-cajero-email-preview');
+        if (inputEmail) {
+          inputEmail.dataset.manual = '0';
+          inputEmail.value = '';
+        }
+
+        var aviso = _el('p10-cajero-email-aviso');
+        if (aviso) {
+          aviso.textContent = '';
+          aviso.className = 'text-small';
+        }
+
+        var passInput = _el('p10-cajero-password');
+        var passGroup = passInput ? passInput.closest('.input-group') : null;
+        if (passGroup) passGroup.style.display = '';
+
         Cuenta.generarEmailCajero();
         App.abrirModal('modal-p10-crear-cajero');
       });
@@ -28818,6 +28840,13 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
       });
     }
     bind('p10-btn-crear-cajero', Cuenta.crearCajero);
+    var selectNumeroCajero = _el('p10-cajero-numero');
+    if (selectNumeroCajero && selectNumeroCajero.dataset.b16p2Bound !== '1') {
+      selectNumeroCajero.dataset.b16p2Bound = '1';
+      selectNumeroCajero.addEventListener('change', function () {
+        Cuenta.generarEmailCajero(true);
+      });
+    }
     bind('p10-btn-copiar-datos-cajero', Cuenta.copiarDatosCajero);
 
     var cerrarCajero = function () { App.cerrarModal('modal-p10-crear-cajero'); };
