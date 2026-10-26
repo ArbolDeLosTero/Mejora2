@@ -81,6 +81,18 @@
     🟢 v11-I (ORDEN) — Google Fonts stylesheet movido ANTES de
        Font Awesome (los estilos de tipografía son más críticos
        para el primer paint que los íconos decorativos).
+
+    🔴 v12-A (Fase 2) — dns-prefetch a cdn.sheetjs.com. SheetJS
+       se carga on-demand desde B14 al importar Excel, por eso
+       usamos dns-prefetch (no preconnect): la conexión se abriría
+       y expiraría antes del uso real.
+
+    🔴 v12-B (Fase 2) — Error listener global extendido para
+       vigilar cdn.sheetjs.com. Si la carga de SheetJS falla, el
+       diagnóstico de consola reporta '[B00] SheetJS Excel Library
+       no cargó desde el CDN' con la etiqueta correcta. Sin esto,
+       el fallo quedaba mudo en consola (solo visible en el toast
+       del wizard).
   -->
   <!-- ═══════════════════════════════════════════════════════════════════ -->
   <!-- NOTA SOBRE LA CONFIG DE FIREBASE                                   -->
@@ -148,7 +160,9 @@
         ['firebase-auth-compat',      'Firebase Auth SDK'],
         ['firebase-firestore-compat', 'Firebase Firestore SDK'],
         ['firebase-functions-compat', 'Firebase Functions SDK'],
-        ['font-awesome',              'Font Awesome CSS']
+        ['font-awesome',              'Font Awesome CSS'],
+        /* [v12-B / Fase 2] SheetJS se carga on-demand desde B14. */
+        ['xlsx',                      'SheetJS Excel Library']
       ];
 
       /* [v11-B] Whitelist estricta: host exacto + prefijo de
@@ -161,7 +175,9 @@
        * js/incomplete-url-substring-sanitization. */
       var _hostsVigilados = [
         { host: 'www.gstatic.com',      pathPrefix: '/firebasejs/' },
-        { host: 'cdnjs.cloudflare.com', pathPrefix: '/ajax/libs/font-awesome/' }
+        { host: 'cdnjs.cloudflare.com', pathPrefix: '/ajax/libs/font-awesome/' },
+        /* [v12-B / Fase 2] SheetJS: cdn.sheetjs.com/xlsx-<ver>/package/... */
+        { host: 'cdn.sheetjs.com',      pathPrefix: '/xlsx-' }
       ];
 
       function _urlEsVigilada(url) {
@@ -288,7 +304,7 @@
   <!-- app-version: leída por App.getVersion() (B10) y por el
        VersionChecker del bloque final. Sincronizable desde
        version.json vía GitHub Action (§5.2 auditoría). -->
-  <meta name="app-version" content="1.0.47">
+  <meta name="app-version" content="1.0.44">
 
   <title>Sistema de Gestión para Kioscos y Almacenes</title>
 
@@ -356,6 +372,17 @@
   <link rel="dns-prefetch" href="https://firestore.googleapis.com">
   <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
   <link rel="dns-prefetch" href="https://securetoken.googleapis.com">
+  <!-- [v12-A / Fase 2] DNS prefetch para SheetJS. Se carga on-demand
+       (solo al importar Excel), por eso NO usamos preconnect: la
+       conexión TCP/TLS se abriría y podría expirar antes del uso. -->
+  <link rel="dns-prefetch" href="https://cdn.sheetjs.com">
+  <!-- [Fase 3] dns-prefetch (no preconnect) para Open Food Facts y
+       Precios Claros. Mismo criterio que SheetJS en v12-A: las APIs
+       se usan on-demand (el usuario abre el catálogo y clickea
+       "Enriquecer" minutos después de cargar la página). Un
+       preconnect se abriría y expiraría antes del uso real. -->
+  <link rel="dns-prefetch" href="https://world.openfoodfacts.org">
+  <link rel="dns-prefetch" href="https://www.preciosclaros.gob.ar">
 
   <!-- ─────────────────────────────────────────────────────────── -->
   <!-- FUENTES TIPOGRÁFICAS                                       -->
@@ -11002,9 +11029,39 @@
   })();
 </script>
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- BLOQUE 08 v3 — HTML PANEL 04 (STOCK E INVENTARIO)                      -->
+<!-- BLOQUE 08 v4 — HTML PANEL 04 (STOCK E INVENTARIO)                      -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <!--                                                                         -->
+<!-- CHANGELOG RESPECTO A v3 (Fase 2 — Soporte Excel):                       -->
+<!--                                                                         -->
+<!-- 🔴 08-v4-A — #p04-import-file-input acepta .xlsx y .xls además de      -->
+<!--    .json. Los MIME types de Excel se suman al `accept` para que el      -->
+<!--    file picker muestre el filtro correcto en cada SO.                   -->
+<!--                                                                         -->
+<!-- 🔴 08-v4-B — Texto del panel 1 del wizard actualizado: "Formatos        -->
+<!--    soportados: .xlsx, .xls (Excel) y .json". Antes decía "solo .json"   -->
+<!--    y "Excel próximamente", lo que confundía al usuario.                 -->
+<!--                                                                         -->
+<!-- 🔴 08-v4-C — aria-label del dropzone e input file neutralizados.        -->
+<!--    Antes decían "archivo JSON", ahora "archivo Excel o JSON".           -->
+<!--                                                                         -->
+<!-- 🔴 08-v4-D — Loading state en el panel 1 del wizard. Nuevo div         -->
+<!--    #p04-import-loading (oculto por defecto) que B14 muestra mientras    -->
+<!--    carga SheetJS (1–3s en la primera importación Excel) o parsea un     -->
+<!--    Excel grande. Cubre el "el wizard parece colgado" de Fase 1.        -->
+<!--                                                                         -->
+<!-- 🟠 08-v4-E — #p04-filtro-origen incluye `<option value="excel">`. La    -->
+<!--    opción faltaba desde Fase 1 aunque B14 ya escribía `_origen: 'excel'`-->
+<!--    en los productos importados. Sin esta opción, los productos Excel    -->
+<!--    no se podían filtrar.                                                -->
+<!--                                                                         -->
+<!-- 🟡 08-v4-F — `title` del botón "Importar Catálogo" del header          -->
+<!--    actualizado a "desde Excel o JSON".                                  -->
+<!--                                                                         -->
+<!-- ✅ Preservados íntegros de v3 (A–F): data-panel="menu", sin            -->
+<!--    inputmode="numeric" en #p04-prod-codigo, CSS auxiliar,              -->
+<!--    accesibilidad, estructura de toolbars, empty states.                -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
 <!-- CHANGELOG RESPECTO A v2:                                                -->
 <!--                                                                         -->
 <!-- 🔴 v3-A — MIGRACIÓN DE NAVEGACIÓN (fix 08-A):                          -->
@@ -11252,8 +11309,482 @@
   body.dark-mode .p04-file-input:hover {
     border-color: var(--m2-primary);
   }
-</style>
+  /* ═══════════════════════════════════════════════════════════ */
+  /* WIZARD DE IMPORTACIÓN — Fase 1                             */
+  /* ═══════════════════════════════════════════════════════════ */
+  .p04-wizard-stepper {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: var(--m2-card-bg-soft, #f8f9fa);
+    border-radius: var(--m2-radius-sm, 10px);
+  }
+  .p04-wizard-step {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    opacity: 0.4;
+    transition: opacity 0.2s ease;
+  }
+  .p04-wizard-step.activo,
+  .p04-wizard-step.completado {
+    opacity: 1;
+  }
+  .p04-wizard-step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--m2-border, #e0e0e0);
+    color: var(--m2-text-dark, #333);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .p04-wizard-step.activo .p04-wizard-step-num {
+    background: var(--m2-primary, #667eea);
+    color: #ffffff;
+  }
+  .p04-wizard-step.completado .p04-wizard-step-num {
+    background: var(--m2-success, #2a9d4a);
+    color: #ffffff;
+  }
+  .p04-wizard-step-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--m2-text-dark, #333);
+  }
+  .p04-wizard-panel { display: none; }
+  .p04-wizard-panel.activo { display: block; }
 
+  /* Preview del wizard (con scroll horizontal) */
+  .p04-preview-scroll {
+    max-height: 320px;
+    overflow: auto;
+    border: 1px solid var(--m2-border, #e0e0e0);
+    border-radius: 8px;
+  }
+  .p04-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 640px;
+  }
+  .p04-preview-table th {
+    background: var(--m2-card-bg-soft, #f8f9fa);
+    padding: 8px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid var(--m2-border, #e0e0e0);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--m2-text-mid, #666);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .p04-preview-table td {
+    padding: 8px;
+    border-bottom: 1px solid var(--m2-border, #e0e0e0);
+    vertical-align: middle;
+  }
+  .p04-preview-table tr.fila-descartada {
+    opacity: 0.5;
+    background: rgba(211, 51, 51, 0.05);
+  }
+  .p04-preview-table tr.fila-incompleta {
+    background: rgba(245, 124, 0, 0.05);
+  }
+  .p04-preview-cell-check {
+    width: 32px;
+    text-align: center;
+  }
+  .p04-preview-cell-check input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--m2-primary, #667eea);
+  }
+  .p04-preview-motivo {
+    font-size: 11px;
+    color: var(--m2-error, #d33);
+    font-style: italic;
+    display: block;
+  }
+  .p04-preview-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .p04-preview-badge.ok { background: rgba(42, 157, 74, 0.15); color: var(--m2-success, #2a9d4a); }
+  .p04-preview-badge.incompleta { background: rgba(245, 124, 0, 0.15); color: var(--m2-warning, #f57c00); }
+  .p04-preview-badge.descartada { background: rgba(211, 51, 51, 0.15); color: var(--m2-error, #d33); }
+
+  /* Mapeo de columnas */
+  .p04-mapeo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .p04-mapeo-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    background: var(--m2-card-bg-soft, #f8f9fa);
+    border-radius: var(--m2-radius-xs, 8px);
+    border: 1px solid var(--m2-border, #e0e0e0);
+  }
+  .p04-mapeo-item label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--m2-text-dark, #333);
+  }
+  .p04-mapeo-item select {
+    font-size: 13px;
+    padding: 6px;
+    border: 1px solid var(--m2-border, #e0e0e0);
+    border-radius: 6px;
+    background: var(--m2-card-bg, #ffffff);
+    color: var(--m2-text-dark, #333);
+    font-family: inherit;
+  }
+
+  /* Badges del catálogo */
+  .p04-badge-incompleto {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(245, 124, 0, 0.15);
+    color: var(--m2-warning, #f57c00);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+    cursor: help;
+  }
+  .p04-badge-origen {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: rgba(102, 126, 234, 0.1);
+    color: var(--m2-primary, #667eea);
+    margin-left: 6px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  /* Footer del wizard (4 botones) */
+  #modal-p04-importar .modal-footer {
+    flex-wrap: wrap;
+  }
+  #modal-p04-importar .modal-footer .btn {
+    flex: 1 1 auto;
+    min-width: 90px;
+  }
+
+  /* Info del archivo en paso 1 */
+  .p04-import-file-info {
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--m2-card-bg-soft, #f8f9fa);
+    border-radius: var(--m2-radius-xs, 8px);
+    border: 1px solid var(--m2-border, #e0e0e0);
+    font-size: 14px;
+  }
+  .p04-import-file-info strong { color: var(--m2-text-dark, #333); }
+  .p04-import-file-name {
+    font-family: var(--m2-font-mono, monospace);
+    font-size: 13px;
+    color: var(--m2-primary, #667eea);
+    word-break: break-all;
+  }
+
+  /* Resumen paso 3 */
+  .p04-wizard-resumen {
+    padding: 16px;
+    background: rgba(102, 126, 234, 0.08);
+    border-left: 4px solid var(--m2-primary, #667eea);
+    border-radius: var(--m2-radius-xs, 8px);
+    margin-bottom: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .p04-wizard-resumen p { margin: 4px 0; }
+  .p04-wizard-resumen strong { color: var(--m2-text-dark, #333); }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .p04-mapeo-grid { grid-template-columns: 1fr; }
+    .p04-wizard-step-label { font-size: 12px; }
+    .p04-wizard-step-num { width: 24px; height: 24px; font-size: 12px; }
+    .p04-wizard-stepper { padding: 8px; gap: 4px; }
+  }
+
+  /* Dark mode */
+  body.dark-mode .p04-wizard-stepper,
+  body.dark-mode .p04-mapeo-item,
+  body.dark-mode .p04-import-file-info {
+    background: var(--m2-card-bg-soft);
+    border-color: var(--m2-border);
+  }
+  body.dark-mode .p04-preview-table th {
+    background: var(--m2-card-bg-soft);
+  }
+  body.dark-mode .p04-mapeo-item select {
+    background: var(--m2-card-bg);
+    color: var(--m2-text-dark);
+    border-color: var(--m2-border);
+  }
+  /* ═══════════════════════════════════════════════════════════ */
+  /* [Fase 3] Enriquecimiento con APIs externas                 */
+  /* ═══════════════════════════════════════════════════════════ */
+
+  /* Spinner inline (usado en el modal de enriquecer y en el wizard) */
+  .p04-spinner-inline {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-top-color: var(--m2-primary, #667eea);
+    border-radius: 50%;
+    animation: m2Spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  /* Ítems de resultado de enriquecimiento (modal #modal-p04-enriquecer) */
+  .p04-enriq-resumen {
+    padding: 12px;
+    background: var(--m2-card-bg-soft, #f8f9fa);
+    border-radius: var(--m2-radius-xs, 8px);
+    margin-bottom: 12px;
+    font-size: 13px;
+    line-height: 1.6;
+    border-left: 4px solid var(--m2-primary, #667eea);
+  }
+  .p04-enriq-resultado {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--m2-border, #e0e0e0);
+    font-size: 13px;
+  }
+  .p04-enriq-resultado:last-child { border-bottom: none; }
+  .p04-enriq-resultado-icon { font-size: 16px; flex-shrink: 0; line-height: 1.2; }
+  .p04-enriq-resultado-info { flex: 1; min-width: 0; }
+  .p04-enriq-resultado-nombre {
+    font-weight: 600;
+    color: var(--m2-text-dark, #333);
+    word-break: break-word;
+  }
+  .p04-enriq-resultado-cambios {
+    font-size: 12px;
+    color: var(--m2-text-mid, #666);
+    margin-top: 2px;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  /* Hint de precio sugerido en el modal de producto */
+  .p04-precio-sugerido-hint {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--m2-info, #1565c0);
+    line-height: 1.4;
+  }
+  .p04-precio-sugerido-hint .btn-sugerir {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 6px;
+    background: var(--m2-primary, #667eea);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    line-height: 1.4;
+    transition: background 0.15s;
+  }
+  .p04-precio-sugerido-hint .btn-sugerir:hover {
+    background: var(--m2-primary-dark, #764ba2);
+  }
+
+  /* Dark mode */
+  body.dark-mode .p04-enriq-resumen {
+    background: var(--m2-card-bg-soft);
+    border-left-color: var(--m2-primary);
+  }
+  body.dark-mode .p04-enriq-resultado {
+    border-bottom-color: var(--m2-border);
+  }
+    body.dark-mode .p04-precio-sugerido-hint {
+      color: #6ba7ff;
+    }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* [Fase 4] Descubrimiento masivo — Resultados de APIs         */
+  /* ═══════════════════════════════════════════════════════════ */
+  .p04-api-result {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid var(--m2-border, #e0e0e0);
+    border-radius: var(--m2-radius-xs, 8px);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    background: var(--m2-card-bg, #ffffff);
+  }
+  .p04-api-result:hover {
+    border-color: var(--m2-primary, #667eea);
+    background: rgba(102, 126, 234, 0.05);
+  }
+  .p04-api-result.ya-en-catalogo {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background: var(--m2-card-bg-soft, #f8f9fa);
+  }
+  .p04-api-result.ya-en-catalogo:hover {
+    border-color: var(--m2-border, #e0e0e0);
+    background: var(--m2-card-bg-soft, #f8f9fa);
+  }
+  .p04-api-result input[type="checkbox"] {
+    margin-top: 3px;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--m2-primary, #667eea);
+  }
+  .p04-api-result-info { flex: 1; min-width: 0; }
+  .p04-api-result-nombre {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--m2-text-dark, #333);
+    margin-bottom: 2px;
+    word-break: break-word;
+  }
+  .p04-api-result-meta {
+    font-size: 12px;
+    color: var(--m2-text-mid, #666);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .p04-api-result-precio {
+    font-weight: 700;
+    color: var(--m2-primary, #667eea);
+    font-size: 14px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+  .p04-api-result-precio small {
+    display: block;
+    font-weight: 400;
+    font-size: 10px;
+    color: var(--m2-text-mid, #666);
+  }
+  .p04-api-result-fuente {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: rgba(102, 126, 234, 0.12);
+    color: var(--m2-primary, #667eea);
+    margin-left: 6px;
+  }
+  .p04-api-result-ya {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: rgba(42, 157, 74, 0.15);
+    color: var(--m2-success, #2a9d4a);
+    margin-left: 6px;
+  }
+  .p04-api-vacio {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--m2-text-light, #888);
+    font-style: italic;
+    font-size: 13px;
+  }
+  .p04-api-loading {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--m2-text-mid, #666);
+    font-size: 13px;
+  }
+
+  /* Dark mode */
+  body.dark-mode .p04-api-result {
+    background: var(--m2-card-bg);
+    border-color: var(--m2-border);
+  }
+  body.dark-mode .p04-api-result:hover {
+    background: rgba(102, 126, 234, 0.12);
+  }
+  body.dark-mode .p04-api-result.ya-en-catalogo {
+    background: var(--m2-card-bg-soft);
+  }
+  /* ═══════════════════════════════════════════════════════════ */
+  /* [FASE-5] Botón "Completar" en la tabla del catálogo.        */
+  /*                                                            */
+  /* B14 renderiza <button class="btn btn-sm btn-warning">       */
+  /* Completar</button> para los drafts. El estilo genérico      */
+  /* .btn-warning es un naranja sólido que choca visualmente     */
+  /* con el badge .p04-badge-incompleto (que es translúcido).    */
+  /* Este override alinea ambos. Se aplica SOLO dentro del       */
+  /* tbody del catálogo para no afectar otros .btn-warning.      */
+  /* ═══════════════════════════════════════════════════════════ */
+  #p04-tbody-productos .btn-warning {
+    background: rgba(245, 124, 0, 0.15);
+    color: var(--m2-warning, #f57c00);
+    border: 1px solid rgba(245, 124, 0, 0.35);
+    font-weight: 600;
+  }
+  #p04-tbody-productos .btn-warning:hover:not(:disabled) {
+    background: rgba(245, 124, 0, 0.28);
+    border-color: var(--m2-warning, #f57c00);
+    color: var(--m2-warning, #f57c00);
+  }
+  body.dark-mode #p04-tbody-productos .btn-warning {
+    background: rgba(245, 124, 0, 0.2);
+    border-color: rgba(245, 124, 0, 0.5);
+    color: #ffb74d;
+  }
+  body.dark-mode #p04-tbody-productos .btn-warning:hover:not(:disabled) {
+    background: rgba(245, 124, 0, 0.35);
+    border-color: #ffb74d;
+  }
+  </style>
 
 <!-- ══════════════════════════════════════════════════════════════════════ -->
 <!-- VISTA STOCK (P04)                                                     -->
@@ -11275,12 +11806,36 @@
     </div>
     <div class="panel-header-actions">
       <button type="button"
-              class="btn btn-secondary"
+              class="btn btn-primary"
               onclick="p04AbrirModalImportar()"
-              title="Importar o exportar el catálogo de productos"
-              aria-label="Abrir importación y exportación">
-        <i class="fa fa-upload" aria-hidden="true"></i>
-        Importar / Exportar
+              title="Importar catálogo desde Excel o JSON"
+              aria-label="Importar catálogo">
+        <i class="fa fa-file-import" aria-hidden="true"></i>
+        Importar Catálogo
+      </button>
+      <button type="button"
+              class="btn btn-secondary"
+              onclick="p04AbrirModalEnriquecer()"
+              title="Enriquecer productos con APIs externas (Open Food Facts / Precios Claros)"
+              aria-label="Enriquecer productos con APIs externas">
+        <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i>
+        Enriquecer
+      </button>
+      <button type="button"
+              class="btn btn-secondary"
+              onclick="p04AbrirModalDescubrir()"
+              title="Buscar productos en APIs externas y agregarlos al catálogo"
+              aria-label="Descubrir productos en APIs externas">
+        <i class="fa fa-magnifying-glass" aria-hidden="true"></i>
+        Descubrir
+      </button>
+      <button type="button"
+              class="btn btn-secondary"
+              onclick="p04ExportarProductosJSON()"
+              title="Exportar el catálogo actual a JSON"
+              aria-label="Exportar catálogo a JSON">
+        <i class="fa fa-download" aria-hidden="true"></i>
+        Exportar
       </button>
       <button type="button"
               class="btn btn-primary"
@@ -11408,8 +11963,25 @@
           </select>
         </div>
 
+        <div class="input-group">
+          <label for="p04-filtro-origen" class="sr-only">Filtrar por origen</label>
+          <select id="p04-filtro-origen"
+                  onchange="p04FiltrarProductos()"
+                  aria-label="Filtrar productos por origen del producto">
+            <option value="todos">Todos los orígenes</option>
+            <option value="draft">Solo incompletos (borrador)</option>
+            <option value="excel">Importados de Excel</option>
+            <option value="json">Importados de JSON</option>
+            <option value="url">Importados de URL</option>
+            <option value="openfoodfacts">Enriquecidos con Open Food Facts</option>
+            <option value="preciosclaros">Con precio de Precios Claros</option>
+            <option value="manual">Creados manualmente</option>
+          </select>
+        </div>
+
         <div class="toolbar-stats">
           <span class="badge badge-info" id="p04-total-items-count">0 productos</span>
+          <span class="badge badge-warning" id="p04-draft-count" style="display:none;">0 incompletos</span>
         </div>
 
       </div>
@@ -11774,7 +12346,19 @@
                      aria-label="Precio de venta del producto">
             </div>
           </div>
-
+          <!-- [Fase 3] Precio sugerido por Precios Claros (si existe) -->
+          <small id="p04-precio-sugerido-hint"
+                 class="p04-precio-sugerido-hint"
+                 style="display:none;"
+                 aria-live="polite">
+            <span id="p04-precio-sugerido-valor">-</span>
+            <button type="button"
+                    class="btn-sugerir"
+                    onclick="p04AplicarPrecioSugerido()"
+                    aria-label="Aplicar el precio sugerido">
+              Aplicar sugerencia
+            </button>
+          </small>
           <div class="input-group">
             <label for="p04-prod-minimo">Stock Mínimo (Alerta)</label>
             <input type="number"
@@ -12111,17 +12695,17 @@
 
 
 <!-- ─────────────────────────────────────────────────────────────────── -->
-<!-- MODAL 5: IMPORTACIÓN Y EXPORTACIÓN MASIVA                           -->
+<!-- MODAL 5: IMPORTACIÓN — WIZARD DE 3 PASOS (Fase 1: solo JSON)        -->
 <!-- ─────────────────────────────────────────────────────────────────── -->
 <div id="modal-p04-importar"
      class="modal"
      role="dialog"
      aria-modal="true"
      aria-labelledby="modal-p04-importar-titulo">
-  <div class="modal-content">
+  <div class="modal-content modal-grande">
 
     <div class="modal-header">
-      <h3 id="modal-p04-importar-titulo">Importar / Exportar Catálogo</h3>
+      <h3 id="modal-p04-importar-titulo">Importar Catálogo</h3>
       <button type="button"
               class="modal-close"
               onclick="p04CerrarModalImportar()"
@@ -12130,49 +12714,183 @@
 
     <div class="modal-body">
 
-      <div class="p04-form-section">
-        <h4>Exportar Datos</h4>
-        <p class="text-muted text-small">
-          Descargá el inventario completo en formato JSON para respaldo.
-        </p>
-        <button type="button"
-                class="btn btn-secondary"
-                onclick="p04ExportarProductosJSON()">
-          <i class="fa fa-download" aria-hidden="true"></i>
-          Descargar JSON de Productos
-        </button>
-      </div>
-
-      <div class="p04-form-section">
-        <h4>Importación Masiva</h4>
-        <p class="text-muted text-small">
-          Seleccioná un archivo JSON para importar productos al sistema.
-        </p>
-        <!-- [v3-C] Reemplazado class="input" (pensada para text) por
-             .p04-file-input. [v3-D] Agregado <label> visual asociado. -->
-        <div class="input-group">
-          <label for="p04-importar-file" class="p04-file-label">Archivo JSON</label>
-          <input type="file"
-                 id="p04-importar-file"
-                 accept=".json"
-                 class="p04-file-input"
-                 aria-label="Seleccionar archivo JSON de productos para importar">
+      <!-- Stepper -->
+      <div class="p04-wizard-stepper"
+           role="progressbar"
+           aria-valuemin="1"
+           aria-valuemax="3"
+           aria-valuenow="1"
+           id="p04-wizard-stepper">
+        <div class="p04-wizard-step activo" data-step="1">
+          <span class="p04-wizard-step-num">1</span>
+          <span class="p04-wizard-step-label">Archivo</span>
+        </div>
+        <div class="p04-wizard-step" data-step="2">
+          <span class="p04-wizard-step-num">2</span>
+          <span class="p04-wizard-step-label">Mapeo</span>
+        </div>
+        <div class="p04-wizard-step" data-step="3">
+          <span class="p04-wizard-step-num">3</span>
+          <span class="p04-wizard-step-label">Confirmar</span>
         </div>
       </div>
 
+      <!-- Paso 1: Selección de archivo -->
+      <div class="p04-wizard-panel activo" id="p04-wizard-panel-1">
+        <p class="text-muted text-small">
+          Formatos soportados: <strong>.xlsx</strong>, <strong>.xls</strong> (Excel) y <strong>.json</strong>.
+        </p>
+
+        <div class="p04-ocr-upload-zone"
+             id="p04-import-dropzone"
+             role="region"
+             aria-label="Zona de carga de archivo. Arrastrá el archivo Excel o JSON o usá el botón Seleccionar Archivo.">
+          <i class="fa fa-file-import p04-ocr-icon" aria-hidden="true"></i>
+          <p>Arrastrá el archivo aquí, o</p>
+          <input type="file"
+                 id="p04-import-file-input"
+                 accept=".json,.xlsx,.xls,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                 class="hidden"
+                 aria-label="Seleccionar archivo Excel o JSON de productos para importar">
+          <button type="button"
+                  class="btn btn-secondary"
+                  onclick="document.getElementById('p04-import-file-input').click()">
+            Seleccionar Archivo
+          </button>
+        </div>
+
+        <!-- [08-v4-D / Fase 2] Loading state durante el parseo.
+             B14 lo muestra/oculta con _mostrarCargando() / _ocultarCargando(). -->
+        <div id="p04-import-loading"
+             style="display:none;"
+             class="text-center"
+             aria-live="polite"
+             aria-busy="true">
+          <div class="loading">
+            <span class="spinner spinner-primary"></span>
+            <span id="p04-import-loading-text">Cargando…</span>
+          </div>
+        </div>
+
+        <div id="p04-import-file-info"
+             class="p04-import-file-info"
+             style="display:none;">
+          <strong>Archivo cargado:</strong>
+          <span id="p04-import-file-name" class="p04-import-file-name">-</span>
+          <br>
+          <span class="text-small text-muted">
+            <span id="p04-import-file-rows">0</span> filas detectadas
+          </span>
+        </div>
+      </div>
+
+      <!-- Paso 2: Mapeo de columnas -->
+      <div class="p04-wizard-panel" id="p04-wizard-panel-2">
+        <p class="text-muted text-small mb-md">
+          Asigná cada columna del archivo a un campo del producto.
+          Los campos marcados con <span class="p04-required">*</span> son obligatorios.
+        </p>
+
+        <div id="p04-mapeo-container" class="p04-mapeo-grid">
+          <!-- Se puebla por JS -->
+        </div>
+
+        <div id="p04-preview-container" style="margin-top:16px;">
+          <h4 class="text-small" style="margin-bottom:8px;">Vista previa</h4>
+          <div class="p04-preview-scroll">
+            <table class="p04-preview-table">
+              <caption class="sr-only">Vista previa de las filas a importar</caption>
+              <thead>
+                <tr id="p04-preview-thead">
+                  <!-- Se puebla por JS -->
+                </tr>
+              </thead>
+              <tbody id="p04-preview-tbody">
+                <!-- Se puebla por JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 3: Confirmación -->
+      <div class="p04-wizard-panel" id="p04-wizard-panel-3">
+        <div id="p04-confirm-resumen" class="p04-wizard-resumen">
+          <!-- Se puebla por JS -->
+        </div>
+
+        <div class="p04-form-section">
+          <h4>Valores por defecto para todos</h4>
+
+          <div class="form-row">
+            <div class="input-group">
+              <label for="p04-import-categoria-def">Categoría por defecto</label>
+              <select id="p04-import-categoria-def">
+                <option value="General">General</option>
+                <option value="Almacén">Almacén</option>
+                <option value="Bebidas">Bebidas</option>
+                <option value="Lácteos">Lácteos</option>
+                <option value="Golosinas">Golosinas</option>
+                <option value="Fiambrería">Fiambrería</option>
+                <option value="Panadería">Panadería</option>
+                <option value="Limpieza">Limpieza</option>
+              </select>
+            </div>
+
+            <div class="input-group">
+              <label for="p04-import-margen-def">Margen sugerido (%)</label>
+              <input type="number"
+                     id="p04-import-margen-def"
+                     min="0" max="999" step="0.1" value="30"
+                     aria-describedby="p04-import-margen-hint">
+              <small id="p04-import-margen-hint" class="text-muted text-small">
+                Si el archivo no trae precio de venta pero sí de compra,
+                se calcula: precio_compra × (1 + margen/100).
+              </small>
+            </div>
+          </div>
+
+          <label class="checkbox-label" style="margin-top:8px;">
+            <input type="checkbox" id="p04-import-stock-min-def-check" checked>
+            <span>Si falta stock mínimo, usar <strong>5</strong></span>
+          </label>
+        </div>
+
+        <!-- [Fase 3] Enriquecimiento opcional con Open Food Facts -->
+        <div class="p04-form-section">
+          <h4>Enriquecimiento opcional</h4>
+          <label class="checkbox-label">
+            <input type="checkbox" id="p04-import-enriquecer-check">
+            <span>Enriquecer productos con Open Food Facts (marca, categoría y presentación por código de barras)</span>
+          </label>
+          <small class="text-muted text-small" style="display:block;margin-top:4px;">
+            Requiere que los productos tengan código de barras válido.
+            Puede tardar unos segundos extra.
+          </small>
+        </div>
+      </div>
     </div>
 
     <div class="modal-footer">
       <button type="button"
               class="btn btn-secondary"
-              onclick="p04CerrarModalImportar()">
-        Cerrar
-      </button>
+              id="p04-import-btn-cancelar"
+              onclick="p04CerrarModalImportar()">Cancelar</button>
+      <button type="button"
+              class="btn btn-secondary"
+              id="p04-import-btn-atras"
+              style="display:none;"
+              onclick="p04WizardAtras()">← Atrás</button>
       <button type="button"
               class="btn btn-primary"
-              onclick="p04EjecutarImportacionJSON()">
-        Importar Archivo
-      </button>
+              id="p04-import-btn-siguiente"
+              disabled
+              onclick="p04WizardSiguiente()">Siguiente →</button>
+      <button type="button"
+              class="btn btn-primary"
+              id="p04-import-btn-importar"
+              style="display:none;"
+              onclick="p04WizardConfirmar()">✓ Importar</button>
     </div>
 
   </div>
@@ -12348,6 +13066,203 @@
 
   </div>
 </div>
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<!-- [Fase 3] MODAL 9: ENRIQUECER PRODUCTOS CON APIs EXTERNAS            -->
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<div id="modal-p04-enriquecer"
+     class="modal"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="modal-p04-enriquecer-titulo">
+  <div class="modal-content modal-grande">
+
+    <div class="modal-header">
+      <h3 id="modal-p04-enriquecer-titulo">
+        ✨ Enriquecer Productos
+      </h3>
+      <button type="button"
+              class="modal-close"
+              onclick="p04CerrarModalEnriquecer()"
+              aria-label="Cerrar">×</button>
+    </div>
+
+    <div class="modal-body">
+
+      <p class="text-muted text-small">
+        Buscá información faltante (marca, categoría, presentación y precio sugerido)
+        en APIs externas usando el código de barras de cada producto.
+      </p>
+
+      <div class="p04-form-section">
+        <h4>Configuración</h4>
+
+        <div class="input-group">
+          <label for="p04-enriquecer-fuente">Fuente de enriquecimiento</label>
+          <select id="p04-enriquecer-fuente" aria-label="Fuente de datos externa">
+            <option value="ambas">Ambas (Open Food Facts + Precios Claros)</option>
+            <option value="off">Solo Open Food Facts (marca, categoría, presentación)</option>
+            <option value="pc">Solo Precios Claros (precio sugerido)</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="p04-enriquecer-alcance">Alcance</label>
+          <select id="p04-enriquecer-alcance" aria-label="Productos a enriquecer">
+            <option value="incompletos">Solo productos incompletos (borrador)</option>
+            <option value="sin_precio">Solo productos sin precio de venta</option>
+            <option value="todos_con_codigo">Todos los que tengan código de barras</option>
+            <option value="todos">Todos los productos</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="p04-enriquecer-progreso"
+           style="display:none; margin-top:16px;"
+           aria-live="polite">
+        <p class="text-small text-muted" id="p04-enriquecer-progreso-texto">
+          Preparando...
+        </p>
+        <div style="height:8px; background:var(--m2-card-bg-soft); border-radius:4px; overflow:hidden;">
+          <div id="p04-enriquecer-progreso-bar"
+               style="height:100%; width:0%; background:var(--m2-primary); transition:width 0.3s;"></div>
+        </div>
+      </div>
+
+      <div id="p04-enriquecer-resultados"
+           style="display:none; margin-top:16px;"
+           aria-live="polite">
+        <h4 class="text-small" style="margin-bottom:8px;">Resultados</h4>
+        <div id="p04-enriquecer-resultados-lista"
+             style="max-height:400px; overflow-y:auto; border:1px solid var(--m2-border); border-radius:8px; background:var(--m2-card-bg);">
+          <!-- Se puebla por JS -->
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button type="button"
+              class="btn btn-secondary"
+              onclick="p04CerrarModalEnriquecer()">
+        Cerrar
+      </button>
+      <button type="button"
+              class="btn btn-primary"
+              id="p04-enriquecer-btn-ejecutar"
+              onclick="p04EjecutarEnriquecimiento()">
+        ✨ Enriquecer
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<!-- [Fase 4] MODAL 10: DESCUBRIR PRODUCTOS EN APIs EXTERNAS             -->
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<div id="modal-p04-descubrir"
+     class="modal"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="modal-p04-descubrir-titulo">
+  <div class="modal-content modal-grande">
+
+    <div class="modal-header">
+      <h3 id="modal-p04-descubrir-titulo">
+        🔍 Descubrir Productos
+      </h3>
+      <button type="button"
+              class="modal-close"
+              onclick="p04CerrarModalDescubrir()"
+              aria-label="Cerrar">×</button>
+    </div>
+
+    <div class="modal-body">
+
+      <p class="text-muted text-small">
+        Buscá productos por nombre, marca o código de barras en APIs externas
+        y agregalos a tu catálogo como borradores para revisar.
+      </p>
+
+      <div class="p04-form-section">
+        <h4>Búsqueda</h4>
+
+        <div class="form-row">
+          <div class="input-group">
+            <label for="p04-descubrir-fuente">Fuente</label>
+            <select id="p04-descubrir-fuente" aria-label="Fuente de datos externa">
+              <option value="off">Open Food Facts</option>
+              <option value="pc">Precios Claros</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label for="p04-descubrir-query">Término de búsqueda</label>
+            <input type="text"
+                   id="p04-descubrir-query"
+                   placeholder="Ej: coca cola, galletitas, 7790895000782"
+                   autocomplete="off"
+                   maxlength="100"
+                   aria-label="Término de búsqueda en APIs externas">
+          </div>
+        </div>
+
+        <button type="button"
+                class="btn btn-primary"
+                id="p04-descubrir-btn-buscar"
+                onclick="p04EjecutarBusquedaExterna()"
+                style="width:auto;">
+          🔍 Buscar
+        </button>
+      </div>
+
+      <div id="p04-descubrir-loading"
+           class="p04-api-loading"
+           style="display:none;"
+           aria-live="polite"
+           aria-busy="true">
+        <span class="p04-spinner-inline"></span>
+        <span id="p04-descubrir-loading-text">Buscando…</span>
+      </div>
+
+      <div id="p04-descubrir-resultados"
+           style="display:none; margin-top:16px;"
+           aria-live="polite">
+        <h4 class="text-small" style="margin-bottom:8px;">
+          Resultados <span id="p04-descubrir-resultados-count" class="text-muted"></span>
+        </h4>
+        <div id="p04-descubrir-resultados-lista"
+             style="max-height:420px; overflow-y:auto; border:1px solid var(--m2-border); border-radius:8px; padding:8px; background:var(--m2-card-bg-soft);">
+          <!-- Se puebla por JS -->
+        </div>
+      </div>
+
+      <div id="p04-descubrir-vacio"
+           class="p04-api-vacio"
+           style="display:none;">
+        Sin resultados para esa búsqueda.
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button type="button"
+              class="btn btn-secondary"
+              onclick="p04CerrarModalDescubrir()">
+        Cerrar
+      </button>
+      <button type="button"
+              class="btn btn-primary"
+              id="p04-descubrir-btn-agregar"
+              style="display:none;"
+              onclick="p04AgregarDescubiertos()">
+        + Agregar seleccionados
+      </button>
+    </div>
+
+  </div>
+</div>
+
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!-- BLOQUE 09 v2 — WIRING "VINCULAR PRODUCTOS A PROVEEDOR"     -->
 <!--                                                            -->
@@ -13229,11 +14144,14 @@
     'E-STK-010': { emoji: '🖨️', titulo: 'Error al generar pesables',
                     mensaje: 'No pudimos generar los tickets. Intentá de nuevo.', nivel: 2, accionCerrar: 'close' },
 
-    /* ─── CATÁLOGO ─── */
+    /* ─── CATÁLOGO / IMPORTACIÓN ─── */
     'E-CAT-001': { emoji: '🔗', titulo: 'URL inválida',
                     mensaje: 'La URL debe empezar con http:// o https://.', nivel: 1, accionCerrar: 'close' },
     'E-CAT-002': { emoji: '📥', titulo: 'Error al descargar el catálogo',
                     mensaje: 'No pudimos acceder a la URL del catálogo. Verificá que sea pública y correcta.', nivel: 1, accionCerrar: 'close' },
+    /* [Fase 2] Errores de carga/parseo de Excel en el wizard de importación. */
+    'E-XLS-001': { emoji: '📄', titulo: 'No se pudo procesar el Excel',
+                    mensaje: 'Verificá que sea un archivo válido (.xlsx/.xls) o importá un .json.', nivel: 1, accionCerrar: 'close' },
 
     /* ─── IMPRESORA ─── */
     'E-IMP-001': { emoji: '🖨️', titulo: 'No se pudo imprimir',
@@ -18709,11 +19627,20 @@
         var precio = parseFloat(p.precio_venta || p.precio) || 0;
         var stockTxt = (stock % 1 === 0) ? String(stock) : stock.toFixed(3);
 
+        /* [Fase-5 / Plan §5.4] Badge visual de draft. Le indica al
+         * cajero que el producto tiene campos faltantes. No bloquea
+         * la venta (si tiene precio, se puede vender). */
+        var badgeDraft = (p._import_status === 'draft')
+          ? ' <span title="Producto incompleto — revisá el detalle en Stock" ' +
+            'style="color:var(--m2-warning);font-size:11px;line-height:1;" ' +
+            'aria-label="Producto incompleto">⚠️</span>'
+          : '';
+
         return '' +
           '<div class="p03-producto-item" data-producto-id="' + esc(p.id) + '"' +
                 (stock <= 0 ? ' data-agotado="1"' : '') + '>' +
             '<div>' +
-              '<div class="p03-producto-item-nombre">' + esc(p.nombre || 'Sin nombre') + '</div>' +
+              '<div class="p03-producto-item-nombre">' + esc(p.nombre || 'Sin nombre') + badgeDraft + '</div>' +
               '<div class="p03-producto-item-meta">' +
                 esc(p.codigo || p.codigo_barras || 'S/C') + ' · ' + fmt(precio) +
               '</div>' +
@@ -18762,6 +19689,35 @@
       });
       if (!prod) { toast('Producto no encontrado', 'error'); return; }
 
+      /* [Fase-0] BUG-STK-B: bloquear productos sin precio.
+       * Va antes del check de stock porque "sin precio" es un motivo
+       * más accionable que "stock insuficiente". */
+      var precio = parseFloat(prod.precio_venta || prod.precio) || 0;
+      if (precio <= 0) {
+        toast(
+          'El producto "' + (prod.nombre || 'sin nombre') + '" no tiene precio de venta. ' +
+          'Completalo en Stock antes de venderlo.',
+          'error', 6000
+        );
+        return;
+      }
+
+      /* [Fase-5 / Plan §5.4] Warning informativo (no bloqueante) si
+       * el producto es draft pero tiene precio > 0. El cajero puede
+       * venderlo igual, pero le avisamos qué falta para que complete
+       * los datos cuando pueda. Sin esto, el draft "vive" en el POS
+       * sin que el usuario se entere de que está incompleto. */
+      if (prod._import_status === 'draft') {
+        var faltantes = Array.isArray(prod._campos_faltantes) ? prod._campos_faltantes : [];
+        if (faltantes.length > 0) {
+          toast(
+            'Producto incompleto. Faltan: ' + faltantes.join(', ') + '. ' +
+            'Podés venderlo igual, pero completá los datos cuando puedas.',
+            'info', 4000
+          );
+        }
+      }
+
       var stockDisponible = stockDeProducto(prod);
       var existente = this.ticket.find(function (i) {
         return String(i.productoId) === String(productoId);
@@ -18773,7 +19729,12 @@
         return;
       }
 
-      var precio = parseFloat(prod.precio_venta || prod.precio) || 0;
+      /* Si el ítem ya en el ticket tenía precio 0 (estado heredado del
+       * bug previo), lo actualizamos al precio actual para no arrastrar
+       * el error. Solo si el nuevo precio es > 0 (ya validado arriba). */
+      if (existente && existente.precioUnitario <= 0 && precio > 0) {
+        existente.precioUnitario = precio;
+      }
 
       if (existente) {
         existente.cantidad += 1;
@@ -19059,6 +20020,22 @@
     procesarVenta: async function () {
       if (this.ticket.length === 0) {
         toast('Ticket vacío', 'warning');
+        return;
+      }
+
+      /* [Fase-0] BUG-STK-B: validación final de precios.
+       * Cubre ítems agregados antes del fix, manipulados desde otra
+       * pestaña, o cualquier caso borde donde un ítem con precio 0
+       * haya llegado al ticket. */
+      var itemsSinPrecio = this.ticket.filter(function (i) {
+        return (parseFloat(i.precioUnitario) || 0) <= 0;
+      });
+      if (itemsSinPrecio.length > 0) {
+        toast(
+          'Hay ' + itemsSinPrecio.length + ' producto(s) sin precio en el ticket. ' +
+          'Quitalos o completá su precio antes de cobrar.',
+          'error', 8000
+        );
         return;
       }
 
@@ -19431,6 +20408,100 @@
           'Producto agregado al ticket. No se pudo guardar en el catálogo — revisá tu conexión.',
           'warning', 5500
         );
+      }
+    },
+
+    /* ═══════════════════════════════════════════════════════════ */
+    /* [Fase-5 / Plan §5.4] COMPLETAR PRODUCTO RÁPIDO              */
+    /*                                                            */
+    /* Atajo para el flujo "descubrir → completar → vender".      */
+    /* Un draft sin precio bloquea la venta en agregarAlTicket.    */
+    /* Sin este método, el usuario tenía que: navegar a Stock →   */
+    /* buscar producto → editar → completar precio → guardar →    */
+    /* volver al POS. Con este método, todo se resuelve con un     */
+    /* prompt() en el mismo POS.                                   */
+    /*                                                            */
+    /* Uso desde consola:                                          */
+    /*   POS.completarProductoRapido('prod_xxx')                   */
+    /*                                                            */
+    /* Uso desde UI (pendiente): agregar un botón "Completar"      */
+    /* dentro del .p03-producto-item cuando es draft. El método    */
+    /* es público para que la UI futura lo enganche.               */
+    /* ═══════════════════════════════════════════════════════════ */
+    completarProductoRapido: async function (productoId) {
+      var prod = this.productos.find(function (p) {
+        return String(p.id) === String(productoId);
+      });
+      if (!prod) {
+        toast('Producto no encontrado', 'error');
+        return;
+      }
+
+      /* Pre-poblar con el precio sugerido por Precios Claros si existe. */
+      var sugeridoTxt = (prod._precio_venta_sugerido && prod._precio_venta_sugerido > 0)
+        ? String(prod._precio_venta_sugerido)
+        : '0';
+
+      var nuevoPrecio = parseFloat(window.prompt(
+        'Ingresá el precio de venta para "' + (prod.nombre || 'sin nombre') + '":',
+        sugeridoTxt
+      ));
+
+      if (isNaN(nuevoPrecio) || nuevoPrecio <= 0) {
+        toast('Precio inválido. Ingresá un número mayor a 0.', 'error', 4000);
+        return;
+      }
+
+      /* Recalcular campos faltantes con el nuevo precio. Usamos la API
+       * pública de B14 para mantener una única fuente de verdad. Si
+       * B14 no está cargado (edge case), caemos a un array vacío
+       * (el producto queda sin _campos_faltantes, lo cual no es
+       * ideal pero no rompe nada). */
+      var nuevosFaltantes = [];
+      if (window.Stock && typeof Stock.calcularCamposFaltantes === 'function') {
+        try {
+          nuevosFaltantes = Stock.calcularCamposFaltantes({
+            precio_venta:   nuevoPrecio,
+            stock_minimo:   prod.stock_minimo,
+            proveedor_id:   prod.proveedor_id,
+            lotes:          prod.lotes
+          });
+        } catch (e) {
+          console.warn('[POS] Stock.calcularCamposFaltantes falló:', e);
+        }
+      }
+
+      var patch = {
+        precio_venta: nuevoPrecio,
+        _campos_faltantes: nuevosFaltantes
+      };
+
+      /* Si ya no quedan faltantes, limpiar el flag draft. */
+      if (nuevosFaltantes.length === 0) {
+        patch._import_status = null;
+      }
+
+      var res = await Store.actualizarDoc('productos', prod.id, patch);
+
+      if (res.ok) {
+        Object.assign(prod, patch);
+        if (res.queued) {
+          toast('Precio actualizado localmente (offline). Se sincronizará al volver online.', 'warning', 5000);
+        } else {
+          toast('Precio actualizado. Ya podés venderlo.', 'success', 4000);
+        }
+        /* Refrescar la lista para que el badge draft desaparezca si
+         * quedó completo. */
+        this.renderListaProductos(this._filtroActual());
+      } else {
+        toast('No se pudo actualizar el precio. Revisá tu conexión.', 'error', 5000);
+        _reportarError('E-DATA-001', {
+          detalles: {
+            contexto: 'completar_producto_rapido',
+            prodId: prod.id,
+            reason: res.reason
+          }
+        });
       }
     }
   };
@@ -20457,10 +21528,106 @@
   'use strict';
 
   /* ═══════════════════════════════════════════════════════════════════ */
-  /* BLOQUE 14 v4 — GESTIÓN DE STOCK E INVENTARIO (PANEL 04)             */
+  /* BLOQUE 14 v5 — GESTIÓN DE STOCK E INVENTARIO (PANEL 04)             */
   /*                                                                     */
-  /* CHANGELOG RESPECTO A v3:                                            */
+  /* CHANGELOG RESPECTO A v4 (Fase 2 — Soporte Excel):                   */
   /*                                                                     */
+  /* 🔴 F2-1 — Nuevo _cargarSheetJSDinamico() con timeout de 10s y       */
+  /*    cacheo de la promesa. Carga SheetJS desde cdn.sheetjs.com solo   */
+  /*    cuando el usuario elige un archivo Excel. Cierra el bug del      */
+  /*    sketch del plan §9.1 que no tenía timeout (CDN colgado →         */
+  /*    promesa pendiente para siempre → wizard congelado).              */
+  /*                                                                     */
+  /* 🔴 F2-2 — Nuevo _parseExcel() con cellDates:true, headers únicos    */
+  /*    (Columna_N para vacíos, sufijo _2/_3 para duplicados), extensión */
+  /*    de columnas a maxCols y conversión Date→ISO YYYY-MM-DD. Corrige  */
+  /*    el bug de desalineación de columnas del plan §9.2 (filter(Boolean) */
+  /*    rompía los índices).                                             */
+  /*                                                                     */
+  /* 🔴 F2-3 — Nuevo _parseJSON() extraído de _parsearArchivo. Misma     */
+  /*    lógica, ahora aislado para testeo y simetría con _parseExcel.    */
+  /*                                                                     */
+  /* 🔴 F2-4 — _parsearArchivo despacha por formato (JSON vs Excel),     */
+  /*    setea _estado.formato correctamente y muestra loading state.     */
+  /*    Guarda la generación en finally para no pisar el loading de un   */
+  /*    nuevo archivo seleccionado mientras el anterior aún parsea.      */
+  /*                                                                     */
+  /* 🔴 F2-5 — _validarFila usa _origen dinámico según _estado.formato.  */
+  /*    Antes estaba hardcodeado a 'json', rompiendo el filtro por       */
+  /*    origen y la trazabilidad de Excel.                               */
+  /*                                                                     */
+  /* 🟠 F2-6 — Nuevos _mostrarCargando() / _ocultarCargando() con        */
+  /*    mensaje contextual ("Leyendo archivo Excel…").                   */
+  /*                                                                     */
+  /* 🟠 F2-7 — IMPORT_JSON_MAX_BYTES → IMPORT_MAX_BYTES. Aplica a JSON   */
+  /*    y Excel por igual (10 MB). Se actualizan las 2 referencias       */
+  /*    (wizard y OCR).                                                  */
+  /*                                                                     */
+  /* 🟠 F2-8 — Errores de Excel usan E-XLS-001 (nivel 1). Errores de     */
+  /*    JSON siguen con E-DATA-001.                                      */
+  /*                                                                     */
+  /* 🟢 F2-POST — Eliminado el binding duplicado del drop en             */
+  /*    #p04-import-dropzone. Vivía en _bindEstaticos y en               */
+  /*    ImportWizard._bind(); solo este último queda, evitando           */
+  /*    doble invocación de _parsearArchivo(f) (lectura 2× del           */
+  /*    archivo, pico de memoria 2× en Excel de 10 MB).                  */
+  /*                                                                     */
+  /* 🟢 F2-POST — _calcularCamposFaltantes ya no marca stock_minimo      */
+  /*    cuando el valor es 0 explícito. Antes usaba `<= 0` y el          */
+  /*    badge "Incompleto" aparecía aunque el producto estuviera         */
+  /*    completo. Ahora solo se marca faltante si es undefined/null.     */
+  /*                                                                     */
+  /* ═══════════════════════════════════════════════════════════════════ */
+  /* CHANGELOG RESPECTO A v5 (Fase 3 — Enriquecimiento con APIs):        */
+  /*                                                                     */
+  /* 🔴 F3-1 — Nuevo módulo `Enricher` (enriquecerProducto,              */
+  /*    enriquecerLote, enriquecerLotePreGuardar, _enriquecerProducto-   */
+  /*    Interno) con skip de 24 h y cancelación soportada.               */
+  /*                                                                     */
+  /* 🔴 F3-2 — Nuevas funciones HTTP `_enriquecerConOpenFoodFacts` y     */
+  /*    `_enriquecerConPreciosClaros` con AbortController + timeout      */
+  /*    (5 s OFP, 4 s PC). Best-effort: si fallan, el flujo principal    */
+  /*    continúa sin romperse.                                           */
+  /*                                                                     */
+  /* 🔴 F3-3 — Nuevos handlers UI: p04AbrirModalEnriquecer,              */
+  /*    p04CerrarModalEnriquecer, p04EjecutarEnriquecimiento              */
+  /*    (este último actúa como "Cancelar" mientras hay un batch en      */
+  /*    curso). Render de progreso y resultados.                         */
+  /*                                                                     */
+  /* 🔴 F3-4 — window.Stock extendido con enriquecerProducto(id,         */
+  /*    fuentes?) y enriquecerLote(ids|productos, opciones?).            */
+  /*                                                                     */
+  /* 🟠 F3-5 — ImportWizard.confirmar() lee el checkbox                  */
+  /*    #p04-import-enriquecer-check y, si está tildado, llama a        */
+  /*    Enricher.enriquecerLotePreGuardar(filasFinales, ['off'],         */
+  /*    onProgreso) ANTES de Storage.saveManyProductos(). Los           */
+  /*    productos se mutan en memoria (aún no existen en Firestore).    */
+  /*                                                                     */
+  /* 🟠 F3-6 — Recalculo de _campos_faltantes y limpieza de              */
+  /*    _import_status post-enriquecimiento (en _enriquecerProducto-     */
+  /*    Interno). Aunque hoy OFP/PC no llenan los 4 campos "reales",    */
+  /*    el recálculo deja el sistema preparado para futuras             */
+  /*    extensiones de _calcularCamposFaltantes.                         */
+  /*                                                                     */
+  /* 🟡 F3-7 — Nuevo helper _extraerCategoriaOFP(p) que prefiere         */
+  /*    `categories` (texto plano, frecuentemente en español) sobre      */
+  /*    `categories_tags` (inglés con prefijo `en:`).                    */
+  /*                                                                     */
+  /* 🟡 F3-8 — Modal de editar producto muestra "Precio sugerido:       */
+  /*    $X.XX" con botón "Aplicar sugerencia" cuando el producto        */
+  /*    tiene _precio_venta_sugerido > 0 y el precio actual no coincide. */
+  /*    Nuevo handler p04AplicarPrecioSugerido.                          */
+  /*                                                                     */
+  /* 🟡 F3-9 — Constantes nuevas: OFP_API_BASE, PC_API_BASE,             */
+  /*    OFP_TIMEOUT_MS, PC_TIMEOUT_MS, ENRIQUECIMIENTO_DELAY_OFP_MS,     */
+  /*    ENRIQUECIMIENTO_DELAY_PC_MS, ENRIQUECIMIENTO_MIN_REENRIQUECER_MS.*/
+  /*                                                                     */
+  /* 🟡 F3-10 — Rate limiting diferenciado: 600 ms entre productos para  */
+  /*    OFP (≈100 req/min), 1200 ms para PC (conservador, sin doc).      */
+  /*                                                                     */
+  /* 🟢 F3-11 — B14_VERSION bump a v7. CoreStockAPI.version bump a v7.   */
+  /*                                                                     */
+  /* CHANGELOG RESPECTO A v3 (histórico — Fase 1):                       */
   /* 🔴 FIX-B14-01 — Descompresión gzip condicional en                  */
   /*    importarCatalogoDesdeURL. El catálogo remoto (repo              */
   /*    `mejora2-catalogo`) se sirve como `catalogo_productos.json.gz`.  */
@@ -20571,10 +21738,19 @@
   var DEBOUNCE_FILTER_MS     = 180;
   var MAX_RENDER             = 500;           /* límite de filas por render */
   var FETCH_TIMEOUT_MS       = 30000;         /* 30s para fetch remoto */
-  var IMPORT_JSON_MAX_BYTES  = 10 * 1024 * 1024;  /* 10 MB */
+  var IMPORT_MAX_BYTES       = 10 * 1024 * 1024;  /* 10 MB (JSON y Excel) */
   var REPORTE_THROTTLE_MS    = 5 * 60 * 1000; /* 5 min por colección */
   var OCR_STUB_DELAY_MS      = 1500;
-  var B14_VERSION            = 'v4';
+  var B14_VERSION            = 'v8';
+
+  /* [Fase 3] Enriquecimiento con APIs externas */
+  var OFP_API_BASE                        = 'https://world.openfoodfacts.org';
+  var PC_API_BASE                         = 'https://www.preciosclaros.gob.ar';
+  var OFP_TIMEOUT_MS                      = 5000;   /* 5s OFP */
+  var PC_TIMEOUT_MS                       = 4000;   /* 4s PC */
+  var ENRIQUECIMIENTO_DELAY_OFP_MS        = 600;    /* ~100 req/min */
+  var ENRIQUECIMIENTO_DELAY_PC_MS         = 1200;   /* conservador */
+  var ENRIQUECIMIENTO_MIN_REENRIQUECER_MS = 24 * 60 * 60 * 1000; /* 24h */
 
   /* ─────────────────────────────────────────────────────────── */
   /* ESTADO INTERNO                                              */
@@ -20588,6 +21764,7 @@
       busqueda: '',
       categoria: '',
       estadoStock: 'todos',
+      origen: 'todos',
       diasVencimiento: '30'
     },
     ocrTemp: null,
@@ -20796,8 +21973,149 @@
       return s + (parseFloat(l && l.cantidad) || 0);
     }, 0);
   }
+  /* [Wizard-F1] Parser robusto de precios: "$1.200,50" → 1200.50. */
+  function _parsePrecio(valor) {
+    if (typeof valor === 'number') return isNaN(valor) ? 0 : valor;
+    if (valor === null || valor === undefined || valor === '') return 0;
+    var s = String(valor).trim()
+      .replace(/[$\s]/g, '')
+      .replace(/\./g, '')
+      .replace(/,/g, '.');
+    var n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  }
 
-  function _normalizarProducto(raw) {
+  /* [Wizard-F1] Cálculo de campos faltantes de un producto.
+   * [FIX] Preservar 0 explícito en stock_minimo: el usuario que lo
+   * setea a 0 quiere "solo alertar cuando no haya stock" (stock === 0).
+   * Antes el check `<= 0` marcaba 0 como faltante y mostraba el badge
+   * "Incompleto" aunque el producto tuviera todo lo demás cargado.
+   * Ahora solo se marca faltante si NO está seteado (undefined/null).
+   * _normalizarProducto ya garantiza que el valor es numérico y que
+   * el default 5 solo se aplica cuando NO vino el campo. */
+  function _calcularCamposFaltantes(p) {
+    var faltan = [];
+    if (!p.precio_venta || p.precio_venta <= 0) faltan.push('precio_venta');
+    if (p.stock_minimo === undefined || p.stock_minimo === null) {
+      faltan.push('stock_minimo');
+    }
+    if (!String(p.proveedor_id || '').trim()) faltan.push('proveedor');
+    if (!Array.isArray(p.lotes) || _sumarLotes(p.lotes) <= 0) faltan.push('stock_inicial');
+    return faltan;
+  }
+
+  /* [Wizard-F1] Detección de duplicados.
+   * · Si el id coincide con uno existente → es update, NO duplicado.
+   * · Si el código normalizado coincide → duplicado.
+   * · Fallback nombre+categoria normalizados → duplicado. */
+  function _esDuplicado(nuevo, existentes) {
+    if (!nuevo) return false;
+    if (nuevo.id && existentes.some(function (p) { return p.id === nuevo.id; })) {
+      return false;
+    }
+    var codNuevo = String(nuevo.codigo || '').trim().toLowerCase();
+    if (codNuevo) {
+      return existentes.some(function (p) {
+        return p.id !== nuevo.id &&
+               String(p.codigo || '').trim().toLowerCase() === codNuevo;
+      });
+    }
+    var nomNuevo = String(nuevo.nombre || '').trim().toLowerCase();
+    var catNuevo = String(nuevo.categoria || 'General').trim().toLowerCase();
+    return existentes.some(function (p) {
+      return p.id !== nuevo.id &&
+             String(p.nombre || '').trim().toLowerCase() === nomNuevo &&
+             String(p.categoria || 'General').trim().toLowerCase() === catNuevo;
+    });
+  }
+
+  /* [Wizard-F1] Alias para auto-mapeo de columnas. */
+  var MAPEO_ALIAS = {
+    'nombre':            ['nombre', 'descripcion', 'descripción', 'producto', 'detalle',
+                          'nombre del producto', 'nombre producto', 'item', 'articulo'],
+    'codigo':            ['codigo', 'código', 'codigo_barras', 'codigo de barras', 'ean',
+                          'ean13', 'ean-13', 'barcode', 'barra', 'cod', 'codigo barra'],
+    'precio_venta':      ['precio', 'precio venta', 'precio_venta', 'pvp',
+                          'precio publico', 'precio final', 'p. venta', 'pvp final',
+                          'precio_referencia'],
+    'precio_compra':     ['costo', 'precio compra', 'precio_compra', 'costo compra',
+                          'p. compra', 'costo unitario'],
+    'categoria':         ['categoria', 'categoría', 'rubro', 'familia', 'seccion',
+                          'sección', 'grupo'],
+    'tipo':              ['tipo', 'tipo venta', 'tipo_venta', 'unidad', 'pesable'],
+    'stock_inicial':     ['stock', 'cantidad', 'stock inicial', 'cant',
+                          'qty', 'unidades', 'stock actual', 'stock_total'],
+    'stock_minimo':      ['minimo', 'mínimo', 'stock minimo', 'stock_minimo',
+                          'alerta', 'stock alerta'],
+    'proveedor':         ['proveedor', 'marca', 'fabricante', 'distribuidor'],
+    'fecha_vencimiento': ['vencimiento', 'fecha vencimiento', 'fecha_vencimiento',
+                          'vence', 'f. vencimiento'],
+    'precio_oferta':     ['oferta', 'precio oferta', 'precio_oferta', 'promo']
+  };
+
+  /* [Wizard-F1] Normaliza texto para matching de columnas. */
+  function _normalizarTextoParaMapeo(s) {
+    return String(s || '')
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  }
+
+  /* [Wizard-F1] Resuelve proveedor por nombre.
+   *
+   * Estrategia (Opción A — alineada con plan §5.5):
+   *   1. Prioridad: window.Proveedores.buscarPorNombre (B15). Su cache
+   *      interno `_proveedores` se mantiene sincronizado en tiempo real
+   *      con Firestore vía onSnapshot, así que refleja altas/bajas/
+   *      ediciones de proveedores ocurridas después del arranque de la
+   *      página.
+   *   2. Fallback: StockState.proveedores (cache local de B14). Este
+   *      cache solo se refresca al inicializar Stock o al abrir el
+   *      modal "Nuevo Producto", así que puede quedar stale. Se usa
+   *      únicamente para cubrir el caso "B15 nunca inicializado"
+   *      (usuario que importa sin haber visitado el panel Proveedores).
+   *
+   * Si ninguna fuente encuentra match, devuelve '' y el producto queda
+   * con `_campos_faltantes = ['proveedor', ...]`, tal como especifica
+   * el plan §5.5 (degradación elegante).
+   */
+  function _resolverProveedorPorNombre(nombre) {
+    if (!nombre) return '';
+    var n = String(nombre).trim().toLowerCase();
+    if (!n) return '';
+
+    /* [FIX-B14-A] Si B15 está inicializado, es la ÚNICA fuente de
+     * verdad. NO caemos al fallback porque StockState.proveedores
+     * puede contener proveedores ya eliminados en Firestore que el
+     * onSnapshot de B15 ya sacó de su cache. Delegar a B15 cuando
+     * está listo elimina el riesgo de vincular a un proveedor
+     * fantasma (bug BUG-B14-A). */
+    try {
+      if (window.Proveedores &&
+          typeof window.Proveedores.buscarPorNombre === 'function' &&
+          typeof window.Proveedores.estaListo === 'function' &&
+          window.Proveedores.estaListo()) {
+        var provB15 = window.Proveedores.buscarPorNombre(nombre);
+        return (provB15 && provB15.id) ? provB15.id : '';
+      }
+    } catch (e) {
+      console.warn('[Stock] Proveedores.buscarPorNombre falló, usando fallback local:', e);
+    }
+
+    /* [FIX-B14-A] Fallback SOLO si B15 nunca se inicializó (usuario
+     * importando sin haber abierto el panel Proveedores). En este
+     * caso StockState.proveedores es lo único que tenemos. El match
+     * puede estar stale si otro dispositivo borró el proveedor, pero
+     * es mejor que devolver '' cuando el usuario claramente quiere
+     * vincular. */
+    var match = StockState.proveedores.find(function (p) {
+      return String(p.nombre || '').trim().toLowerCase() === n;
+    });
+    return match ? match.id : '';
+  }
+
+    function _normalizarProducto(raw) {
     if (!raw || typeof raw !== 'object') return null;
     var p = Object.assign({}, raw);
 
@@ -20811,17 +22129,28 @@
     p.es_pesable = (typeof p.es_pesable === 'boolean')
       ? p.es_pesable
       : (p.tipo === 'pesable');
-    p.proveedor_id = p.proveedor_id || '';
-    p.precio_compra = parseFloat(p.precio_compra) || 0;
-    p.precio_venta = parseFloat(p.precio_venta) || 0;
-    p.precio_oferta = (p.precio_oferta !== null && p.precio_oferta !== undefined)
-      ? (parseFloat(p.precio_oferta) || null) : null;
+    p.proveedor_id = String(p.proveedor_id || '').trim();
+
+    /* Precios con parser robusto. */
+    p.precio_compra = _parsePrecio(p.precio_compra);
+    p.precio_venta = _parsePrecio(p.precio_venta !== undefined ? p.precio_venta : p.precio);
+    p.precio_oferta = (p.precio_oferta !== null && p.precio_oferta !== undefined && p.precio_oferta !== '')
+      ? _parsePrecio(p.precio_oferta) : null;
     p.porcentaje_oferta = (p.porcentaje_oferta !== null && p.porcentaje_oferta !== undefined)
       ? (parseFloat(p.porcentaje_oferta) || null) : null;
-    p.stock_minimo = parseInt(p.stock_minimo, 10) || 0;
-    p.created_at = p.created_at || new Date().toISOString();
-    p.updated_at = p.updated_at || new Date().toISOString();
 
+    /* Stock mínimo: default 5 solo si NO vino. Preserva 0 explícito. */
+    var smRaw = p.stock_minimo;
+    var smParsed = parseInt(smRaw, 10);
+    if (smRaw === undefined || smRaw === null || smRaw === '') {
+      p.stock_minimo = 5;
+    } else if (isNaN(smParsed) || smParsed < 0) {
+      p.stock_minimo = 5;
+    } else {
+      p.stock_minimo = smParsed;
+    }
+
+    /* Lotes: normalizar o crear sintético desde stock_inicial/stock_total. */
     if (!Array.isArray(p.lotes)) p.lotes = [];
     p.lotes = p.lotes
       .filter(function (l) { return l && typeof l === 'object'; })
@@ -20835,7 +22164,39 @@
         };
       });
 
+    var stockInicialSuelto = parseFloat(p.stock_inicial) || parseFloat(p.stock_total) || 0;
+    if (p.lotes.length === 0 && stockInicialSuelto > 0) {
+      p.lotes.push({
+        id: _genId('lote'),
+        fecha_ingreso: new Date().toISOString().split('T')[0],
+        fecha_vencimiento: p.fecha_vencimiento || null,
+        cantidad: stockInicialSuelto,
+        precio_compra: p.precio_compra
+      });
+    }
     p.stock_total = _sumarLotes(p.lotes);
+
+    /* Campos de importación (Fase 1). */
+    p._import_status = (p._import_status === 'draft' || p._import_status === 'reviewed')
+      ? p._import_status : null;
+    p._origen = p._origen || 'manual';
+    p._campos_faltantes = _calcularCamposFaltantes(p);
+    p._precio_venta_sugerido = (p._precio_venta_sugerido !== null && p._precio_venta_sugerido !== undefined)
+      ? _parsePrecio(p._precio_venta_sugerido) : null;
+    p._marca = p._marca || null;
+    p._presentacion = p._presentacion || null;
+    p._ofp_enriched_at = p._ofp_enriched_at || null;
+    p._pc_enriched_at = p._pc_enriched_at || null;
+
+    /* Limpiar draft/reviewed si no quedan faltantes. */
+    if ((p._import_status === 'draft' || p._import_status === 'reviewed') &&
+        p._campos_faltantes.length === 0) {
+      p._import_status = null;
+    }
+
+    p.created_at = p.created_at || new Date().toISOString();
+    p.updated_at = p.updated_at || new Date().toISOString();
+
     return p;
   }
 
@@ -20969,43 +22330,163 @@
       return false;
     },
 
-    /* [v3-14] No sobrescribe StockState.productos hasta confirmar batch.
-     * Estrategia: guardar Firestore primero, localStorage después. */
+    /* [v3-14] saveManyProductos con MERGE + deduplicación + conteo de descartes.
+     * Corrige BUG-STK-A (pérdida de catálogo), BUG-STK-C (duplicados) y
+     * BUG-STK-D (descartes silenciosos) de una sola vez.
+     *
+     * Cambios respecto a v3-14:
+     *   · Ya NO reemplaza StockState.productos: hace merge por id.
+     *   · Deduplica por código contra el catálogo existente y contra el
+     *     propio lote en proceso. Fallback: nombre+categoria.
+     *   · Los productos que vienen con `id` de un doc existente son
+     *     tratados como UPDATE (se aceptan aunque el código ya exista).
+     *   · Cuenta descartados y motivos, y los devuelve en el retorno.
+     *   · Los productos que fallan al persistir se revierten al estado
+     *     previo (si existían) o se descartan del estado en memoria (si
+     *     eran nuevos).
+     *
+     * Retorno: { ok, fail, saved, descartados, motivos: { sin_nombre, duplicado } }
+     */
     async saveManyProductos(lista) {
-      if (!Array.isArray(lista)) return { ok: 0, fail: 0, saved: [] };
-      var normalizados = lista.map(_normalizarProducto).filter(Boolean);
+      var resultadoVacio = {
+        ok: 0, fail: 0, saved: [],
+        descartados: 0,
+        motivos: { sin_nombre: 0, duplicado: 0 }
+      };
+      if (!Array.isArray(lista)) return resultadoVacio;
 
-      if (!_dataLista() || !window.Data || typeof Data.set !== 'function') {
-        /* Sin Firestore: persistimos local y devolvemos saved completa. */
-        StockState.productos = normalizados;
-        _safeLocalStorageSet('productos_v1', JSON.stringify(normalizados));
-        return { ok: 0, fail: normalizados.length, saved: normalizados };
+      /* ─── 1. Normalizar con contabilidad de descartes ─── */
+      var normalizados = [];
+      var motivos = { sin_nombre: 0, duplicado: 0 };
+
+      for (var idx = 0; idx < lista.length; idx++) {
+        var norm = _normalizarProducto(lista[idx]);
+        if (!norm) {
+          motivos.sin_nombre++;
+          continue;
+        }
+        normalizados.push(norm);
       }
 
+      /* ─── 2. Sets de deduplicación contra el catálogo actual ─── */
+      var idsExistentes      = Object.create(null);
+      var codigosExistentes  = Object.create(null);
+      var nombresExistentes  = Object.create(null);
+
+      StockState.productos.forEach(function (p) {
+        idsExistentes[p.id] = true;
+        var c = String(p.codigo || '').trim().toLowerCase();
+        if (c) codigosExistentes[c] = p.id;
+        var n = String(p.nombre || '').trim().toLowerCase() + '::' +
+                String(p.categoria || 'General').trim().toLowerCase();
+        nombresExistentes[n] = p.id;
+      });
+
+      /* Rastrear códigos/nombres ya usados EN este lote. */
+      var codigosLote = Object.create(null);
+      var nombresLote = Object.create(null);
+
+      /* ─── 3. Filtrar duplicados ─── */
+      var unicos = [];
+      for (var j = 0; j < normalizados.length; j++) {
+        var prod = normalizados[j];
+        var c = String(prod.codigo || '').trim().toLowerCase();
+        var nKey = String(prod.nombre || '').trim().toLowerCase() + '::' +
+                   String(prod.categoria || 'General').trim().toLowerCase();
+        var esUpdate = !!idsExistentes[prod.id];
+
+        if (esUpdate) {
+          if (c) codigosLote[c] = prod.id;
+          else nombresLote[nKey] = prod.id;
+          unicos.push(prod);
+          continue;
+        }
+
+        if (c) {
+          if (codigosExistentes[c] || codigosLote[c]) {
+            motivos.duplicado++;
+            continue;
+          }
+          codigosLote[c] = prod.id;
+        } else {
+          if (nombresExistentes[nKey] || nombresLote[nKey]) {
+            motivos.duplicado++;
+            continue;
+          }
+          nombresLote[nKey] = prod.id;
+        }
+        unicos.push(prod);
+      }
+
+      var totalDescartados = motivos.sin_nombre + motivos.duplicado;
+
+      /* ─── 4. mapFinal = merge(catálogo actual, unicos) ─── */
+      var mapOriginal = new Map();
+      StockState.productos.forEach(function (p) {
+        mapOriginal.set(p.id, p);
+      });
+      var mapFinal = new Map(mapOriginal);
+      unicos.forEach(function (p) {
+        mapFinal.set(p.id, p);
+      });
+
+      /* ─── 5. Persistir SOLO los unicos ─── */
+      if (!_dataLista() || !window.Data || typeof Data.set !== 'function') {
+        /* Sin comercioId o sin Data.set: no podemos sincronizar a Firestore.
+         * Guardamos en StockState + localStorage para que la UI refleje el
+         * resultado, pero no hay persistencia remota hasta que el usuario
+         * tenga sesión con comercio activo. */
+        var finalesSinData = Array.from(mapFinal.values());
+        StockState.productos = finalesSinData;
+        _safeLocalStorageSet('productos_v1', JSON.stringify(finalesSinData));
+        return {
+          ok: unicos.length,
+          fail: 0,
+          saved: unicos.slice(),
+          descartados: totalDescartados,
+          motivos: motivos
+        };
+      }
+
+      /* ─── 6. Persistir contra Data ─── */
       var ok = 0, fail = 0;
       var saved = [];
 
-      for (var i = 0; i < normalizados.length; i++) {
-        var p = normalizados[i];
+      for (var k = 0; k < unicos.length; k++) {
+        var pToSave = unicos[k];
         try {
-          var res = await Data.set('productos', p.id, p);
+          var res = await Data.set('productos', pToSave.id, pToSave);
           if (_fuePersistido(res)) {
             ok++;
-            saved.push(p);
+            saved.push(pToSave);
           } else {
             fail++;
+            console.warn('[Stock] saveManyProductos: Data.set no persistió ' +
+                         pToSave.id + ' (posible comercioId ausente)');
           }
         } catch (e) {
           fail++;
-          console.warn('[Stock] saveManyProductos falló en ' + p.id + ':', e);
+          console.warn('[Stock] saveManyProductos falló en ' + pToSave.id + ':', e);
         }
       }
 
-      /* Estado final: solo los que SÍ se persistieron o se encolaron. */
-      StockState.productos = saved;
-      _safeLocalStorageSet('productos_v1', JSON.stringify(saved));
+      /* ─── 7. Estado final: original + guardados OK ───
+       * Partimos de mapOriginal (catálogo previo intacto) y superponemos
+       * solo los que se persistieron con éxito. Si una actualización falló,
+       * queda la versión vieja en el estado. Si un producto nuevo falló,
+       * no aparece en el estado. */
+      var estadoFinal = new Map(mapOriginal);
+      saved.forEach(function (p) { estadoFinal.set(p.id, p); });
+      StockState.productos = Array.from(estadoFinal.values());
+      _safeLocalStorageSet('productos_v1', JSON.stringify(StockState.productos));
 
-      return { ok: ok, fail: fail, saved: saved };
+      return {
+        ok: ok,
+        fail: fail,
+        saved: saved,
+        descartados: totalDescartados,
+        motivos: motivos
+      };
     },
 
     async saveHistorico(registro) {
@@ -21025,7 +22506,7 @@
         }
       }
       return false;
-    },
+      },
 
     async getConfigComercio() {
       if (_dataLista() && window.Data && typeof Data.get === 'function') {
@@ -21373,10 +22854,12 @@
             precio_venta: pv,
             precio_oferta: item.precio_oferta || null,
             porcentaje_oferta: item.porcentaje_oferta || null,
-            stock_minimo: parseInt(item.stock_minimo, 10) || 0,
-            /* [v3-20] stock_total siempre derivado de lotes. */
+            stock_minimo: (item.stock_minimo !== undefined && item.stock_minimo !== null && item.stock_minimo !== '')
+              ? parseInt(item.stock_minimo, 10) : 5,
             stock_total: _sumarLotes(lotesIniciales),
             lotes: lotesIniciales,
+            _origen: 'url',
+            _import_status: 'draft',
             updated_at: new Date().toISOString()
           };
 
@@ -21431,7 +22914,6 @@
   /* [v3-16] Exponer normalización como API pública para B13/B15. */
   CoreStockAPI.normalizarProducto = _normalizarProducto;
   CoreStockAPI.sumarLotes = _sumarLotes;
-
   /* [v3-21] destroy() público. */
   CoreStockAPI.destroy = function () {
     if (_destroyed) return;
@@ -21451,18 +22933,1220 @@
       StockState._ocrTimeoutId = null;
     }
 
+    /* [FIX-B14-D] Cleanup de los módulos nuevos. Se llama en orden
+     * inverso de creación para que cualquier dependencia entre ellos
+     * se resuelva. Los `typeof` protegen contra el caso extremo de
+     * que destroy() se invoque antes de que los módulos estén
+     * definidos (no debería pasar, pero es defensa barata). */
+    if (typeof ImportWizard !== 'undefined' && typeof ImportWizard.destroy === 'function') {
+      try { ImportWizard.destroy(); } catch (e) { console.warn('[Stock] ImportWizard.destroy falló:', e); }
+    }
+    if (typeof Discovery !== 'undefined' && typeof Discovery.destroy === 'function') {
+      try { Discovery.destroy(); } catch (e) { console.warn('[Stock] Discovery.destroy falló:', e); }
+    }
+    if (typeof Enricher !== 'undefined' && typeof Enricher.destroy === 'function') {
+      try { Enricher.destroy(); } catch (e) { console.warn('[Stock] Enricher.destroy falló:', e); }
+    }
+
     _snapshotRegistrado = false;
     _snapshotComercioId = null;
     console.info('[Stock] destroy() completado.');
   };
 
-  /* [v4-A] Exponer diagnóstico como API pública. Permite que
-   * otros bloques (o la consola) verifiquen la integridad del DOM
-   * de Stock sin esperar a que falle un render. */
   CoreStockAPI.diagnostico = _diagnosticoDOM;
+  CoreStockAPI.version = 'v8';
 
-  /* [v3-22] Versión pública. */
-  CoreStockAPI.version = B14_VERSION;
+  /* [Wizard-F1] Nuevos métodos públicos. */
+  CoreStockAPI.calcularCamposFaltantes = _calcularCamposFaltantes;
+  CoreStockAPI.esDuplicado = _esDuplicado;
+  CoreStockAPI.contarDrafts = function () {
+    return StockState.productos.filter(function (p) {
+      return p._import_status === 'draft';
+    }).length;
+  };
+  CoreStockAPI.completarProducto = function (prodId) {
+    window.p04AbrirModalProducto(prodId);
+  };
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* [Fase 3] ENRIQUECIMIENTO CON APIS EXTERNAS                  */
+  /* ═══════════════════════════════════════════════════════════ */
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* Funciones HTTP — Open Food Facts                            */
+  /*                                                             */
+  /* Endpoint v2 estable. CORS abierto. Timeout 5 s.             */
+  /* Best-effort: si falla, el flujo principal continúa.         */
+  /* ─────────────────────────────────────────────────────────── */
+  async function _enriquecerConOpenFoodFacts(prod) {
+    var codigoProd = (prod && (prod.codigo || prod.codigo_barras)) || '';
+    if (!codigoProd) {
+      return { ok: false, motivo: 'sin_codigo' };
+    }
+
+    var codigoLimpio = String(codigoProd).replace(/[^0-9]/g, '');
+    if (codigoLimpio.length < 8) {
+      return { ok: false, motivo: 'codigo_invalido' };
+    }
+
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function () { controller.abort(); }, OFP_TIMEOUT_MS);
+
+    try {
+      var url = OFP_API_BASE + '/api/v2/product/' +
+                encodeURIComponent(codigoLimpio) + '.json' +
+                '?fields=product_name,brands,categories,categories_tags,quantity';
+      var res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) return { ok: false, motivo: 'http_' + res.status };
+
+      var data = await res.json();
+      if (data.status !== 1 || !data.product) {
+        return { ok: false, motivo: 'no_encontrado' };
+      }
+
+      var p = data.product;
+      var cambios = {};
+
+      if (!prod.nombre && p.product_name) {
+        cambios.nombre = String(p.product_name).trim();
+      }
+      if (!prod._marca && p.brands) {
+        cambios._marca = String(p.brands).split(',')[0].trim();
+      }
+      if ((!prod.categoria || prod.categoria === 'General')) {
+        var cat = _extraerCategoriaOFP(p);
+        if (cat) cambios.categoria = cat;
+      }
+      if (!prod._presentacion && p.quantity) {
+        cambios._presentacion = String(p.quantity).trim();
+      }
+
+      if (Object.keys(cambios).length === 0) {
+        return { ok: true, cambios: {}, motivo: 'sin_cambios' };
+      }
+
+      cambios._ofp_enriched_at = Date.now();
+      return { ok: true, cambios: cambios, fuente: 'openfoodfacts' };
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (e && e.name === 'AbortError') {
+        return { ok: false, motivo: 'timeout' };
+      }
+      return { ok: false, motivo: 'network_error', error: e && e.message };
+    }
+  }
+
+  /* Extrae la mejor categoría disponible de OFP.
+   * Preferimos `categories` (texto plano, frecuentemente en español)
+   * sobre `categories_tags` (inglés con prefijo `en:`). */
+  function _extraerCategoriaOFP(p) {
+    if (p.categories && typeof p.categories === 'string') {
+      var primera = p.categories.split(',')[0].trim();
+      if (primera) return primera;
+    }
+    if (Array.isArray(p.categories_tags) && p.categories_tags.length > 0) {
+      var tag = String(p.categories_tags[0])
+        .replace(/^[a-z]{2}:/, '')
+        .replace(/-/g, ' ');
+      if (tag) return tag.charAt(0).toUpperCase() + tag.slice(1);
+    }
+    return null;
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* Funciones HTTP — Precios Claros                             */
+  /*                                                             */
+  /* Endpoint BEST-EFFORT. La URL puede cambiar; el CORS puede   */
+  /* fallar. Si algo de esto ocurre, la llamada devuelve          */
+  /* { ok: false } y el flujo principal continúa sin PC.         */
+  /* NUNCA se aplica precio automáticamente: solo se llena      */
+  /* `_precio_venta_sugerido`.                                   */
+  /* ─────────────────────────────────────────────────────────── */
+  async function _enriquecerConPreciosClaros(prod) {
+    var codigoProd = (prod && (prod.codigo || prod.codigo_barras)) || '';
+    if (!codigoProd) {
+      return { ok: false, motivo: 'sin_codigo' };
+    }
+
+    var codigoLimpio = String(codigoProd).replace(/[^0-9]/g, '');
+    if (codigoLimpio.length < 8) {
+      return { ok: false, motivo: 'codigo_invalido' };
+    }
+
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function () { controller.abort(); }, PC_TIMEOUT_MS);
+
+    try {
+      /* ⚠️ URL a confirmar al implementar. Históricamente:
+       *   https://www.preciosclaros.gob.ar/api/productos?ean={barcode}
+       * Si CORS falla de forma consistente, migrar a Cloud Function
+       * proxy (fuera de scope de Fase 3). */
+      var url = PC_API_BASE + '/api/productos?ean=' +
+                encodeURIComponent(codigoLimpio);
+
+      var res = await fetch(url, {
+        signal: controller.signal,
+        headers: { 'Accept': 'application/json' }
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) return { ok: false, motivo: 'http_' + res.status };
+
+      var data = await res.json();
+      if (!data || !Array.isArray(data.resultados) || data.resultados.length === 0) {
+        return { ok: false, motivo: 'no_encontrado' };
+      }
+
+      var item = data.resultados[0];
+      var precio = parseFloat(item.precio) || 0;
+      if (precio <= 0) return { ok: false, motivo: 'sin_precio' };
+
+      return {
+        ok: true,
+        cambios: {
+          _precio_venta_sugerido: precio,
+          _pc_enriched_at: Date.now()
+        },
+        fuente: 'preciosclaros'
+      };
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (e && e.name === 'AbortError') return { ok: false, motivo: 'timeout' };
+      return { ok: false, motivo: 'network_error', error: e && e.message };
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* Orquestador — enriquece UN producto sin persistir          */
+  /*                                                             */
+  /* Usado internamente por enriquecerProducto() y              */
+  /* enriquecerLote(). NO hace Data.update.                      */
+  /*                                                             */
+  /* [Fase 3] Recalcula _campos_faltantes y limpia _import_     */
+  /* status si el producto queda completo (aunque en Fase 3     */
+  /* OFP/PC no llenan los 4 campos "reales", el recálculo es    */
+  /* inocuo y deja el sistema preparado para futuras           */
+  /* extensiones de _calcularCamposFaltantes).                   */
+  /* ─────────────────────────────────────────────────────────── */
+  var Enricher = {
+    _ejecutando: false,
+    _cancelado:  false
+  };
+
+  /* [FIX-B14-D] Cleanup del módulo. Resetea flags de ejecución para
+   * que un destroy() → init() posterior no quede con estado pegado. */
+  Enricher.destroy = function () {
+    Enricher._ejecutando = false;
+    Enricher._cancelado  = false;
+  };
+
+  Enricher._enriquecerProductoInterno = async function (prod, fuentes) {
+    if (!prod) return { ok: false, motivo: 'sin_producto' };
+
+    /* Skip si ya fue enriquecido recientemente. */
+    var ahora = Date.now();
+    if (fuentes.indexOf('off') !== -1 &&
+        prod._ofp_enriched_at &&
+        (ahora - prod._ofp_enriched_at) < ENRIQUECIMIENTO_MIN_REENRIQUECER_MS) {
+      /* No bloqueamos del todo: si el usuario pidió PC también,
+       * seguimos con PC. Solo saltamos OFP. */
+    }
+
+    var cambios = {};
+    var resultados = [];
+
+    if (fuentes.indexOf('off') !== -1) {
+      var debeSkipOFP = prod._ofp_enriched_at &&
+        (ahora - prod._ofp_enriched_at) < ENRIQUECIMIENTO_MIN_REENRIQUECER_MS;
+      if (!debeSkipOFP) {
+        var rOff = await _enriquecerConOpenFoodFacts(prod);
+        resultados.push(rOff);
+        if (rOff.ok && rOff.cambios && Object.keys(rOff.cambios).length > 0) {
+          Object.assign(cambios, rOff.cambios);
+        }
+      }
+    }
+
+    if (fuentes.indexOf('pc') !== -1) {
+      var debeSkipPC = prod._pc_enriched_at &&
+        (ahora - prod._pc_enriched_at) < ENRIQUECIMIENTO_MIN_REENRIQUECER_MS;
+      if (!debeSkipPC) {
+        var rPc = await _enriquecerConPreciosClaros(prod);
+        resultados.push(rPc);
+        if (rPc.ok && rPc.cambios && Object.keys(rPc.cambios).length > 0) {
+          Object.assign(cambios, rPc.cambios);
+        }
+      }
+    }
+
+    if (Object.keys(cambios).length === 0) {
+      var motivo = 'sin_cambios';
+      var huboNoEnc = resultados.some(function (r) { return r.motivo === 'no_encontrado'; });
+      if (huboNoEnc) motivo = 'no_encontrado';
+      var huboTimeout = resultados.some(function (r) { return r.motivo === 'timeout'; });
+      if (huboTimeout) motivo = 'timeout';
+      var huboNet = resultados.some(function (r) { return r.motivo === 'network_error'; });
+      if (huboNet) motivo = 'network_error';
+      return { ok: false, motivo: motivo, resultados: resultados };
+    }
+
+    /* Mutar el objeto en memoria. */
+    Object.assign(prod, cambios);
+
+    /* Recalcular campos faltantes y limpiar draft si corresponde. */
+    prod._campos_faltantes = _calcularCamposFaltantes(prod);
+    if ((prod._import_status === 'draft' || prod._import_status === 'reviewed') &&
+        prod._campos_faltantes.length === 0) {
+      prod._import_status = null;
+      cambios._import_status = null;
+    }
+    cambios._campos_faltantes = prod._campos_faltantes;
+
+    return { ok: true, cambios: cambios, resultados: resultados };
+  };
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* API pública — enriquecerProducto                            */
+  /*                                                             */
+  /* Enriquece UN producto por ID, persiste con Data.update,    */
+  /* muta StockState. Retorna:                                   */
+  /*   { ok: true,  cambios: {...} }                             */
+  /*   { ok: false, motivo: 'sin_codigo' | 'no_encontrado' | ... } */
+  /* ─────────────────────────────────────────────────────────── */
+  Enricher.enriquecerProducto = async function (prodId, fuentes) {
+    var prod = CoreStockAPI.obtenerProducto(prodId);
+    if (!prod) return { ok: false, motivo: 'no_encontrado_local' };
+
+    var sources = Array.isArray(fuentes) ? fuentes : ['off', 'pc'];
+    var r = await Enricher._enriquecerProductoInterno(prod, sources);
+
+    if (r.ok && r.cambios) {
+      try {
+        await Data.update('productos', prod.id, r.cambios);
+        _safeLocalStorageSet('productos_v1', JSON.stringify(StockState.productos));
+      } catch (e) {
+        console.warn('[Enricher] Data.update falló para ' + prod.id + ':', e);
+        return { ok: false, motivo: 'persistencia_fallida', error: e && e.message };
+      }
+    }
+    return r;
+  };
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* API pública — enriquecerLote                                */
+  /*                                                             */
+  /* Acepta:                                                     */
+  /*   · Array de strings (IDs)                                  */
+  /*   · Array de objetos producto                               */
+  /*   · Un solo string / objeto                                 */
+  /*                                                             */
+  /* Opciones:                                                   */
+  /*   { fuentes: ['off', 'pc'], onProgreso: (actual, total, p) }*/
+  /*                                                             */
+  /* Persiste cada producto enriquecido con Data.update.        */
+  /* Cancelable vía Enricher._cancelado = true.                  */
+  /* ─────────────────────────────────────────────────────────── */
+  Enricher.enriquecerLote = async function (productosOIds, opciones) {
+    opciones = opciones || {};
+    var productos = _resolverProductos(productosOIds);
+    if (productos.length === 0) {
+      return { ok: 0, sin_cambios: 0, no_encontrados: 0, errores: 0, resultados: [], cancelado: false };
+    }
+
+    var fuentes = Array.isArray(opciones.fuentes) ? opciones.fuentes : ['off', 'pc'];
+    var onProgreso = typeof opciones.onProgreso === 'function' ? opciones.onProgreso : null;
+
+    var resultado = {
+      ok: 0, sin_cambios: 0, no_encontrados: 0, errores: 0,
+      resultados: [], cancelado: false
+    };
+
+    for (var i = 0; i < productos.length; i++) {
+      if (Enricher._cancelado) {
+        resultado.cancelado = true;
+        break;
+      }
+
+      var prod = productos[i];
+      if (onProgreso) onProgreso(i + 1, productos.length, prod);
+
+      try {
+        var r = await Enricher._enriquecerProductoInterno(prod, fuentes);
+
+        if (r.ok && r.cambios) {
+          try {
+            await Data.update('productos', prod.id, r.cambios);
+            resultado.ok++;
+            resultado.resultados.push({
+              estado: 'enriquecido',
+              nombre: prod.nombre,
+              prodId: prod.id,
+              cambios: r.cambios
+            });
+          } catch (e) {
+            console.warn('[Enricher] Data.update falló para ' + prod.id + ':', e);
+            resultado.errores++;
+            resultado.resultados.push({
+              estado: 'error',
+              nombre: prod.nombre,
+              prodId: prod.id,
+              motivo: 'persistencia_fallida'
+            });
+          }
+        } else if (r.motivo === 'no_encontrado') {
+          resultado.no_encontrados++;
+          resultado.resultados.push({
+            estado: 'no_encontrado',
+            nombre: prod.nombre,
+            prodId: prod.id
+          });
+        } else if (r.motivo === 'sin_cambios') {
+          resultado.sin_cambios++;
+          resultado.resultados.push({
+            estado: 'sin_cambios',
+            nombre: prod.nombre,
+            prodId: prod.id
+          });
+        } else {
+          resultado.errores++;
+          resultado.resultados.push({
+            estado: 'error',
+            nombre: prod.nombre,
+            prodId: prod.id,
+            motivo: r.motivo || 'desconocido'
+          });
+        }
+      } catch (e) {
+        console.warn('[Enricher] Error en producto ' + (prod && prod.id) + ':', e);
+        resultado.errores++;
+        resultado.resultados.push({
+          estado: 'error',
+          nombre: (prod && prod.nombre) || '-',
+          prodId: (prod && prod.id) || '-',
+          motivo: e && e.message
+        });
+      }
+
+      /* Rate limiting entre productos. */
+      var delay = (fuentes.indexOf('pc') !== -1)
+        ? ENRIQUECIMIENTO_DELAY_PC_MS
+        : ENRIQUECIMIENTO_DELAY_OFP_MS;
+      if (i < productos.length - 1 && !Enricher._cancelado) {
+        await new Promise(function (res) { setTimeout(res, delay); });
+      }
+    }
+
+    /* Persistir cache local + refrescar UI. */
+    _safeLocalStorageSet('productos_v1', JSON.stringify(StockState.productos));
+    try { renderListaProductos(); } catch (e) {}
+
+    return resultado;
+  };
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* Variante usada por el wizard de importación:                */
+  /* muta los productos en memoria SIN tocar Firestore.          */
+  /* Los productos aún no existen en Firestore al momento de     */
+  /* llamar esta función; el wizard los persiste después con    */
+  /* Storage.saveManyProductos().                                */
+  /* ─────────────────────────────────────────────────────────── */
+  Enricher.enriquecerLotePreGuardar = async function (productos, fuentes, onProgreso) {
+    if (!Array.isArray(productos) || productos.length === 0) {
+      return { ok: 0, sin_cambios: 0, no_encontrados: 0, errores: 0, resultados: [] };
+    }
+
+    var sources = Array.isArray(fuentes) ? fuentes : ['off'];
+    var resultado = {
+      ok: 0, sin_cambios: 0, no_encontrados: 0, errores: 0, resultados: []
+    };
+
+    for (var i = 0; i < productos.length; i++) {
+      if (Enricher._cancelado) break;
+
+      var prod = productos[i];
+      if (typeof onProgreso === 'function') onProgreso(i + 1, productos.length, prod);
+
+      try {
+        var r = await Enricher._enriquecerProductoInterno(prod, sources);
+
+        if (r.ok && r.cambios) {
+          resultado.ok++;
+          resultado.resultados.push({
+            estado: 'enriquecido',
+            nombre: prod.nombre,
+            prodId: prod.id,
+            cambios: r.cambios
+          });
+        } else if (r.motivo === 'no_encontrado') {
+          resultado.no_encontrados++;
+          resultado.resultados.push({ estado: 'no_encontrado', nombre: prod.nombre, prodId: prod.id });
+        } else if (r.motivo === 'sin_cambios') {
+          resultado.sin_cambios++;
+          resultado.resultados.push({ estado: 'sin_cambios', nombre: prod.nombre, prodId: prod.id });
+        } else {
+          resultado.errores++;
+          resultado.resultados.push({ estado: 'error', nombre: prod.nombre, prodId: prod.id, motivo: r.motivo });
+        }
+      } catch (e) {
+        resultado.errores++;
+        resultado.resultados.push({
+          estado: 'error',
+          nombre: (prod && prod.nombre) || '-',
+          prodId: (prod && prod.id) || '-',
+          motivo: e && e.message
+        });
+      }
+
+      var delay = (sources.indexOf('pc') !== -1) ? ENRIQUECIMIENTO_DELAY_PC_MS : ENRIQUECIMIENTO_DELAY_OFP_MS;
+      if (i < productos.length - 1) {
+        await new Promise(function (res) { setTimeout(res, delay); });
+      }
+    }
+
+    return resultado;
+  };
+
+  /* Resolver array de IDs u objetos a productos del estado. */
+  function _resolverProductos(productosOIds) {
+    if (!productosOIds) return [];
+    var arr = Array.isArray(productosOIds) ? productosOIds : [productosOIds];
+    return arr.map(function (x) {
+      if (!x) return null;
+      if (typeof x === 'string') {
+        return StockState.productos.find(function (p) { return p.id === x; }) || null;
+      }
+      if (typeof x === 'object' && x.id) {
+        /* Si ya es un producto del estado, devolverlo tal cual
+         * (para que las mutaciones apliquen al original). */
+        var existente = StockState.productos.find(function (p) { return p.id === x.id; });
+        return existente || x;
+      }
+      return null;
+    }).filter(Boolean);
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* Handlers UI                                                 */
+  /* ─────────────────────────────────────────────────────────── */
+
+  window.p04AbrirModalEnriquecer = function () {
+    /* Reset de UI */
+    var progCont = _el('p04-enriquecer-progreso');
+    if (progCont) progCont.style.display = 'none';
+    var resCont = _el('p04-enriquecer-resultados');
+    if (resCont) resCont.style.display = 'none';
+    var resList = _el('p04-enriquecer-resultados-lista');
+    if (resList) resList.innerHTML = '';
+    var progBar = _el('p04-enriquecer-progreso-bar');
+    if (progBar) progBar.style.width = '0%';
+    var progText = _el('p04-enriquecer-progreso-texto');
+    if (progText) progText.textContent = 'Preparando...';
+    var btn = _el('p04-enriquecer-btn-ejecutar');
+    if (btn) { btn.textContent = '✨ Enriquecer'; btn.disabled = false; }
+    var fuente = _el('p04-enriquecer-fuente');
+    if (fuente) fuente.value = 'ambas';
+    var alcance = _el('p04-enriquecer-alcance');
+    if (alcance) alcance.value = 'incompletos';
+
+    Enricher._ejecutando = false;
+    Enricher._cancelado  = false;
+
+    _abrirModal('modal-p04-enriquecer');
+  };
+
+  window.p04CerrarModalEnriquecer = function () {
+    if (Enricher._ejecutando) {
+      Enricher._cancelado = true;
+    } else {
+      /* Si no hay ejecución en curso, resetear el flag por si quedó
+       * pegado de una ejecución anterior cancelada y no reseteada. */
+      Enricher._cancelado = false;
+    }
+    _cerrarModal('modal-p04-enriquecer');
+  };
+
+  window.p04EjecutarEnriquecimiento = async function () {
+    /* Si ya hay uno en curso, el click actúa como "Cancelar". */
+    if (Enricher._ejecutando) {
+      Enricher._cancelado = true;
+      var btnCancel = _el('p04-enriquecer-btn-ejecutar');
+      if (btnCancel) { btnCancel.textContent = 'Cancelando...'; btnCancel.disabled = true; }
+      return;
+    }
+
+    /* Resolver fuentes. */
+    var fuenteVal = _val('p04-enriquecer-fuente', 'ambas');
+    var fuentes;
+    if (fuenteVal === 'off')      fuentes = ['off'];
+    else if (fuenteVal === 'pc')  fuentes = ['pc'];
+    else                          fuentes = ['off', 'pc'];
+
+    /* Resolver alcance. */
+    var alcance = _val('p04-enriquecer-alcance', 'incompletos');
+    var productos = StockState.productos.filter(function (p) {
+      if (alcance === 'incompletos')      return p._import_status === 'draft';
+      if (alcance === 'sin_precio')       return !p.precio_venta || p.precio_venta <= 0;
+      if (alcance === 'todos_con_codigo') return !!String(p.codigo || '').trim();
+      if (alcance === 'todos')            return true;
+      return false;
+    });
+
+    if (productos.length === 0) {
+      _toast('No hay productos para enriquecer con ese alcance', 'warning', 5000);
+      return;
+    }
+
+    /* UI setup. */
+    var progCont = _el('p04-enriquecer-progreso');
+    var progText = _el('p04-enriquecer-progreso-texto');
+    var progBar  = _el('p04-enriquecer-progreso-bar');
+    var resCont  = _el('p04-enriquecer-resultados');
+    var resList  = _el('p04-enriquecer-resultados-lista');
+    var btn      = _el('p04-enriquecer-btn-ejecutar');
+
+    if (progCont) progCont.style.display = 'block';
+    if (progBar)  progBar.style.width = '0%';
+    if (resCont)  resCont.style.display = 'none';
+    if (btn) { btn.textContent = '⏹ Cancelar'; btn.disabled = false; }
+
+    Enricher._ejecutando = true;
+    Enricher._cancelado  = false;
+
+    try {
+      var resultado = await Enricher.enriquecerLote(productos, {
+        fuentes: fuentes,
+        onProgreso: function (actual, total, prod) {
+          if (progText) {
+            progText.textContent = 'Enriqueciendo ' + actual + '/' + total +
+                                   (prod ? ' · ' + (prod.nombre || '') : '') + '…';
+          }
+          if (progBar) {
+            progBar.style.width = Math.round((actual / total) * 100) + '%';
+          }
+        }
+      });
+
+      /* Render resultados. */
+      _renderResultadosEnriquecimiento(resultado, resList);
+      if (resCont) resCont.style.display = 'block';
+      if (progCont) progCont.style.display = 'none';
+
+      /* Refrescar contadores. */
+      try { renderListaProductos(); } catch (e) {}
+      try { _actualizarDraftCount(); } catch (e) {}
+
+      /* Toast con resumen. */
+      var partes = [];
+      if (resultado.ok > 0)            partes.push(resultado.ok + ' enriquecidos');
+      if (resultado.sin_cambios > 0)   partes.push(resultado.sin_cambios + ' sin cambios');
+      if (resultado.no_encontrados > 0) partes.push(resultado.no_encontrados + ' no encontrados');
+      if (resultado.errores > 0)       partes.push(resultado.errores + ' errores');
+      if (resultado.cancelado)         partes.push('cancelado por el usuario');
+
+      var msg = partes.length > 0 ? partes.join(' · ') : 'Enriquecimiento finalizado';
+      var tipo = (resultado.errores > 0 || resultado.cancelado) ? 'warning' : 'success';
+      _toast(msg, tipo, 6000);
+    } catch (e) {
+      console.error('[Enricher] Error en p04EjecutarEnriquecimiento:', e);
+      _toast('Error en enriquecimiento: ' + (e && e.message ? e.message : 'desconocido'), 'error', 6000);
+      _err('E-DATA-001', {
+        detalles: { contexto: 'p04EjecutarEnriquecimiento', mensaje: e && e.message },
+        stack: e && e.stack
+      });
+    } finally {
+      Enricher._ejecutando = false;
+      Enricher._cancelado  = false;
+      if (btn) { btn.textContent = '✨ Enriquecer'; btn.disabled = false; }
+    }
+  };
+
+  function _renderResultadosEnriquecimiento(resultado, cont) {
+    if (!cont) return;
+
+    var html = '<div class="p04-enriq-resumen">' +
+      '<strong>Resumen:</strong> ' +
+      (resultado.ok || 0) + ' enriquecido' + (resultado.ok === 1 ? '' : 's') + ' · ' +
+      (resultado.sin_cambios || 0) + ' sin cambios · ' +
+      (resultado.no_encontrados || 0) + ' no encontrado' + (resultado.no_encontrados === 1 ? '' : 's') + ' · ' +
+      (resultado.errores || 0) + ' error' + (resultado.errores === 1 ? '' : 'es') +
+      (resultado.cancelado ? ' · <em>Cancelado</em>' : '') +
+      '</div>';
+
+    var items = resultado.resultados || [];
+    if (items.length === 0) {
+      html += '<p class="text-center text-muted text-small" style="padding:20px;">Sin detalles para mostrar</p>';
+    } else {
+      html += items.map(function (r) {
+        var icon, texto = '';
+        if (r.estado === 'enriquecido') {
+          icon = '✅';
+          var cambiosFiltrados = Object.keys(r.cambios || {}).filter(function (k) {
+            return k.indexOf('_enriched_at') === -1 &&
+                   k.indexOf('_campos_faltantes') === -1 &&
+                   k.indexOf('_import_status') === -1;
+          });
+          texto = cambiosFiltrados.map(function (k) {
+            var valor = r.cambios[k];
+            if (valor === null || valor === undefined) return null;
+            if (typeof valor === 'number') valor = valor.toFixed(2);
+            return '<strong>' + _escapeHtml(k.replace(/^_/, '')) + '</strong> → ' + _escapeHtml(String(valor));
+          }).filter(Boolean).join(' · ');
+          if (!texto) texto = 'Actualizado';
+        } else if (r.estado === 'sin_cambios') {
+          icon = '➖';
+          texto = 'La API no aportó datos nuevos';
+        } else if (r.estado === 'no_encontrado') {
+          icon = '❓';
+          texto = 'No encontrado en la API';
+        } else {
+          icon = '⚠️';
+          texto = r.motivo || 'Error desconocido';
+        }
+
+        return '<div class="p04-enriq-resultado">' +
+          '<span class="p04-enriq-resultado-icon">' + icon + '</span>' +
+          '<div class="p04-enriq-resultado-info">' +
+          '<div class="p04-enriq-resultado-nombre">' + _escapeHtml(r.nombre || r.prodId || '-') + '</div>' +
+          (texto ? '<div class="p04-enriq-resultado-cambios">' + texto + '</div>' : '') +
+          '</div></div>';
+      }).join('');
+    }
+
+    cont.innerHTML = html;
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* Extensiones de CoreStockAPI                                 */
+  /* ─────────────────────────────────────────────────────────── */
+  CoreStockAPI.enriquecerProducto = function (prodId, fuentes) {
+    return Enricher.enriquecerProducto(prodId, fuentes);
+  };
+  CoreStockAPI.enriquecerLote = function (prodIds, opciones) {
+    return Enricher.enriquecerLote(prodIds, opciones);
+  };
+  /* [FIX-B14-F] CoreStockAPI.version ya fue asignada más arriba, en el
+   * bloque principal de CoreStockAPI. Se elimina esta asignación
+   * duplicada para evitar divergencia futura. */
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* [Fase 4] DISCOVERY — Descubrimiento masivo desde APIs      */
+  /* ═══════════════════════════════════════════════════════════ */
+  var Discovery = {
+    _busquedaEnCurso: false,
+    _resultados: [],       /* resultados de la última búsqueda */
+    _seleccionados: [],    /* ids (índices) seleccionados por el usuario */
+    _ultimaQuery: '',
+    _ultimaFuente: 'off'
+  };
+
+  /* [FIX-B14-D] Cleanup del módulo. Cancela flags de búsqueda y vacía
+   * los buffers en memoria. Si había un fetch en vuelo, su finally
+   * (con guard de generación) no pisará nada. */
+  Discovery.destroy = function () {
+    Discovery._busquedaEnCurso = false;
+    Discovery._resultados      = [];
+    Discovery._seleccionados   = [];
+    Discovery._ultimaQuery     = '';
+    Discovery._ultimaFuente    = 'off';
+  };
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* Búsqueda en Open Food Facts (search.pl)                     */
+  /* Endpoint histórico estable. CORS abierto.                   */
+  /* Timeout 8s (puede ser más lento que el lookup por barcode). */
+  /* ─────────────────────────────────────────────────────────── */
+  async function _buscarEnOpenFoodFacts(query, opciones) {
+    opciones = opciones || {};
+    var pageSize = parseInt(opciones.pageSize, 10) || 20;
+    var page = parseInt(opciones.page, 10) || 1;
+
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function () { controller.abort(); }, 8000);
+
+    try {
+      var url = OFP_API_BASE + '/cgi/search.pl' +
+                '?search_terms=' + encodeURIComponent(query) +
+                '&search_simple=1&action=process&json=1' +
+                '&page_size=' + pageSize +
+                '&page=' + page +
+                '&fields=code,product_name,brands,categories,quantity';
+
+      var res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) return { ok: false, motivo: 'http_' + res.status };
+
+      var data = await res.json();
+      var productos = (data.products || []).map(function (p) {
+        var cat = '';
+        if (p.categories) {
+          cat = String(p.categories).split(',')[0].trim();
+        }
+        return {
+          codigo: p.code || '',
+          nombre: p.product_name || '',
+          marca: p.brands || '',
+          categoria: cat || 'General',
+          presentacion: p.quantity || '',
+          precio_venta: 0,
+          precio_compra: 0,
+          fuente: 'off'
+        };
+      }).filter(function (p) { return p.nombre && String(p.nombre).trim(); });
+
+      return {
+        ok: true,
+        productos: productos,
+        total: data.count || productos.length,
+        fuente: 'off'
+      };
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (e && e.name === 'AbortError') {
+        return { ok: false, motivo: 'timeout' };
+      }
+      return { ok: false, motivo: 'network_error', error: e && e.message };
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* Búsqueda en Precios Claros (best-effort)                    */
+  /*                                                             */
+  /* La API de PC puede no tener CORS o cambiar de URL.          */
+  /* Si falla, el descubrimiento sigue funcionando sin PC.       */
+  /* ─────────────────────────────────────────────────────────── */
+  async function _buscarEnPreciosClaros(query, opciones) {
+    opciones = opciones || {};
+    var pageSize = parseInt(opciones.pageSize, 10) || 20;
+
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function () { controller.abort(); }, 6000);
+
+    try {
+      /* ⚠️ URL a confirmar al implementar. Si CORS falla de forma
+       * consistente, este branch devuelve { ok: false } y el
+       * descubrimiento continúa solo con OFP. */
+      var url = PC_API_BASE + '/api/productos?busqueda=' +
+                encodeURIComponent(query) +
+                '&limit=' + pageSize;
+
+      var res = await fetch(url, {
+        signal: controller.signal,
+        headers: { 'Accept': 'application/json' }
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) return { ok: false, motivo: 'http_' + res.status };
+
+      var data = await res.json();
+      var items = (data.resultados || data.productos || []);
+      var productos = items.map(function (p) {
+        return {
+          codigo: p.ean || p.codigo_barras || '',
+          nombre: p.descripcion || p.nombre || '',
+          marca: p.marca || '',
+          categoria: p.categoria || 'General',
+          presentacion: p.presentacion || '',
+          precio_venta: parseFloat(p.precio) || 0,
+          precio_compra: 0,
+          fuente: 'pc'
+        };
+      }).filter(function (p) { return p.nombre && String(p.nombre).trim(); });
+
+      return {
+        ok: true,
+        productos: productos,
+        total: productos.length,
+        fuente: 'pc'
+      };
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (e && e.name === 'AbortError') return { ok: false, motivo: 'timeout' };
+      return { ok: false, motivo: 'network_error', error: e && e.message };
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* API pública — Discovery.buscar                              */
+  /*                                                             */
+  /* Retorna { ok, productos: [...], total, fuente }.            */
+  /* Cada producto incluye un flag `_yaEnCatalogo` que indica    */
+  /* si ya existe en StockState.productos (por código o por      */
+  /* nombre+categoría normalizados).                             */
+  /* ─────────────────────────────────────────────────────────── */
+  Discovery.buscar = async function (query, fuente, opciones) {
+    query = String(query || '').trim();
+    if (!query) {
+      return { ok: false, motivo: 'query_vacia', productos: [] };
+    }
+
+    if (fuente === 'pc') {
+      return _buscarEnPreciosClaros(query, opciones);
+    }
+    return _buscarEnOpenFoodFacts(query, opciones);
+  };
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* Marca cada resultado con `_yaEnCatalogo`.                   */
+  /* Se ejecuta después de buscar, antes de renderizar.          */
+  /* ─────────────────────────────────────────────────────────── */
+  function _marcarResultadosYaEnCatalogo(productos) {
+    if (!Array.isArray(productos)) return [];
+
+    var codigosExistentes = Object.create(null);
+    var nombresExistentes = Object.create(null);
+
+    StockState.productos.forEach(function (p) {
+      var c = String(p.codigo || '').trim().toLowerCase();
+      if (c) codigosExistentes[c] = p.id;
+      var nKey = String(p.nombre || '').trim().toLowerCase() + '::' +
+                 String(p.categoria || 'General').trim().toLowerCase();
+      nombresExistentes[nKey] = p.id;
+    });
+
+    return productos.map(function (p) {
+      var c = String(p.codigo || '').trim().toLowerCase();
+      var nKey = String(p.nombre || '').trim().toLowerCase() + '::' +
+                 String(p.categoria || 'General').trim().toLowerCase();
+      p._yaEnCatalogo = !!(c && codigosExistentes[c]) || !!(nombresExistentes[nKey]);
+      return p;
+    });
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* Render de resultados de búsqueda                            */
+  /* ─────────────────────────────────────────────────────────── */
+  function _renderResultadosDescubrir(resultados, contenedor) {
+    if (!contenedor) return;
+
+    if (!Array.isArray(resultados) || resultados.length === 0) {
+      contenedor.innerHTML =
+        '<div class="p04-api-vacio">' +
+        'Sin resultados para esa búsqueda. Probá con otro término.' +
+        '</div>';
+      return;
+    }
+
+    contenedor.innerHTML = resultados.map(function (p, idx) {
+      var yaEnCat = !!p._yaEnCatalogo;
+      var clase = yaEnCat ? ' p04-api-result ya-en-catalogo' : ' p04-api-result';
+      var checked = !yaEnCat && Discovery._seleccionados.indexOf(idx) !== -1 ? ' checked' : '';
+      var disabled = yaEnCat ? ' disabled' : '';
+
+      var precioTxt = p.precio_venta > 0
+        ? '$' + p.precio_venta.toFixed(2)
+        : '—';
+      var precioLabel = p.fuente === 'pc' ? 'Precio sugerido' : 'Precio';
+
+      var metaTxt = [];
+      if (p.codigo) metaTxt.push('<span>📋 ' + _escapeHtml(p.codigo) + '</span>');
+      if (p.marca) metaTxt.push('<span>🏷️ ' + _escapeHtml(p.marca) + '</span>');
+      if (p.presentacion) metaTxt.push('<span>📦 ' + _escapeHtml(p.presentacion) + '</span>');
+      if (p.categoria && p.categoria !== 'General') {
+        metaTxt.push('<span>📂 ' + _escapeHtml(p.categoria) + '</span>');
+      }
+
+      var fuenteBadge = '<span class="p04-api-result-fuente">' +
+                        (p.fuente === 'pc' ? 'PC' : 'OFP') + '</span>';
+      var yaBadge = yaEnCat
+        ? '<span class="p04-api-result-ya">✓ Ya en catálogo</span>'
+        : '';
+
+      return '<label class="p04-api-result' + clase + '" data-idx="' + idx + '">' +
+        '<input type="checkbox" data-descubrir-check="' + idx + '"' +
+          checked + disabled + '>' +
+        '<div class="p04-api-result-info">' +
+          '<div class="p04-api-result-nombre">' +
+            _escapeHtml(p.nombre) + fuenteBadge + yaBadge +
+          '</div>' +
+          '<div class="p04-api-result-meta">' + metaTxt.join('') + '</div>' +
+        '</div>' +
+        '<div class="p04-api-result-precio">' +
+          _escapeHtml(precioTxt) +
+          '<small>' + precioLabel + '</small>' +
+        '</div>' +
+      '</label>';
+    }).join('');
+
+    /* Bind de checkboxes. */
+    contenedor.querySelectorAll('[data-descubrir-check]').forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        var idx = parseInt(cb.dataset.descubrirCheck, 10);
+        if (isNaN(idx)) return;
+        var pos = Discovery._seleccionados.indexOf(idx);
+        if (cb.checked) {
+          if (pos === -1) Discovery._seleccionados.push(idx);
+        } else {
+          if (pos !== -1) Discovery._seleccionados.splice(pos, 1);
+        }
+        _actualizarBotonAgregarDescubrir();
+      });
+    });
+  }
+
+  function _actualizarBotonAgregarDescubrir() {
+    var btn = _el('p04-descubrir-btn-agregar');
+    if (!btn) return;
+    var n = Discovery._seleccionados.length;
+    if (n > 0) {
+      btn.style.display = '';
+      btn.textContent = '+ Agregar ' + n + ' seleccionado' + (n === 1 ? '' : 's');
+    } else {
+      btn.style.display = 'none';
+      btn.textContent = '+ Agregar seleccionados';
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* Handlers UI                                                 */
+  /* ─────────────────────────────────────────────────────────── */
+
+  window.p04AbrirModalDescubrir = function () {
+    /* Reset de estado. */
+    Discovery._resultados = [];
+    Discovery._seleccionados = [];
+    Discovery._ultimaQuery = '';
+    Discovery._ultimaFuente = 'off';
+    Discovery._busquedaEnCurso = false;
+
+    /* Reset de UI. */
+    var queryInput = _el('p04-descubrir-query');
+    if (queryInput) queryInput.value = '';
+    var fuenteSel = _el('p04-descubrir-fuente');
+    if (fuenteSel) fuenteSel.value = 'off';
+    var loading = _el('p04-descubrir-loading');
+    if (loading) loading.style.display = 'none';
+    var resultados = _el('p04-descubrir-resultados');
+    if (resultados) resultados.style.display = 'none';
+    var vacio = _el('p04-descubrir-vacio');
+    if (vacio) vacio.style.display = 'none';
+    var lista = _el('p04-descubrir-resultados-lista');
+    if (lista) lista.innerHTML = '';
+    var count = _el('p04-descubrir-resultados-count');
+    if (count) count.textContent = '';
+
+    _actualizarBotonAgregarDescubrir();
+
+    _abrirModal('modal-p04-descubrir');
+
+    /* Focus al input de búsqueda. */
+    if (queryInput) {
+      setTimeout(function () {
+        try { queryInput.focus(); } catch (e) {}
+      }, 150);
+    }
+  };
+
+  window.p04CerrarModalDescubrir = function () {
+    _cerrarModal('modal-p04-descubrir');
+  };
+
+  window.p04EjecutarBusquedaExterna = async function () {
+    if (Discovery._busquedaEnCurso) return;
+
+    var query = _val('p04-descubrir-query', '').trim();
+    if (!query) {
+      _toast('Ingresá un término de búsqueda', 'warning');
+      return;
+    }
+
+    var fuente = _val('p04-descubrir-fuente', 'off');
+    Discovery._ultimaQuery = query;
+    Discovery._ultimaFuente = fuente;
+    Discovery._seleccionados = [];
+    Discovery._busquedaEnCurso = true;
+
+    var loading = _el('p04-descubrir-loading');
+    var loadingText = _el('p04-descubrir-loading-text');
+    var resultados = _el('p04-descubrir-resultados');
+    var vacio = _el('p04-descubrir-vacio');
+    var btnBuscar = _el('p04-descubrir-btn-buscar');
+
+    if (loading) loading.style.display = 'block';
+    if (loadingText) {
+      loadingText.textContent = fuente === 'pc'
+        ? 'Buscando en Precios Claros…'
+        : 'Buscando en Open Food Facts…';
+    }
+    if (resultados) resultados.style.display = 'none';
+    if (vacio) vacio.style.display = 'none';
+    if (btnBuscar) { btnBuscar.disabled = true; btnBuscar.textContent = 'Buscando…'; }
+
+    try {
+      var r = await Discovery.buscar(query, fuente, { pageSize: 20 });
+
+      if (!r.ok) {
+        var motivo = r.motivo || 'desconocido';
+        var msgToast = 'No se pudo completar la búsqueda';
+        if (motivo === 'timeout') {
+          msgToast = 'La búsqueda tardó demasiado. Reintentá o probá con otra fuente.';
+        } else if (motivo === 'network_error') {
+          msgToast = 'Error de red. Revisá tu conexión e intentá de nuevo.';
+        } else if (motivo.indexOf('http_') === 0) {
+          msgToast = 'El servicio externo respondió con error (' + motivo + ').';
+        }
+        _toast(msgToast, 'error', 6000);
+        _err('E-DATA-002', {
+          detalles: {
+            contexto: 'discovery_buscar',
+            fuente: fuente,
+            query: query,
+            motivo: motivo,
+            error: r.error
+          }
+        });
+        return;
+      }
+
+      Discovery._resultados = _marcarResultadosYaEnCatalogo(r.productos || []);
+      var total = Discovery._resultados.length;
+
+      var count = _el('p04-descubrir-resultados-count');
+      if (count) {
+        count.textContent = '(' + total + ' resultado' + (total === 1 ? '' : 's') + ')';
+      }
+
+      var lista = _el('p04-descubrir-resultados-lista');
+      _renderResultadosDescubrir(Discovery._resultados, lista);
+
+      if (total > 0) {
+        if (resultados) resultados.style.display = 'block';
+      } else {
+        if (vacio) vacio.style.display = 'block';
+      }
+
+      _actualizarBotonAgregarDescubrir();
+
+      _toast(
+        total > 0
+          ? 'Se encontraron ' + total + ' producto' + (total === 1 ? '' : 's') + '.'
+          : 'No se encontraron productos para esa búsqueda.',
+        total > 0 ? 'success' : 'info',
+        3500
+      );
+    } catch (e) {
+      console.error('[Discovery] Error inesperado en búsqueda:', e);
+      _toast('Error al buscar. Reintentá.', 'error', 5000);
+      _err('E-DATA-001', {
+        detalles: { contexto: 'discovery_buscar_exception', mensaje: e && e.message },
+        stack: e && e.stack
+      });
+    } finally {
+      Discovery._busquedaEnCurso = false;
+      if (loading) loading.style.display = 'none';
+      if (btnBuscar) { btnBuscar.disabled = false; btnBuscar.textContent = '🔍 Buscar'; }
+    }
+  };
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* Agregar seleccionados al catálogo                           */
+  /*                                                             */
+  /* Reglas:                                                     */
+  /*   · Toma los índices de Discovery._seleccionados.           */
+  /*   · Normaliza con _normalizarProducto + _import_status      */
+  /*     'draft'.                                                */
+  /*   · Deduplica contra catálogo existente Y entre sí.         */
+  /*   · Persiste con Storage.saveManyProductos (merge).         */
+  /*   · Toast honesto con agregados + duplicados ignorados.     */
+  /* ─────────────────────────────────────────────────────────── */
+  window.p04AgregarDescubiertos = async function () {
+    if (Discovery._seleccionados.length === 0) {
+      _toast('No hay productos seleccionados', 'warning');
+      return;
+    }
+
+    var seleccionados = Discovery._seleccionados
+      .map(function (idx) { return Discovery._resultados[idx]; })
+      .filter(Boolean);
+
+    if (seleccionados.length === 0) {
+      _toast('No hay productos seleccionados', 'warning');
+      return;
+    }
+
+    var btn = _el('p04-descubrir-btn-agregar');
+    if (btn) { btn.disabled = true; btn.textContent = 'Agregando…'; }
+
+    try {
+      /* Normalizar a productos con shape de importación. */
+      var productosNuevos = seleccionados.map(function (p) {
+        var prod = {
+          _origen: p.fuente === 'pc' ? 'preciosclaros' : 'openfoodfacts',
+          _import_status: 'draft',
+          nombre: p.nombre,
+          codigo: p.codigo || '',
+          categoria: p.categoria || 'General',
+          precio_venta: p.precio_venta || 0,
+          precio_compra: p.precio_compra || 0,
+          _marca: p.marca || null,
+          _presentacion: p.presentacion || null
+        };
+        if (p.fuente === 'pc' && p.precio_venta > 0) {
+          prod._precio_venta_sugerido = p.precio_venta;
+        }
+        return _normalizarProducto(prod);
+      }).filter(Boolean);
+
+      if (productosNuevos.length === 0) {
+        _toast('Ninguno de los productos tiene los datos mínimos (nombre).', 'warning', 5000);
+        return;
+      }
+
+      var resultado = await Storage.saveManyProductos(productosNuevos);
+
+      /* Refrescar UI. */
+      renderListaProductos();
+      renderTablaVencimientos();
+
+      /* Cerrar modal. */
+      _cerrarModal('modal-p04-descubrir');
+
+      /* Toast honesto. */
+      var motivos = resultado.motivos || {};
+      var nDuplicado = motivos.duplicado || 0;
+      var nDescartados = resultado.descartados || 0;
+
+      var partes = [];
+      partes.push((resultado.ok) + ' producto' + (resultado.ok === 1 ? '' : 's') +
+                  ' agregado' + (resultado.ok === 1 ? '' : 's') + ' como borrador');
+      if (resultado.fail > 0) {
+        partes.push(resultado.fail + ' fallido' + (resultado.fail === 1 ? '' : 's'));
+      }
+      if (nDescartados > 0) {
+        partes.push(nDescartados + ' descartado' + (nDescartados === 1 ? '' : 's') +
+                    (nDuplicado > 0 ? ' (' + nDuplicado + ' duplicado' + (nDuplicado > 1 ? 's' : '') + ')' : ''));
+      }
+
+      var tipo = (resultado.fail > 0 || nDescartados > 0) ? 'warning' : 'success';
+      _toast(partes.join(' · '), tipo, 6000);
+
+      /* Reset del estado de descubrimiento. */
+      Discovery._resultados = [];
+      Discovery._seleccionados = [];
+      Discovery._ultimaQuery = '';
+    } catch (e) {
+      console.error('[Discovery] Error al agregar:', e);
+      _toast('Error al agregar los productos', 'error', 5000);
+      _err('E-DATA-001', {
+        detalles: { contexto: 'discovery_agregar', mensaje: e && e.message },
+        stack: e && e.stack
+      });
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '+ Agregar seleccionados';
+      }
+    }
+  };
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* Extensiones de CoreStockAPI para descubrimiento              */
+  /* ─────────────────────────────────────────────────────────── */
+  CoreStockAPI.buscarProductos = function (query, fuente, opciones) {
+    return Discovery.buscar(query, fuente, opciones);
+  };
 
   window.Stock = CoreStockAPI;
   window.stock = CoreStockAPI;
@@ -21483,11 +24167,12 @@
 
   function renderListaProductos() {
     if (_destroyed) return;
+
+    /* Actualizar contador de drafts (aunque falte el tbody). */
+    _actualizarDraftCount();
+
     var tbody = _el('p04-tbody-productos');
     if (!tbody) {
-      /* [v4-B] Antes retornaba en silencio. Ahora avisa explícitamente
-       * porque este error típicamente significa que B08 no expone
-       * <tbody id="p04-tbody-productos"> y el catálogo nunca se pinta. */
       console.error(
         '[Stock] renderListaProductos: #p04-tbody-productos no existe en el DOM. ' +
         'El catálogo NO se renderizará. Verificá el HTML de B08 (tab ' +
@@ -21497,11 +24182,11 @@
     }
     var badgeCount = _el('p04-total-items-count');
 
-    /* [v3-40] aria-busy durante render. */
     tbody.setAttribute('aria-busy', 'true');
 
     var cacheStock = _construirCacheStock();
     var txt = (StockState.filtros.busqueda || '').toLowerCase().trim();
+    var origenFiltro = StockState.filtros.origen || 'todos';
 
     var filtrados = StockState.productos.filter(function (prod) {
       if (txt) {
@@ -21510,6 +24195,15 @@
         if (nom.indexOf(txt) === -1 && cod.indexOf(txt) === -1) return false;
       }
       if (StockState.filtros.categoria && prod.categoria !== StockState.filtros.categoria) return false;
+
+      /* Filtro por origen / draft. */
+      if (origenFiltro !== 'todos') {
+        if (origenFiltro === 'draft') {
+          if (prod._import_status !== 'draft') return false;
+        } else {
+          if ((prod._origen || 'manual') !== origenFiltro) return false;
+        }
+      }
 
       var stock = cacheStock.get(prod.id) || 0;
       var min = prod.stock_minimo || 0;
@@ -21522,7 +24216,6 @@
     var totalFiltrados = filtrados.length;
     var truncado = false;
 
-    /* [v3-27] Aplicar MAX_RENDER si no hay búsqueda activa. */
     if (!txt && filtrados.length > MAX_RENDER) {
       filtrados = filtrados.slice(0, MAX_RENDER);
       truncado = true;
@@ -21554,7 +24247,6 @@
       var pVentaBase = parseFloat(prod.precio_venta) || 0;
       var pVentaTxt;
 
-      /* [v3-37] Mostrar precio oferta tachado si existe. */
       var tieneOferta = prod.precio_oferta !== null && prod.precio_oferta !== undefined;
       if (tieneOferta) {
         var pOferta = parseFloat(prod.precio_oferta) || 0;
@@ -21569,9 +24261,29 @@
       var stockTxt = esPesable ? stock.toFixed(3) : String(Math.floor(stock));
       var enOferta = tieneOferta ? ' <span class="badge badge-info">Oferta</span>' : '';
 
+      /* Badges de draft y origen. */
+      var badgeIncompleto = '';
+      if (prod._import_status === 'draft') {
+        var faltantesTxt = (prod._campos_faltantes || []).join(', ');
+        badgeIncompleto = ' <span class="p04-badge-incompleto" title="Faltan: ' +
+                          _escapeAttr(faltantesTxt) + '">⚠️ Incompleto</span>';
+      }
+      var badgeOrigen = '';
+      if (prod._origen && prod._origen !== 'manual') {
+        badgeOrigen = '<span class="p04-badge-origen">' + _escapeHtml(prod._origen) + '</span>';
+      }
+
+      /* Acción "Completar" extra para drafts. */
+      var btnCompletar = '';
+      if (prod._import_status === 'draft') {
+        btnCompletar = '<button type="button" class="btn btn-sm btn-warning" data-accion="completar" data-prod-id="' +
+                       _escapeAttr(prod.id) + '" title="Completar producto" aria-label="Completar producto ' +
+                       _escapeAttr(prod.nombre) + '">Completar</button>';
+      }
+
       return '<tr>' +
         '<td class="font-mono text-small">' + _escapeHtml(prod.codigo || '-') + '</td>' +
-        '<td><strong>' + _escapeHtml(prod.nombre) + '</strong>' + enOferta + '</td>' +
+        '<td><strong>' + _escapeHtml(prod.nombre) + '</strong>' + enOferta + badgeIncompleto + badgeOrigen + '</td>' +
         '<td><span class="badge badge-secondary">' + _escapeHtml(prod.categoria || 'General') + '</span></td>' +
         '<td>' + (esPesable ? '<span class="text-small text-info">Kg (Pesable)</span>' : 'Unidad') + '</td>' +
         '<td>$' + pCompra + '</td>' +
@@ -21580,6 +24292,7 @@
         '<td>' + badge + '</td>' +
         '<td class="text-center">' +
           '<div class="btn-group">' +
+            btnCompletar +
             '<button type="button" class="btn btn-sm btn-secondary" data-accion="abrir-lote" data-prod-id="' + _escapeAttr(prod.id) + '" title="Agregar stock / lote" aria-label="Agregar stock al producto ' + _escapeAttr(prod.nombre) + '">+Stock</button>' +
             '<button type="button" class="btn btn-sm btn-secondary" data-accion="ver-lotes" data-prod-id="' + _escapeAttr(prod.id) + '" title="Ver lotes" aria-label="Ver lotes del producto ' + _escapeAttr(prod.nombre) + '">Lotes</button>' +
             '<button type="button" class="btn btn-sm btn-primary" data-accion="editar" data-prod-id="' + _escapeAttr(prod.id) + '" title="Editar" aria-label="Editar producto ' + _escapeAttr(prod.nombre) + '">Editar</button>' +
@@ -21590,7 +24303,6 @@
       '</tr>';
     }).join('');
 
-    /* [v3-27] Footer con aviso de truncado. */
     if (truncado) {
       var tr = document.createElement('tr');
       tr.innerHTML =
@@ -21604,6 +24316,21 @@
     tbody.setAttribute('aria-busy', 'false');
   }
 
+  /* [Wizard-F1] Actualiza el contador de drafts. */
+  function _actualizarDraftCount() {
+    var el = _el('p04-draft-count');
+    if (!el) return;
+    var n = StockState.productos.filter(function (p) {
+      return p._import_status === 'draft';
+    }).length;
+    if (n > 0) {
+      el.textContent = n + ' incompleto' + (n === 1 ? '' : 's');
+      el.style.display = '';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
   function _bindAccionesProductos(tbody) {
     tbody.querySelectorAll('[data-accion]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -21614,6 +24341,7 @@
           case 'abrir-lote':  window.p04AbrirModalLote(prodId); break;
           case 'ver-lotes':   window.p04AbrirModalDetalleLotes(prodId); break;
           case 'editar':      window.p04AbrirModalProducto(prodId); break;
+          case 'completar':   window.p04AbrirModalProducto(prodId); break;  /* NUEVO */
           case 'oferta':      window.p04AbrirModalOferta(prodId); break;
           case 'eliminar':    window.p04EliminarProducto(prodId); break;
         }
@@ -21760,6 +24488,7 @@
     StockState.filtros.busqueda     = _val('p04-buscar-producto', '');
     StockState.filtros.categoria    = _val('p04-filtro-categoria', '');
     StockState.filtros.estadoStock  = _val('p04-filtro-estado-stock', 'todos');
+    StockState.filtros.origen       = _val('p04-filtro-origen', 'todos');  /* NUEVO */
     renderListaProductos();
   }, DEBOUNCE_FILTER_MS);
 
@@ -21807,10 +24536,14 @@
         _setVal('p04-prod-precio-venta', prod.precio_venta || '');
         _setVal('p04-prod-minimo', prod.stock_minimo || 0);
         if (contStockInicial) contStockInicial.style.display = 'none';
+        /* [Fase 3] Mostrar hint de precio sugerido si aplica. */
+        _mostrarHintPrecioSugerido(prod);
       } else {
         if (titulo) titulo.textContent = 'Nuevo Producto';
         if (contStockInicial) contStockInicial.style.display = 'block';
         _setVal('p04-prod-minimo', '5');
+        /* [Fase 3] Ocultar hint al crear un producto nuevo. */
+        _mostrarHintPrecioSugerido(null);
       }
       window.p04CalcularMargenGanancia();
       _abrirModal('modal-p04-producto');
@@ -21971,6 +24704,54 @@
       hint.textContent = '';
       hint.style.display = 'none';
     }
+  };
+
+
+  /* [Fase 3] Muestra u oculta el hint de precio sugerido en el modal
+   * de editar producto. `prod` puede ser null para ocultar. */
+  function _mostrarHintPrecioSugerido(prod) {
+    var hint = _el('p04-precio-sugerido-hint');
+    var valorEl = _el('p04-precio-sugerido-valor');
+    if (!hint || !valorEl) return;
+
+    var sugerido = (prod && prod._precio_venta_sugerido && prod._precio_venta_sugerido > 0)
+      ? parseFloat(prod._precio_venta_sugerido)
+      : NaN;
+
+    if (isNaN(sugerido)) {
+      hint.style.display = 'none';
+      hint.dataset.sugerido = '';
+      valorEl.textContent = '-';
+      return;
+    }
+
+    /* Si el precio actual ya coincide con el sugerido, no tiene
+     * sentido mostrarlo. */
+    var precioActual = parseFloat(prod.precio_venta) || 0;
+    if (Math.abs(precioActual - sugerido) < 0.01) {
+      hint.style.display = 'none';
+      hint.dataset.sugerido = '';
+      valorEl.textContent = '-';
+      return;
+    }
+
+    valorEl.textContent = 'Precio sugerido: $' + sugerido.toFixed(2);
+    hint.dataset.sugerido = String(sugerido);
+    hint.style.display = 'block';
+  }
+
+  /* [Fase 3] Aplica el precio sugerido al input de precio de venta. */
+  window.p04AplicarPrecioSugerido = function () {
+    var hint = _el('p04-precio-sugerido-hint');
+    if (!hint) return;
+    var sugerido = parseFloat(hint.dataset.sugerido || '');
+    if (isNaN(sugerido) || sugerido <= 0) {
+      _toast('No hay precio sugerido disponible', 'warning');
+      return;
+    }
+    _setVal('p04-prod-precio-venta', sugerido.toFixed(2));
+    window.p04CalcularMargenGanancia();
+    _toast('Precio sugerido aplicado', 'success', 3000);
   };
 
   window.p04CambiarTipoProducto = function () {
@@ -22229,7 +25010,7 @@
     if (!file) return;
 
     /* Validar tamaño de archivo. */
-    if (file.size > IMPORT_JSON_MAX_BYTES) {
+    if (file.size > IMPORT_MAX_BYTES) {
       _toast('La imagen supera los 10 MB. Comprimila antes de subirla.', 'error', 5000);
       _err('E-DATA-009', { detalles: { tamano_bytes: file.size, contexto: 'ocr_imagen' } });
       return;
@@ -22380,12 +25161,8 @@
   /* ═══════════════════════════════════════════════════════════ */
   /* IMPORTACIÓN / EXPORTACIÓN                                   */
   /* ═══════════════════════════════════════════════════════════ */
-  window.p04AbrirModalImportar = function () {
-    var inp = _el('p04-importar-file'); if (inp) inp.value = '';
-    _abrirModal('modal-p04-importar');
-  };
-
-  window.p04CerrarModalImportar = function () { _cerrarModal('modal-p04-importar'); };
+  window.p04AbrirModalImportar = function () { ImportWizard.abrir(); };
+  window.p04CerrarModalImportar = function () { ImportWizard.cerrar(); };
 
   window.p04ExportarProductosJSON = function () {
     var data = JSON.stringify(StockState.productos, null, 2);
@@ -22408,46 +25185,19 @@
     }
     _toast('Catálogo exportado', 'success');
   };
-
   /* [v3-29] Validar tamaño del archivo JSON antes de leerlo. */
+  /* [Fase-0] Toast enriquecido con descartes y motivos (BUG-STK-D). */
+  /* [Wizard-F1] p04EjecutarImportacionJSON queda deprecada.
+   * El flujo ahora pasa por ImportWizard. Se conserva como wrapper
+   * por si algún consumidor externo la invoca. */
   window.p04EjecutarImportacionJSON = function () {
-    var fileInput = _el('p04-importar-file');
-    var file = fileInput && fileInput.files && fileInput.files[0];
-    if (!file) { _toast('Seleccioná un archivo JSON', 'error'); return; }
-
-    if (file.size > IMPORT_JSON_MAX_BYTES) {
-      var mb = (IMPORT_JSON_MAX_BYTES / (1024 * 1024)).toFixed(0);
-      _toast('El archivo supera los ' + mb + ' MB permitidos.', 'error', 5000);
-      _err('E-DATA-009', {
-        detalles: { tamano_bytes: file.size, limite_bytes: IMPORT_JSON_MAX_BYTES, contexto: 'importar_json' }
-      });
-      return;
-    }
-
-    var reader = new FileReader();
-    reader.onload = async function (e) {
-      try {
-        var importados = JSON.parse(e.target.result);
-        if (!Array.isArray(importados)) {
-          _toast('El JSON debe ser una lista de productos', 'error');
-          return;
-        }
-        var resultado = await Storage.saveManyProductos(importados);
-        renderListaProductos();
-        renderTablaVencimientos();
-        p04CerrarModalImportar();
-        _toast(
-          'Importados: ' + resultado.ok + ' · Fallidos: ' + resultado.fail,
-          resultado.fail === 0 ? 'success' : 'warning',
-          5000
-        );
-      } catch (err) {
-        console.error('[Stock] Error JSON:', err);
-        _toast('Error al leer el JSON: ' + err.message, 'error');
-      }
-    };
-    reader.readAsText(file);
+    console.warn('[Stock] p04EjecutarImportacionJSON está deprecada. Abriendo wizard.');
+    ImportWizard.abrir();
   };
+
+  window.p04WizardSiguiente = function () { ImportWizard.siguiente(); };
+  window.p04WizardAtras = function () { ImportWizard.atras(); };
+  window.p04WizardConfirmar = function () { ImportWizard.confirmar(); };
 
   /* ═══════════════════════════════════════════════════════════ */
   /* OFERTAS                                                     */
@@ -22550,6 +25300,1007 @@
     await Storage.saveProducto(prod);
     p04CerrarModalVinculoProveedor();
     _toast('Proveedor vinculado', 'success');
+  };
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* HELPERS DE PARSEO — JSON / EXCEL                            */
+  /* [Fase 2 — Soporte Excel]                                    */
+  /* ═══════════════════════════════════════════════════════════ */
+  var _SHEETJS_CDN_URL    = 'https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js';
+  var _SHEETJS_TIMEOUT_MS = 10000;
+  var _sheetJSLoading     = null;
+
+  /* Carga SheetJS bajo demanda con timeout de 10s.
+   * Cachea la promesa para no inyectar el <script> dos veces.
+   * Cierra el bug del sketch del plan §9.1 (sin timeout → promesa
+   * pendiente para siempre si el CDN cuelga). */
+  function _cargarSheetJSDinamico() {
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (_sheetJSLoading) return _sheetJSLoading;
+
+    _sheetJSLoading = new Promise(function (resolve, reject) {
+      var timeoutId = null;
+      var finalizado = false;
+
+      function _limpiar() {
+        if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
+      }
+
+      function _onLoad() {
+        if (finalizado) return;
+        finalizado = true;
+        _limpiar();
+        if (window.XLSX) {
+          resolve(window.XLSX);
+        } else {
+          _sheetJSLoading = null;
+          reject(new Error('SheetJS cargó pero window.XLSX no está disponible.'));
+        }
+      }
+
+      function _onError() {
+        if (finalizado) return;
+        finalizado = true;
+        _limpiar();
+        _sheetJSLoading = null;
+        reject(new Error(
+          'No se pudo cargar el lector de Excel. Verificá tu conexión o importá un .json.'
+        ));
+      }
+
+      function _onTimeout() {
+        if (finalizado) return;
+        finalizado = true;
+        _sheetJSLoading = null;
+        try {
+          if (script && script.parentNode) script.parentNode.removeChild(script);
+        } catch (e) {}
+        var err = new Error(
+          'El lector de Excel tardó demasiado en cargar. Usá .json o reintentá.'
+        );
+        err.code = 'TIMEOUT';
+        reject(err);
+      }
+
+      var script = document.createElement('script');
+      script.src = _SHEETJS_CDN_URL;
+      script.async = true;
+      script.onload = _onLoad;
+      script.onerror = _onError;
+
+      timeoutId = setTimeout(_onTimeout, _SHEETJS_TIMEOUT_MS);
+      document.head.appendChild(script);
+    });
+
+    return _sheetJSLoading;
+  }
+
+  /* Parsea un archivo JSON. Devuelve { columnas, filas, formato: 'json' }.
+   * Extraído de _parsearArchivo para simetría con _parseExcel y testeo. */
+  async function _parseJSON(file) {
+    var texto = await file.text();
+    var data;
+    try {
+      data = JSON.parse(texto);
+    } catch (e) {
+      throw new Error('El archivo JSON está mal formado: ' + e.message);
+    }
+
+    var lista = null;
+    if (Array.isArray(data)) lista = data;
+    else if (data && Array.isArray(data.productos)) lista = data.productos;
+
+    if (!lista) {
+      throw new Error('El JSON debe ser un array de productos o un objeto con { productos: [...] }');
+    }
+
+    var columnasSet = Object.create(null);
+    lista.forEach(function (item) {
+      if (item && typeof item === 'object') {
+        Object.keys(item).forEach(function (k) { columnasSet[k] = true; });
+      }
+    });
+    var columnas = Object.keys(columnasSet);
+
+    return { columnas: columnas, filas: lista, formato: 'json' };
+  }
+
+  /* Parsea un archivo Excel (.xlsx / .xls) usando SheetJS.
+   * Devuelve { columnas, filas, formato: 'excel', sheetName }.
+   *
+   * Decisiones:
+   *   · cellDates:true → SheetJS entrega fechas como Date objects.
+   *   · Post-procesamos Date → ISO 'YYYY-MM-DD' para que
+   *     _normalizarProducto las acepte sin tocar su contrato.
+   *   · Headers vacíos → 'Columna_N' (no se filtran, para que el
+   *     usuario los vea y decida ignorarlos en el mapeo).
+   *   · Headers duplicados → sufijo _2, _3, …
+   *   · Si data rows son más anchas que el header, se extienden las
+   *     columnas hasta el máximo para no perder datos.
+   */
+  async function _parseExcel(file, onSheetJSListo) {
+    var XLSX = await _cargarSheetJSDinamico();
+
+    /* [P2] Callback opcional que se dispara cuando SheetJS ya está
+     * cargado y disponible. Permite al caller (ImportWizard) cambiar
+     * el mensaje de carga de "Descargando lector de Excel…" a
+     * "Leyendo archivo Excel…" sin romper la firma existente.
+     * Si el caller no pasa callback, es no-op. */
+    if (typeof onSheetJSListo === 'function') {
+      try { onSheetJSListo(); } catch (e) {
+        console.warn('[Stock] onSheetJSListo callback falló:', e);
+      }
+    }
+
+    var data = await file.arrayBuffer();
+    var workbook;
+    try {
+      workbook = XLSX.read(data, { type: 'array', cellDates: true });
+    } catch (e) {
+      var msg = String(e && e.message || '').toLowerCase();
+      if (msg.indexOf('password') !== -1 || msg.indexOf('encrypt') !== -1) {
+        throw new Error('El archivo Excel está protegido con contraseña.');
+      }
+      throw new Error('No se pudo leer el archivo Excel. ¿Está corrupto?');
+    }
+
+    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+      throw new Error('El archivo Excel no tiene hojas.');
+    }
+
+    var sheetName = workbook.SheetNames[0];
+    var sheet = workbook.Sheets[sheetName];
+
+    var rows = XLSX.utils.sheet_to_json(sheet, {
+      header: 1,
+      defval: '',
+      blankrows: false
+    });
+
+    if (!Array.isArray(rows) || rows.length < 2) {
+      throw new Error('El archivo Excel tiene menos de 2 filas (header + datos).');
+    }
+
+    /* ─── Headers: únicos + sin vacíos + sin duplicados ─── */
+    var headerRow = Array.isArray(rows[0]) ? rows[0] : [];
+    var columnas = [];
+    var ocurrencias = Object.create(null);
+
+    for (var c = 0; c < headerRow.length; c++) {
+      var raw = headerRow[c];
+      var h = String(raw === undefined || raw === null ? '' : raw).trim();
+      if (!h) h = 'Columna_' + (c + 1);
+      var lower = h.toLowerCase();
+      ocurrencias[lower] = (ocurrencias[lower] || 0) + 1;
+      if (ocurrencias[lower] > 1) h = h + '_' + ocurrencias[lower];
+      columnas.push(h);
+    }
+
+    /* Extender columnas si las filas de datos son más anchas que el header. */
+    var maxCols = columnas.length;
+    for (var r = 1; r < rows.length; r++) {
+      if (Array.isArray(rows[r]) && rows[r].length > maxCols) {
+        maxCols = rows[r].length;
+      }
+    }
+    while (columnas.length < maxCols) {
+      columnas.push('Columna_' + (columnas.length + 1));
+    }
+
+    if (columnas.length === 0) {
+      throw new Error('El archivo Excel no tiene columnas detectables.');
+    }
+
+    /* ─── Filas: Date → ISO, resto tal cual ─── */
+    var filas = [];
+    for (var r2 = 1; r2 < rows.length; r2++) {
+      var row = rows[r2];
+      if (!Array.isArray(row)) continue;
+      var obj = {};
+      for (var k = 0; k < columnas.length; k++) {
+        var val = row[k];
+        if (val === undefined || val === null) {
+          obj[columnas[k]] = '';
+        } else if (val instanceof Date && !isNaN(val.getTime())) {
+          obj[columnas[k]] = val.toISOString().split('T')[0];
+        } else {
+          obj[columnas[k]] = val;
+        }
+      }
+      filas.push(obj);
+    }
+
+    return {
+      columnas: columnas,
+      filas: filas,
+      formato: 'excel',
+      sheetName: sheetName
+    };
+  }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* IMPORT WIZARD — Fase 2 (JSON + Excel)                       */
+  /* ═══════════════════════════════════════════════════════════ */
+  var CAMPOS_PRODUCTO = [
+    { valor: '',                etiqueta: '(ignorar)' },
+    { valor: 'nombre',          etiqueta: 'Nombre *' },
+    { valor: 'codigo',          etiqueta: 'Código de barras' },
+    { valor: 'categoria',       etiqueta: 'Categoría' },
+    { valor: 'tipo',            etiqueta: 'Tipo (unidad/pesable)' },
+    { valor: 'proveedor',       etiqueta: 'Proveedor (por nombre)' },
+    { valor: 'precio_compra',   etiqueta: 'Precio de compra' },
+    { valor: 'precio_venta',    etiqueta: 'Precio de venta' },
+    { valor: 'precio_oferta',   etiqueta: 'Precio oferta' },
+    { valor: 'stock_inicial',   etiqueta: 'Stock inicial' },
+    { valor: 'stock_minimo',    etiqueta: 'Stock mínimo' },
+    { valor: 'fecha_vencimiento', etiqueta: 'Fecha de vencimiento' }
+  ];
+
+  var ImportWizard = {
+    _estado: {
+      paso: 1,
+      archivo: null,
+      formato: null,
+      filas: [],
+      columnas: [],
+      mapeo: {},
+      preview: [],
+      defaults: { categoria: 'General', margen: 30, stock_minimo_def: 5, usar_stock_min_def: true },
+      generacion: 0,
+      ocupado: false
+    },
+    _bound: false,
+
+    /* ─────────────────────────────────────────────────────── */
+    /* Bind de listeners (una sola vez)                        */
+    /* ─────────────────────────────────────────────────────── */
+    _bind: function () {
+      if (this._bound) return;
+      this._bound = true;
+      var self = this;
+
+      var fileInput = _el('p04-import-file-input');
+      if (fileInput && fileInput.dataset.b14WizBound !== '1') {
+        fileInput.dataset.b14WizBound = '1';
+        fileInput.addEventListener('change', function (e) {
+          var file = e.target.files && e.target.files[0];
+          if (file) self._parsearArchivo(file);
+        });
+      }
+
+      var dropzone = _el('p04-import-dropzone');
+      if (dropzone && dropzone.dataset.b14WizDropBound !== '1') {
+        dropzone.dataset.b14WizDropBound = '1';
+        ['dragover', 'dragenter'].forEach(function (evt) {
+          dropzone.addEventListener(evt, function (e) {
+            e.preventDefault();
+            dropzone.style.borderColor = 'var(--m2-primary)';
+          });
+        });
+        ['dragleave', 'drop'].forEach(function (evt) {
+          dropzone.addEventListener(evt, function (e) {
+            e.preventDefault();
+            dropzone.style.borderColor = '';
+          });
+        });
+        dropzone.addEventListener('drop', function (e) {
+          var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+          if (f) self._parsearArchivo(f);
+        });
+      }
+    },
+
+    /* ─────────────────────────────────────────────────────── */
+    /* Abrir / cerrar                                          */
+    /* ─────────────────────────────────────────────────────── */
+    abrir: function () {
+      this._bind();
+      this._reset();
+      _abrirModal('modal-p04-importar');
+      this._irAPaso(1);
+    },
+
+    cerrar: function () {
+      this._reset();
+      _cerrarModal('modal-p04-importar');
+    },
+
+    _reset: function () {
+      this._estado = {
+        paso: 1,
+        archivo: null,
+        formato: null,
+        filas: [],
+        columnas: [],
+        mapeo: {},
+        preview: [],
+        defaults: { categoria: 'General', margen: 30, stock_minimo_def: 5, usar_stock_min_def: true },
+        generacion: (this._estado && this._estado.generacion ? this._estado.generacion : 0) + 1,
+        ocupado: false
+      };
+
+      var fi = _el('p04-import-file-input');
+      if (fi) fi.value = '';
+      var info = _el('p04-import-file-info');
+      if (info) info.style.display = 'none';
+      var tbody = _el('p04-preview-tbody');
+      if (tbody) tbody.innerHTML = '';
+      var thead = _el('p04-preview-thead');
+      if (thead) thead.innerHTML = '';
+      var mapeo = _el('p04-mapeo-container');
+      if (mapeo) mapeo.innerHTML = '';
+      var resumen = _el('p04-confirm-resumen');
+      if (resumen) resumen.innerHTML = '';
+
+      /* [Fase 2] Restaurar estado visual del panel 1. */
+      var loading = _el('p04-import-loading');
+      if (loading) loading.style.display = 'none';
+      var dropzone = _el('p04-import-dropzone');
+      if (dropzone) dropzone.style.display = '';
+
+      var cat = _el('p04-import-categoria-def');
+      if (cat) cat.value = 'General';
+      var mar = _el('p04-import-margen-def');
+      if (mar) mar.value = '30';
+      var chk = _el('p04-import-stock-min-def-check');
+      if (chk) chk.checked = true;
+
+      this._actualizarBotones();
+    },
+
+    /* [Fase 2] Muestra el spinner de carga del panel 1 y oculta
+     * la dropzone + el file-info. Se usa durante la carga de
+     * SheetJS (1–3s la primera vez) o durante el parseo de un
+     * Excel grande. */
+    _mostrarCargando: function (mensaje) {
+      var loading = _el('p04-import-loading');
+      var text    = _el('p04-import-loading-text');
+      var dropzone = _el('p04-import-dropzone');
+      var info    = _el('p04-import-file-info');
+      if (text && mensaje) text.textContent = mensaje;
+      if (loading) loading.style.display = 'block';
+      if (dropzone) dropzone.style.display = 'none';
+      if (info) info.style.display = 'none';
+    },
+
+    /* [Fase 2] Oculta el spinner y restaura la dropzone. El
+     * file-info NO se restaura acá: lo decide _parsearArchivo
+     * según el resultado del parseo. */
+    _ocultarCargando: function () {
+      var loading = _el('p04-import-loading');
+      var dropzone = _el('p04-import-dropzone');
+      if (loading) loading.style.display = 'none';
+      if (dropzone) dropzone.style.display = '';
+    },
+
+    /* ─────────────────────────────────────────────────────── */
+    /* Navegación de pasos                                     */
+    /* ─────────────────────────────────────────────────────── */
+    _irAPaso: function (n) {
+      this._estado.paso = n;
+
+      for (var i = 1; i <= 3; i++) {
+        var panel = _el('p04-wizard-panel-' + i);
+        if (panel) panel.classList.toggle('activo', i === n);
+      }
+
+      var steps = document.querySelectorAll('#p04-wizard-stepper .p04-wizard-step');
+      steps.forEach(function (step) {
+        var s = parseInt(step.dataset.step, 10);
+        step.classList.toggle('activo', s === n);
+        step.classList.toggle('completado', s < n);
+      });
+
+      var stepper = _el('p04-wizard-stepper');
+      if (stepper) stepper.setAttribute('aria-valuenow', String(n));
+
+      this._actualizarBotones();
+    },
+
+    _actualizarBotones: function () {
+      var btnAtras = _el('p04-import-btn-atras');
+      var btnSig = _el('p04-import-btn-siguiente');
+      var btnImp = _el('p04-import-btn-importar');
+
+      var paso = this._estado.paso;
+      var puedeSig = false;
+
+      if (paso === 1) {
+        puedeSig = this._estado.filas.length > 0;
+      } else if (paso === 2) {
+        puedeSig = true;
+      }
+
+      if (btnAtras) {
+        btnAtras.style.display = (paso === 1) ? 'none' : '';
+        btnAtras.disabled = !!this._estado.ocupado;
+      }
+      if (btnSig) {
+        btnSig.style.display = (paso === 3) ? 'none' : '';
+        btnSig.disabled = !puedeSig || !!this._estado.ocupado;
+      }
+      if (btnImp) {
+        btnImp.style.display = (paso === 3) ? '' : 'none';
+        btnImp.disabled = !!this._estado.ocupado;
+      }
+    },
+
+    /* ─────────────────────────────────────────────────────── */
+    /* Parseo de archivo                                       */
+    /* ─────────────────────────────────────────────────────── */
+    _parsearArchivo: async function (file) {
+      var self = this;
+      var gen = ++this._estado.generacion;
+
+      if (!file) return;
+
+      var nombre = String(file.name || '');
+      var esJson  = /\.json$/i.test(nombre) ||
+                    (file.type && file.type.indexOf('json') !== -1);
+      var esExcel = /\.(xlsx|xls)$/i.test(nombre) ||
+                    (file.type && (
+                      file.type.indexOf('spreadsheetml') !== -1 ||
+                      file.type.indexOf('ms-excel') !== -1
+                    ));
+
+      if (!esJson && !esExcel) {
+        _toast('Formato no soportado. Usá .xlsx, .xls o .json.', 'error', 6000);
+        return;
+      }
+
+      if (file.size > IMPORT_MAX_BYTES) {
+        var mb = (IMPORT_MAX_BYTES / (1024 * 1024)).toFixed(0);
+        _toast('El archivo supera los ' + mb + ' MB permitidos.', 'error', 5000);
+        return;
+      }
+
+      try {
+        /* [P3] Mensaje de carga en 2 fases para Excel.
+         * Primera vez: la descarga de SheetJS (~400 KB) puede tardar
+         * 1-3s en 4G. Sin este cambio, el texto decía "Leyendo archivo
+         * Excel…" durante la descarga, lo cual era impreciso y podía
+         * confundir al usuario ("¿por qué tarda tanto en leer un
+         * archivo que ya subí?"). Ahora:
+         *   · Si XLSX ya está cargado → "Leyendo archivo Excel…".
+         *   · Si no está cargado → "Descargando lector de Excel…",
+         *     y cuando el callback de _parseExcel dispara (SheetJS
+         *     listo), cambia a "Leyendo archivo Excel…". */
+        var mensajeInicial;
+        if (!esExcel) {
+          mensajeInicial = 'Leyendo archivo JSON…';
+        } else if (window.XLSX) {
+          mensajeInicial = 'Leyendo archivo Excel…';
+        } else {
+          mensajeInicial = 'Descargando lector de Excel…';
+        }
+        this._mostrarCargando(mensajeInicial);
+
+        var parsed;
+        if (esExcel) {
+          /* `self` ya está declarado al inicio de _parsearArchivo.
+           * Ahora pasa a usarse en este callback, por lo que deja de
+           * ser dead code (hallazgo H2 del análisis previo). */
+          parsed = await _parseExcel(file, function () {
+            if (gen === self._estado.generacion) {
+              self._mostrarCargando('Leyendo archivo Excel…');
+            }
+          });
+        } else {
+          parsed = await _parseJSON(file);
+        }
+
+        if (gen !== this._estado.generacion) return;
+
+        var lista = parsed.filas;
+        var columnas = parsed.columnas;
+
+        if (!Array.isArray(lista) || lista.length === 0) {
+          throw new Error('El archivo no contiene filas de datos.');
+        }
+        if (!Array.isArray(columnas) || columnas.length === 0) {
+          throw new Error('No se detectaron columnas en el archivo.');
+        }
+
+        this._estado.archivo = file;
+        this._estado.formato = parsed.formato;
+        this._estado.filas = lista;
+        this._estado.columnas = columnas;
+        this._estado.mapeo = this._autoMapear(columnas);
+
+        var nameEl = _el('p04-import-file-name');
+        if (nameEl) nameEl.textContent = nombre;
+        var rowsEl = _el('p04-import-file-rows');
+        if (rowsEl) rowsEl.textContent = String(lista.length);
+        var infoEl = _el('p04-import-file-info');
+        if (infoEl) infoEl.style.display = 'block';
+
+        this._renderMapeo();
+        this._recalcularPreview();
+        this._irAPaso(2);
+      } catch (e) {
+        if (gen !== this._estado.generacion) return;
+        console.error('[ImportWizard] Error al parsear:', e);
+
+        var codigoError = esExcel ? 'E-XLS-001' : 'E-DATA-001';
+        var msgToast = (e && e.message) ? e.message : 'Error al leer el archivo';
+
+        _toast(msgToast, 'error', 6000);
+        _err(codigoError, {
+          detalles: {
+            contexto: 'import_wizard_parse',
+            formato: esExcel ? 'excel' : 'json',
+            nombre: nombre,
+            mensaje: msgToast,
+            timeout: (e && e.code === 'TIMEOUT') ? true : undefined
+          }
+        });
+
+        this._estado.filas = [];
+        this._estado.archivo = null;
+        this._estado.formato = null;
+        this._actualizarBotones();
+      } finally {
+        /* Guarda de generación: si el usuario ya abrió otro archivo
+         * (o reseteó el wizard), no pisar el loading del nuevo. */
+        if (gen === this._estado.generacion) {
+          this._ocultarCargando();
+        }
+      }
+    },
+
+    /* ─────────────────────────────────────────────────────── */
+    /* Auto-mapeo                                              */
+    /* ─────────────────────────────────────────────────────── */
+    _autoMapear: function (columnas) {
+      var mapeo = {};
+      var camposUsados = Object.create(null);
+
+      columnas.forEach(function (col) {
+        var colNorm = _normalizarTextoParaMapeo(col);
+        for (var campo in MAPEO_ALIAS) {
+          if (camposUsados[campo]) continue;
+          var alias = MAPEO_ALIAS[campo];
+          var match = alias.some(function (a) {
+            var aNorm = _normalizarTextoParaMapeo(a);
+            return colNorm === aNorm ||
+                   colNorm.indexOf(aNorm) !== -1 ||
+                   aNorm.indexOf(colNorm) !== -1;
+          });
+          if (match) {
+            mapeo[col] = campo;
+            camposUsados[campo] = true;
+            break;
+          }
+        }
+      });
+
+      return mapeo;
+    },
+
+    /* ─────────────────────────────────────────────────────── */
+    /* Render del mapeo                                        */
+    /* ─────────────────────────────────────────────────────── */
+    _renderMapeo: function () {
+      var cont = _el('p04-mapeo-container');
+      if (!cont) return;
+      var self = this;
+
+      cont.innerHTML = this._estado.columnas.map(function (col) {
+        var camposUsadosAqui = self._estado.mapeo[col] || '';
+        var opciones = CAMPOS_PRODUCTO.map(function (c) {
+          return '<option value="' + _escapeAttr(c.valor) + '"' +
+                 (c.valor === camposUsadosAqui ? ' selected' : '') + '>' +
+                 _escapeHtml(c.etiqueta) + '</option>';
+        }).join('');
+        return '<div class="p04-mapeo-item">' +
+          '<label>' + _escapeHtml(col) + '</label>' +
+          '<select data-mapeo-col="' + _escapeAttr(col) + '">' + opciones + '</select>' +
+          '</div>';
+      }).join('');
+
+      cont.querySelectorAll('[data-mapeo-col]').forEach(function (sel) {
+        sel.addEventListener('change', function () {
+          var col = sel.dataset.mapeoCol;
+          var nuevoCampo = sel.value;
+          if (nuevoCampo) {
+            /* Unicidad: si otro campo ya usaba ese target, liberarlo. */
+            Object.keys(self._estado.mapeo).forEach(function (c) {
+              if (c !== col && self._estado.mapeo[c] === nuevoCampo) {
+                self._estado.mapeo[c] = '';
+              }
+            });
+            self._estado.mapeo[col] = nuevoCampo;
+          } else {
+            delete self._estado.mapeo[col];
+          }
+          self._renderMapeo();
+          self._recalcularPreview();
+        });
+      });
+    },
+
+    /* ─────────────────────────────────────────────────────── */
+    /* Recalcular preview                                      */
+    /* ─────────────────────────────────────────────────────── */
+    _recalcularPreview: function () {
+      this._estado.defaults = this._leerDefaultsPaso3();
+
+      var existentes = StockState.productos.slice();
+      var codigosLote = Object.create(null);
+      var nombresLote = Object.create(null);
+      var self = this;
+      var defaults = this._estado.defaults;
+
+      this._estado.preview = this._estado.filas.map(function (filaCruda, idx) {
+        return self._validarFila(filaCruda, idx, defaults, existentes, codigosLote, nombresLote);
+      });
+
+      this._renderPreview();
+    },
+
+    _leerDefaultsPaso3: function () {
+      var cat = _el('p04-import-categoria-def');
+      var mar = _el('p04-import-margen-def');
+      var chk = _el('p04-import-stock-min-def-check');
+      return {
+        categoria: cat ? (cat.value || 'General') : 'General',
+        margen: mar ? (parseFloat(mar.value) || 0) : 30,
+        stock_minimo_def: 5,
+        usar_stock_min_def: chk ? !!chk.checked : true
+      };
+    },
+
+    _validarFila: function (filaCruda, idx, defaults, existentes, codigosLote, nombresLote) {
+      /* [Fase 2] Origen dinámico según el formato del archivo.
+       * Antes estaba hardcodeado a 'json', lo que rompía el filtro
+       * por origen y la trazabilidad de los productos importados
+       * desde Excel (quedaban marcados con _origen: 'json'). */
+      var origenActual = (this._estado && this._estado.formato === 'excel')
+        ? 'excel'
+        : 'json';
+      var prod = { _origen: origenActual, _import_status: 'draft' };
+
+      /* Aplicar mapeo. */
+      var mapeo = this._estado.mapeo;
+      for (var col in mapeo) {
+        var campo = mapeo[col];
+        if (!campo) continue;
+        if (filaCruda && filaCruda[col] !== undefined && filaCruda[col] !== null) {
+          prod[campo] = filaCruda[col];
+        }
+      }
+
+      /* Preservar id si vino en el JSON aunque no se haya mapeado. */
+      if (filaCruda && filaCruda.id) prod.id = filaCruda.id;
+
+      /* Proveedor por nombre. */
+      if (prod.proveedor) {
+        var provId = _resolverProveedorPorNombre(prod.proveedor);
+        prod.proveedor_id = provId || '';
+        delete prod.proveedor;
+      }
+
+      /* Default de categoría. */
+      if (!prod.categoria) prod.categoria = defaults.categoria;
+
+      /* Default de stock_minimo. */
+      if (prod.stock_minimo === undefined || prod.stock_minimo === null || prod.stock_minimo === '') {
+        prod.stock_minimo = defaults.usar_stock_min_def ? 5 : 0;
+      }
+
+      /* Cálculo de precio_venta desde margen si falta. */
+      var pc = _parsePrecio(prod.precio_compra);
+      var pv = _parsePrecio(prod.precio_venta);
+      if (pv <= 0 && pc > 0 && defaults.margen > 0) {
+        pv = pc * (1 + defaults.margen / 100);
+        prod.precio_venta = pv;
+        prod._precio_venta_sugerido = pv;
+      }
+
+      /* Normalizar. */
+      var prodNorm = _normalizarProducto(prod);
+
+      /* Validaciones. */
+      var motivo = null;
+      if (!prodNorm) {
+        motivo = 'sin_nombre';
+      } else {
+        /* Dedup contra existentes. */
+        if (_esDuplicado(prodNorm, existentes)) {
+          motivo = 'duplicado';
+        } else {
+          /* Dedup dentro del mismo archivo. */
+          var c = String(prodNorm.codigo || '').trim().toLowerCase();
+          var nKey = String(prodNorm.nombre || '').trim().toLowerCase() + '::' +
+                     String(prodNorm.categoria || 'General').trim().toLowerCase();
+          if (c) {
+            if (codigosLote[c]) motivo = 'duplicado';
+            else codigosLote[c] = prodNorm.id;
+          } else {
+            if (nombresLote[nKey]) motivo = 'duplicado';
+            else nombresLote[nKey] = prodNorm.id;
+          }
+        }
+      }
+
+      return {
+        idx: idx,
+        filaCruda: filaCruda,
+        prod: prodNorm,
+        valida: !motivo,
+        motivo: motivo,
+        faltantes: prodNorm ? prodNorm._campos_faltantes : [],
+        selected: !motivo
+      };
+    },
+
+    /* ─────────────────────────────────────────────────────── */
+    /* Render del preview                                      */
+    /* ─────────────────────────────────────────────────────── */
+    _renderPreview: function () {
+      var thead = _el('p04-preview-thead');
+      var tbody = _el('p04-preview-tbody');
+      if (!thead || !tbody) return;
+      var self = this;
+      var preview = this._estado.preview;
+
+      thead.innerHTML =
+        '<th class="p04-preview-cell-check" scope="col">✓</th>' +
+        '<th scope="col">Nombre</th>' +
+        '<th scope="col">Código</th>' +
+        '<th scope="col">Categoría</th>' +
+        '<th scope="col">P. Compra</th>' +
+        '<th scope="col">P. Venta</th>' +
+        '<th scope="col">Stock</th>' +
+        '<th scope="col">Estado</th>';
+
+      if (preview.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted" style="padding:20px;">Sin filas para previsualizar</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = preview.map(function (p, i) {
+        var prod = p.prod;
+        var claseTr = '';
+        if (p.motivo === 'duplicado' || p.motivo === 'sin_nombre') claseTr = 'fila-descartada';
+        else if (p.faltantes && p.faltantes.length > 0) claseTr = 'fila-incompleta';
+
+        var badge, motivoTxt = '';
+        if (p.motivo === 'sin_nombre') {
+          badge = '<span class="p04-preview-badge descartada">Sin nombre</span>';
+          motivoTxt = 'Se descarta: falta el nombre';
+        } else if (p.motivo === 'duplicado') {
+          badge = '<span class="p04-preview-badge descartada">Duplicado</span>';
+          motivoTxt = 'Se descarta: duplicado';
+        } else if (p.faltantes && p.faltantes.length > 0) {
+          badge = '<span class="p04-preview-badge incompleta">Incompleto</span>';
+          motivoTxt = 'Faltan: ' + p.faltantes.join(', ');
+        } else {
+          badge = '<span class="p04-preview-badge ok">Válido</span>';
+        }
+
+        var nombreTxt = prod ? _escapeHtml(prod.nombre || '') : (_escapeHtml(p.filaCruda && p.filaCruda.nombre) || '—');
+        var codigoTxt = prod ? _escapeHtml(prod.codigo || '—') : '—';
+        var catTxt = prod ? _escapeHtml(prod.categoria || '—') : '—';
+        var pcTxt = prod ? '$' + (prod.precio_compra || 0).toFixed(2) : '—';
+        var pvTxt = prod ? '$' + (prod.precio_venta || 0).toFixed(2) : '—';
+        var stockTxt = prod ? String(prod.stock_total || 0) : '—';
+
+        var puedeSeleccionar = !p.motivo;
+
+        return '<tr class="' + claseTr + '" data-idx="' + i + '">' +
+          '<td class="p04-preview-cell-check">' +
+            '<input type="checkbox" data-preview-check="' + i + '"' +
+            (p.selected ? ' checked' : '') +
+            (puedeSeleccionar ? '' : ' disabled') + '>' +
+          '</td>' +
+          '<td>' + nombreTxt +
+            (motivoTxt ? '<span class="p04-preview-motivo">' + _escapeHtml(motivoTxt) + '</span>' : '') +
+          '</td>' +
+          '<td class="font-mono text-small">' + codigoTxt + '</td>' +
+          '<td>' + catTxt + '</td>' +
+          '<td>' + pcTxt + '</td>' +
+          '<td>' + pvTxt + '</td>' +
+          '<td>' + stockTxt + '</td>' +
+          '<td>' + badge + '</td>' +
+          '</tr>';
+      }).join('');
+
+      tbody.querySelectorAll('[data-preview-check]').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+          var i = parseInt(cb.dataset.previewCheck, 10);
+          if (self._estado.preview[i]) {
+            self._estado.preview[i].selected = !!cb.checked;
+          }
+        });
+      });
+    },
+
+    /* ─────────────────────────────────────────────────────── */
+    /* Navegación                                              */
+    /* ─────────────────────────────────────────────────────── */
+    siguiente: function () {
+      if (this._estado.paso === 1) {
+        if (this._estado.filas.length === 0) {
+          _toast('Seleccioná un archivo (.xlsx, .xls o .json) primero', 'warning');
+          return;
+        }
+        this._irAPaso(2);
+      } else if (this._estado.paso === 2) {
+        this._irAPaso(3);
+        this._renderResumenPaso3();
+      }
+    },
+
+    atras: function () {
+      if (this._estado.paso > 1) {
+        this._irAPaso(this._estado.paso - 1);
+      }
+    },
+
+    _renderResumenPaso3: function () {
+      var resumen = _el('p04-confirm-resumen');
+      if (!resumen) return;
+
+      var seleccionadas = this._estado.preview.filter(function (p) { return p.selected; });
+      var incompletas = seleccionadas.filter(function (p) { return p.faltantes && p.faltantes.length > 0; }).length;
+      var completas = seleccionadas.length - incompletas;
+      var descartadas = this._estado.preview.length - seleccionadas.length;
+
+      var html = '<p><strong>Vas a importar ' + seleccionadas.length + ' producto' +
+                 (seleccionadas.length === 1 ? '' : 's') + '.</strong></p>';
+      if (completas > 0) {
+        html += '<p>· ' + completas + ' completo' + (completas === 1 ? '' : 's') + '</p>';
+      }
+      if (incompletas > 0) {
+        html += '<p>· ' + incompletas + ' incompleto' + (incompletas === 1 ? '' : 's') +
+                ' (quedarán como borrador)</p>';
+      }
+      if (descartadas > 0) {
+        html += '<p>· ' + descartadas + ' se descartará' + (descartadas === 1 ? '' : 'n') +
+                ' (sin nombre o duplicados)</p>';
+      }
+      resumen.innerHTML = html;
+    },
+
+    /* ─────────────────────────────────────────────────────── */
+    /* Confirmar e importar                                    */
+    /* ─────────────────────────────────────────────────────── */
+    confirmar: async function () {
+      if (this._estado.ocupado) return;
+
+      /* Releer defaults del paso 3 (el usuario pudo cambiarlos). */
+      var defaults = this._leerDefaultsPaso3();
+      this._estado.defaults = defaults;
+
+      var seleccionadas = this._estado.preview.filter(function (p) { return p.selected; });
+      if (seleccionadas.length === 0) {
+        _toast('No hay productos seleccionados para importar', 'warning');
+        return;
+      }
+
+      this._estado.ocupado = true;
+      this._actualizarBotones();
+      var btnImp = _el('p04-import-btn-importar');
+      if (btnImp) btnImp.textContent = 'Importando...';
+
+      try {
+        /* Revalidar con los defaults finales. */
+        var existentes = StockState.productos.slice();
+        var codigosLote = Object.create(null);
+        var nombresLote = Object.create(null);
+        var self = this;
+
+        var filasFinales = this._estado.preview
+          .map(function (p) { return p.filaCruda; })
+          .map(function (filaCruda, idx) {
+            return self._validarFila(filaCruda, idx, defaults, existentes, codigosLote, nombresLote);
+          })
+          .filter(function (p) { return p.selected && p.prod && !p.motivo; })
+          .map(function (p) { return p.prod; });
+
+        if (filasFinales.length === 0) {
+          _toast('No hay filas válidas para importar con los ajustes actuales', 'warning', 5000);
+          return;
+        }
+
+        /* [Fase 3] Enriquecimiento opcional con OFP antes de guardar.
+         * Los productos aún no existen en Firestore; enriquecemos
+         * en memoria y luego persistimos. */
+        var checkEnr = _el('p04-import-enriquecer-check');
+        if (checkEnr && checkEnr.checked) {
+          if (btnImp) {
+            btnImp.disabled = true;
+            btnImp.textContent = 'Enriqueciendo 0/' + filasFinales.length + '...';
+          }
+          try {
+            var enriqResult = await Enricher.enriquecerLotePreGuardar(
+              filasFinales,
+              ['off'],
+              function (actual, total) {
+                if (btnImp) {
+                  btnImp.textContent = 'Enriqueciendo ' + actual + '/' + total + '...';
+                }
+              }
+            );
+            console.info('[ImportWizard] Enriquecidos pre-guardado: ' + enriqResult.ok +
+                         ' · sin cambios: ' + enriqResult.sin_cambios +
+                         ' · errores: ' + enriqResult.errores);
+          } catch (eEnr) {
+            console.warn('[ImportWizard] Enriquecimiento falló, siguiendo sin él:', eEnr);
+          } finally {
+            if (btnImp) {
+              btnImp.disabled = false;
+              btnImp.textContent = 'Importando...';
+            }
+          }
+        }
+
+        var resultado = await Storage.saveManyProductos(filasFinales);
+
+        renderListaProductos();
+        renderTablaVencimientos();
+        this.cerrar();
+
+        /* Resetear filtro de origen para que se vean los nuevos. */
+        var selOrigen = _el('p04-filtro-origen');
+        if (selOrigen && selOrigen.value !== 'todos') {
+          selOrigen.value = 'todos';
+          StockState.filtros.origen = 'todos';
+          renderListaProductos();
+        }
+
+        /* Toast honesto con descartados y motivos. */
+        var motivos = resultado.motivos || {};
+        var nSinNombre = motivos.sin_nombre || 0;
+        var nDuplicado = motivos.duplicado || 0;
+        var nDescartados = resultado.descartados || 0;
+
+        var partes = [];
+        partes.push('Importados/actualizados: ' + resultado.ok);
+        if (resultado.fail > 0) partes.push('Fallidos: ' + resultado.fail);
+        if (nDescartados > 0) {
+          var detalle = [];
+          if (nSinNombre > 0) detalle.push(nSinNombre + ' sin nombre');
+          if (nDuplicado > 0) detalle.push(nDuplicado + ' duplicado' + (nDuplicado > 1 ? 's' : ''));
+          partes.push('Descartados: ' + nDescartados +
+                      (detalle.length ? ' (' + detalle.join(', ') + ')' : ''));
+        }
+
+        var tipo = (resultado.fail > 0 || nDescartados > 0) ? 'warning' : 'success';
+        _toast(partes.join(' · '), tipo, nDescartados > 0 ? 7000 : 5000);
+      } catch (e) {
+        console.error('[ImportWizard] Error al confirmar:', e);
+        _toast('Error al importar: ' + (e.message || 'desconocido'), 'error', 6000);
+        _err('E-DATA-001', {
+          detalles: { contexto: 'import_wizard_confirm', mensaje: e.message },
+          stack: e.stack
+        });
+      } finally {
+        this._estado.ocupado = false;
+        this._actualizarBotones();
+        if (btnImp) btnImp.textContent = '✓ Importar';
+      }
+    },
+
+    /* [FIX-B14-D] Cleanup del wizard. Resetea el estado, incrementa
+     * la generación (para que parseos en vuelo se auto-descarten),
+     * y limpia la promesa cacheada de SheetJS si quedó en estado
+     * de error/timeout. */
+    destroy: function () {
+      this._estado = {
+        paso: 1,
+        archivo: null,
+        formato: null,
+        filas: [],
+        columnas: [],
+        mapeo: {},
+        preview: [],
+        defaults: { categoria: 'General', margen: 30, stock_minimo_def: 5, usar_stock_min_def: true },
+        generacion: (this._estado && this._estado.generacion ? this._estado.generacion : 0) + 1,
+        ocupado: false
+      };
+    }
   };
 
   /* ═══════════════════════════════════════════════════════════ */
@@ -22661,10 +26412,16 @@
       'p04-tbody-detalle-lotes',
       'p04-tbody-ocr-items',
       'p04-total-items-count',
+      'p04-draft-count',
       'p04-buscar-producto',
       'p04-filtro-categoria',
       'p04-filtro-estado-stock',
-      'p04-metodo-descuento-select'
+      'p04-filtro-origen',
+      'p04-metodo-descuento-select',
+      'p04-import-file-input',
+      'p04-mapeo-container',
+      'p04-preview-tbody',
+      'p04-import-btn-siguiente'
     ];
 
     var faltantes = requeridos.filter(function (id) {
@@ -22737,6 +26494,121 @@
     }
   }
 
+  /* ═══════════════════════════════════════════════════════════ */
+  /* [FASE-5] FOCUS TRAP — Modales del panel Stock              */
+  /*                                                            */
+  /* Paridad con B06 v7 (_configurarFocusTrap). Atrapa Tab y     */
+  /* Shift+Tab dentro del modal activo y restaura el foco al     */
+  /* elemento previo al cerrarse. Sin esto, usuarios de teclado  */
+  /* podían tabular hacia el contenido de fondo.                 */
+  /* ═══════════════════════════════════════════════════════════ */
+  var _focusTrapBoundP04 = new WeakMap();
+
+  function _getFocusablesP04(modal) {
+    var nodes = modal.querySelectorAll(
+      'button:not([disabled]), [href], input:not([disabled]), ' +
+      'select:not([disabled]), textarea:not([disabled]), ' +
+      '[tabindex]:not([tabindex="-1"])'
+    );
+    var visibles = [];
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i].offsetParent !== null) visibles.push(nodes[i]);
+    }
+    return visibles;
+  }
+
+  function _configurarFocusTrapP04(modalId) {
+    var modal = _el(modalId);
+    if (!modal) return;
+    if (_focusTrapBoundP04.has(modal)) return;
+    _focusTrapBoundP04.set(modal, true);
+
+    var lastFocused = null;
+
+    /* Observar activación/desactivación del modal para gestionar foco. */
+    if (typeof MutationObserver === 'function') {
+      var obs = new MutationObserver(function () {
+        var activo = modal.classList.contains('active');
+        if (activo && !lastFocused) {
+          lastFocused = document.activeElement;
+          setTimeout(function () {
+            if (!modal.classList.contains('active')) return;
+            var focusables = _getFocusablesP04(modal);
+            if (focusables.length > 0) {
+              try { focusables[0].focus(); } catch (e) {}
+            }
+          }, 80);
+        } else if (!activo && lastFocused) {
+          var restore = lastFocused;
+          lastFocused = null;
+          setTimeout(function () {
+            if (restore &&
+                typeof restore.focus === 'function' &&
+                document.body.contains(restore)) {
+              try { restore.focus(); } catch (e) {}
+            }
+          }, 60);
+        }
+      });
+      obs.observe(modal, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    /* Trap de Tab dentro del modal activo. */
+    modal.addEventListener('keydown', function (e) {
+      if (e.key !== 'Tab') return;
+      if (!modal.classList.contains('active')) return;
+
+      var focusables = _getFocusablesP04(modal);
+      if (focusables.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      var first = focusables[0];
+      var last  = focusables[focusables.length - 1];
+      var active = document.activeElement;
+
+      if (e.shiftKey) {
+        if (active === first || focusables.indexOf(active) === -1) {
+          e.preventDefault();
+          try { last.focus(); } catch (err) {}
+        }
+      } else {
+        if (active === last || focusables.indexOf(active) === -1) {
+          e.preventDefault();
+          try { first.focus(); } catch (err) {}
+        }
+      }
+    });
+  }
+
+  function _configurarFocusTrapModalesP04() {
+    [
+      'modal-p04-producto',
+      'modal-p04-lote',
+      'modal-p04-ajuste',
+      'modal-p04-ocr',
+      'modal-p04-importar',
+      'modal-p04-detalle-lotes',
+      'modal-p04-oferta',
+      'modal-p04-proveedor-vinculo',
+      'modal-p04-enriquecer',
+      'modal-p04-descubrir'
+    ].forEach(_configurarFocusTrapP04);
+  }
+
+  /* [FASE-5-POST] Helper que rutea el cierre según el modal.
+   * El enricher requiere pasar por p04CerrarModalEnriquecer() para
+   * cancelar un batch en curso (Enricher._cancelado = true).
+   * Los demás modales usan _cerrarModal() directo. */
+  function _cerrarModalP04(id) {
+    if (id === 'modal-p04-enriquecer' &&
+        typeof window.p04CerrarModalEnriquecer === 'function') {
+      window.p04CerrarModalEnriquecer();
+    } else {
+      _cerrarModal(id);
+    }
+  }
+
   /* [v3-17 / v3-18 / v3-23] Listeners estáticos con guards. */
   function _bindEstaticos() {
     if (_estaticosBound) return;
@@ -22750,7 +26622,9 @@
       'modal-p04-importar',
       'modal-p04-detalle-lotes',
       'modal-p04-oferta',
-      'modal-p04-proveedor-vinculo'
+      'modal-p04-proveedor-vinculo',
+      'modal-p04-enriquecer',
+      'modal-p04-descubrir'
     ];
 
     modales.forEach(function (id) {
@@ -22759,7 +26633,7 @@
       if (m.dataset.b14BackdropBound === '1') return;
       m.dataset.b14BackdropBound = '1';
       m.addEventListener('mousedown', function (e) {
-        if (e.target === m) _cerrarModal(id);
+        if (e.target === m) _cerrarModalP04(id);
       });
     });
 
@@ -22777,7 +26651,7 @@
       for (var i = 0; i < modales.length; i++) {
         var m = _el(modales[i]);
         if (m && m.classList.contains('active')) {
-          _cerrarModal(modales[i]);
+          _cerrarModalP04(modales[i]);
           e.stopPropagation();
           return;
         }
@@ -22816,7 +26690,32 @@
         }
       });
     }
+
+    /* [FASE-5] Focus trap en los 10 modales del panel Stock.
+     * Idempotente por WeakMap: si se llama dos veces, no duplica. */
+    _configurarFocusTrapModalesP04();
   }
+
+  /* Reset del flag de cancelación cuando el modal de enriquecer
+   * se cierra por cualquier vía (X, backdrop, Escape, botón). */
+  (function _bindEnricherModalReset() {
+    var modal = document.getElementById('modal-p04-enriquecer');
+    if (!modal) return;
+    if (modal.dataset.b14EnriqResetBound === '1') return;
+    modal.dataset.b14EnriqResetBound = '1';
+
+    if (typeof MutationObserver === 'function') {
+      var obs = new MutationObserver(function () {
+        if (!modal.classList.contains('active')) {
+          /* Modal cerrado: si no hay ejecución en curso, resetear. */
+          if (!Enricher._ejecutando) {
+            Enricher._cancelado = false;
+          }
+        }
+      });
+      obs.observe(modal, { attributes: true, attributeFilter: ['class'] });
+    }
+  })();
 
   /* ═══════════════════════════════════════════════════════════ */
   /* ARRANQUE                                                    */
@@ -23032,6 +26931,11 @@
     let _proveedoresListenersBound = false;
     let _proveedoresComercioId = null;
     let _proveedoresSnapshotRetries = 0;
+    /* [FIX-B14-A] Flag de inicialización de Proveedores.
+     * B14 lo consulta para distinguir "proveedor no existe" de
+     * "B15 todavía no cargó". Si es false, B14 usa fallback local;
+     * si es true, B15 es la ÚNICA fuente de verdad (onSnapshot vivo). */
+    let _proveedoresListo = false;
     const _MAX_SNAPSHOT_RETRIES = 5;
     const _SNAPSHOT_RETRY_MS = 600;
 
@@ -23106,6 +27010,11 @@
       if (!_registrarSnapshotSiPosible()) {
         _reintentarRegistrarSnapshot();
       }
+
+      /* [FIX-B14-A] Marcar Proveedores como listo. A partir de este
+       * punto, B14 puede confiar en buscarPorNombre() como fuente de
+       * verdad (onSnapshot mantiene _proveedores actualizado). */
+      _proveedoresListo = true;
     };
 
     /* [Cross-tab] Detectar logout en otra pestaña y resetear el cache. */
@@ -25462,6 +29371,26 @@
         });
       }
     }
+    /* [FIX-B14-A] API pública: ¿B15 ya terminó de inicializarse y tiene
+     * datos cargados? B14 lo consulta antes de delegar la resolución de
+     * proveedores. Si retorna false, B14 usa su propio fallback local. */
+    Proveedores.estaListo = function () {
+      return _proveedoresListo === true && Array.isArray(_proveedores);
+    };
+
+  Proveedores.buscarPorNombre = function (nombre) {
+    if (!nombre) return null;
+    var n = String(nombre).trim().toLowerCase();
+    return _proveedores.find(function (p) {
+      return String(p.nombre || '').trim().toLowerCase() === n;
+    }) || null;
+  };
+
+  Proveedores.obtenerTodosNombres = function () {
+    return _proveedores.map(function (p) {
+      return { id: p.id, nombre: p.nombre };
+    });
+  };
 
     /* ─────────────────────────────────────────────────────── */
     /* 17. EXPOSICIÓN GLOBAL                                  */
