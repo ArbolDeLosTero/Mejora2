@@ -1,33 +1,40 @@
 {
   "version": "1.0.0",
   "schema_version": "1.0.0",
-  "fecha_generacion": "2026-10-12T00:00:00Z",
-  "total_productos": 335932,
+  "fecha_generacion": "2026-10-26T00:00:00Z",
+  "total_productos": 5000,
   "encoding": "UTF-8",
   "compresion": "gzip",
-
   "archivo": {
     "nombre": "catalogo_productos.json.gz",
     "ruta": "catalogo/catalogo_productos.json.gz",
-    "tamano_bytes": 0,
-    "tamano_legible": "REEMPLAZAR_TAMANO_LEGIBLE",
-    "sha256": "REEMPLAZAR_CON_SHA256_REAL_DEL_GZ"
+    "tamano_bytes": 478021,
+    "tamano_legible": "0.46 MB",
+    "sha256": "eb6bec642abe9ca2e5e5eed9327176c4b1f1e8e22a21576b42a56d54b841f58b"
   },
-
   "fuente": {
     "descripcion": "Catálogo de productos EAN-13 de referencia para Mejora2",
     "repositorio": "ArbolDeLosTero/Mejora2",
     "url_raw": "https://raw.githubusercontent.com/ArbolDeLosTero/Mejora2/main/catalogo/catalogo_productos.json.gz",
     "licencia": "MIT"
   },
-
   "estructura": {
     "raiz": "object",
-    "meta_campos": ["fecha_generacion", "fuente", "total_productos"],
-    "producto_campos_obligatorios": ["ean", "descripcion"],
-    "producto_campos_opcionales": ["marca", "categoria", "dias_caducidad"]
+    "meta_campos": [
+      "fecha_generacion",
+      "fuente",
+      "total_productos"
+    ],
+    "producto_campos_obligatorios": [
+      "ean",
+      "descripcion"
+    ],
+    "producto_campos_opcionales": [
+      "marca",
+      "categoria",
+      "dias_caducidad"
+    ]
   },
-
   "compatibilidad": {
     "consumidor": "Mejora2",
     "bloque": "B14",
@@ -40,10 +47,9 @@
       "Safari 16.4+"
     ]
   },
-
   "generador": {
     "script": "catalogo/scripts/generar_catalogo.py",
-    "estado": "pendiente",
-    "nota": "Documentar el proceso de regeneración cuando se implemente el script"
+    "estado": "completado",
+    "nota": "Generado a partir de Open Food Facts con scripts locales"
   }
 }
