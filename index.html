@@ -304,7 +304,7 @@
   <!-- app-version: leída por App.getVersion() (B10) y por el
        VersionChecker del bloque final. Sincronizable desde
        version.json vía GitHub Action (§5.2 auditoría). -->
-  <meta name="app-version" content="1.0.60">
+  <meta name="app-version" content="1.0.44">
 
   <title>Sistema de Gestión para Kioscos y Almacenes</title>
 
@@ -12263,9 +12263,10 @@
                 <button type="button"
                         class="btn btn-secondary"
                         onclick="p04GenerarCodigoBarras()"
-                        title="Generar código interno"
-                        aria-label="Generar código de barras">
+                        title="Escanear con cámara o generar código interno"
+                        aria-label="Escanear o generar código de barras">
                   <i class="fa fa-barcode" aria-hidden="true"></i>
+                  Escanear
                 </button>
               </div>
             </div>
@@ -15825,20 +15826,83 @@
         }
       }
 
+      /* [FIX-STORAGE-11] Tope de items por colección cacheada.
+       * ventas es la que más crece; con 300 recientes alcanza para
+       * el fallback offline del POS. */
+      const _CACHE_MAX_ITEMS = {
+        ventas: 300,
+        historico_compras: 200,
+        turnos: 100,
+        pedidos: 200,
+        devoluciones: 200
+      };
+
       function _escribirCache(coleccion, items) {
         if (!_comercioId) return;
         if (COLECCIONES_SIN_CACHE[coleccion]) return;
+
+        /* [FIX-STORAGE-11b] Cap antes de serializar. */
+        var itemsParaCache = items;
+        var cap = _CACHE_MAX_ITEMS[coleccion];
+        if (cap && Array.isArray(items) && items.length > cap) {
+          itemsParaCache = items.slice(-cap);
+        }
+
         try {
-          localStorage.setItem(_cacheKey(coleccion), JSON.stringify(items));
+          localStorage.setItem(_cacheKey(coleccion), JSON.stringify(itemsParaCache));
         } catch (e) {
           if (e && e.name === 'QuotaExceededError') {
+            /* [FIX-STORAGE-11c] Eviction + retry. */
+            var liberado = _liberarEspacioCache();
+            if (liberado > 0) {
+              try {
+                localStorage.setItem(_cacheKey(coleccion), JSON.stringify(itemsParaCache));
+                console.info('[Data] Reintento de caché exitoso tras liberar ' +
+                             (liberado / 1024).toFixed(1) + ' KB.');
+                return;
+              } catch (e2) { /* Cae al reporte. */ }
+            }
             console.error('[Data] localStorage lleno (caché de ' + coleccion + ')');
-            /* [FIX-11-19] E-DATA-009, no E-DATA-007 (que no existe). */
-            _reportarError('E-DATA-009', { detalles: { coleccion: coleccion, origen: 'cache' } });
+            _reportarError('E-DATA-009', {
+              detalles: { coleccion: coleccion, origen: 'cache' }
+            });
           } else {
             console.warn('[Data] Error al escribir caché:', e);
           }
         }
+      }
+
+      /* [FIX-STORAGE-11d] Libera espacio de caches de OTROS comercios
+       * y dead-code. NO toca la caché del comercio actual. */
+      function _liberarEspacioCache() {
+        var liberado = 0;
+        var candidatos = [];
+
+        try {
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (!k || k.indexOf('_cache_v1::') === -1) continue;
+            if (_comercioId && k.indexOf('::' + _comercioId) !== -1) continue;
+            candidatos.push({ key: k, size: (localStorage.getItem(k) || '').length });
+          }
+        } catch (e) {}
+
+        candidatos.sort(function (a, b) { return b.size - a.size; });
+        for (var j = 0; j < candidatos.length; j++) {
+          try {
+            localStorage.removeItem(candidatos[j].key);
+            liberado += candidatos[j].size;
+          } catch (e) {}
+        }
+
+        ['m2_productos', 'm2_ventas', 'm2_actividades'].forEach(function (k) {
+          try {
+            var v = localStorage.getItem(k);
+            if (v) { liberado += v.length; localStorage.removeItem(k); }
+          } catch (e) {}
+        });
+
+        return liberado;
       }
 
       function _actualizarItemEnCache(coleccion, item) {
@@ -19455,12 +19519,35 @@
         btnCobrar.addEventListener('click', function () { self.abrirModalCobro(); });
       }
 
+      /* [FIX-CAM-13] Handler del botón de cámara del POS.
+       * Ahora usa el módulo Escaner (Bloque 18) que tiene cámara
+       * real con html5-qrcode. Fallback al modal informativo si
+       * el módulo no está disponible (CDN caído, permisos). */
       var btnEscanear = $('p03-btn-escanear');
       if (btnEscanear && !btnEscanear.dataset.p13Bound) {
         btnEscanear.dataset.p13Bound = '1';
         btnEscanear.addEventListener('click', function () {
-          abrirModal('modal-p03-escanear');
-          toast('Escáner en desarrollo. Ingresá el código manualmente por ahora.', 'info', 4000);
+          if (window.Escaner && typeof Escaner.escanear === 'function' && typeof window.Html5Qrcode !== 'undefined') {
+            Escaner.escanear(function (codigo) {
+              if (!codigo) return;
+              var prod = self.productos.find(function (p) {
+                return String(p.codigo || p.codigo_barras || '') === String(codigo);
+              });
+              if (prod) {
+                self.agregarAlTicket(prod.id);
+                toast('Agregado: ' + (prod.nombre || codigo), 'success', 2500);
+              } else {
+                toast(
+                  'Producto no encontrado: ' + codigo + '. Podés crearlo ahora.',
+                  'warning', 5000
+                );
+                self.abrirModalProductoManual(codigo);
+              }
+            });
+          } else {
+            abrirModal('modal-p03-escanear');
+            toast('Escáner no disponible. Ingresá el código manualmente.', 'warning', 4000);
+          }
         });
       }
       var btnCloseEsc = $('p03-close-escanear');
@@ -21920,15 +22007,94 @@
     };
   }
 
-  /* [v3-15] setItem con reporte de QuotaExceededError. */
+  /* [FIX-STORAGE-14] Libera espacio borrando:
+   *  1. Dead-code de Block 19 (m2_productos, m2_ventas, m2_actividades)
+   *  2. Caches de OTROS comercios (_cache_v1::<cid>)
+   *  3. Keys legacy grandes
+   * NUNCA toca la caché del comercio actual ni productos del actual. */
+  function _intentarLiberarEspacio(storageNecesario) {
+    var liberado = 0;
+    var candidatos = [];
+
+    ['m2_productos', 'm2_ventas', 'm2_actividades'].forEach(function (k) {
+      try {
+        var v = localStorage.getItem(k);
+        if (v) { liberado += v.length; localStorage.removeItem(k); }
+      } catch (e) {}
+    });
+
+    var cidActual = null;
+    try {
+      if (window.Data && typeof Data.getComercioId === 'function') {
+        cidActual = Data.getComercioId();
+      }
+    } catch (e) {}
+
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (!k || k.indexOf('_cache_v1::') === -1) continue;
+        if (cidActual && k.indexOf('::' + cidActual) !== -1) continue;
+        candidatos.push({ key: k, size: (localStorage.getItem(k) || '').length });
+      }
+    } catch (e) {}
+
+    candidatos.sort(function (a, b) { return b.size - a.size; });
+    for (var j = 0; j < candidatos.length && liberado < storageNecesario; j++) {
+      try {
+        localStorage.removeItem(candidatos[j].key);
+        liberado += candidatos[j].size;
+      } catch (e) {}
+    }
+
+    ['productos', 'proveedores', 'historico_compras', 'logs_v1'].forEach(function (k) {
+      if (liberado >= storageNecesario) return;
+      try {
+        var v = localStorage.getItem(k);
+        if (v && v.length > 5000) {
+          liberado += v.length;
+          localStorage.removeItem(k);
+        }
+      } catch (e) {}
+    });
+
+    if (liberado > 0) {
+      console.info('[Stock] Liberados ' + (liberado / 1024).toFixed(1) +
+                   ' KB de localStorage.');
+    }
+    return liberado;
+  }
+
+  /* [FIX-STORAGE-14b] setItem con eviction automática + retry. */
   function _safeLocalStorageSet(key, value) {
     try {
       localStorage.setItem(key, value);
       return true;
     } catch (e) {
       if (e && e.name === 'QuotaExceededError') {
-        console.error('[Stock] localStorage lleno al escribir ' + key);
-        _err('E-DATA-009', { detalles: { key: key, origen: 'localStorage_set' } });
+        var necesitado = (value ? value.length : 0) * 2;
+        var liberado = _intentarLiberarEspacio(necesitado);
+
+        if (liberado > 0) {
+          try {
+            localStorage.setItem(key, value);
+            console.info('[Stock] Reintento exitoso tras liberar ' +
+                         (liberado / 1024).toFixed(1) + ' KB.');
+            return true;
+          } catch (e2) { /* Cae al reporte de error. */ }
+        }
+
+        console.error('[Stock] localStorage lleno tras eviction en "' + key +
+                      '" (necesitado ~' + (necesitado / 1024).toFixed(1) +
+                      ' KB, liberado ' + (liberado / 1024).toFixed(1) + ' KB)');
+        _err('E-DATA-009', {
+          detalles: {
+            key: key,
+            origen: 'localStorage_set_tras_eviction',
+            liberado_bytes: liberado,
+            necesitado_bytes: necesitado
+          }
+        });
       } else {
         console.warn('[Stock] Error al escribir ' + key + ':', e);
       }
@@ -24669,10 +24835,36 @@
     }
   };
 
-  /* [v3-1] Código de barras con CSPRNG. */
+  /* [FIX-CAM-14] Handler del botón de código de barras.
+   * Ahora intenta escanear con cámara (Bloque 18). Si Escaner
+   * no está disponible, cae al comportamiento previo (generar
+   * código interno aleatorio). */
   window.p04GenerarCodigoBarras = function () {
     var inp = _el('p04-prod-codigo');
-    if (inp) inp.value = _generarCodigoBarrasEAN13Simulado();
+    if (!inp) return;
+
+    if (window.Escaner && typeof Escaner.escanear === 'function' && typeof window.Html5Qrcode !== 'undefined') {
+      Escaner.escanear(function (codigo) {
+        if (!codigo) return;
+        inp.value = codigo;
+        inp.dispatchEvent(new Event('input',  { bubbles: true }));
+        inp.dispatchEvent(new Event('change', { bubbles: true }));
+
+        var codigoLimpio = String(codigo).trim().toLowerCase();
+        var dup = StockState.productos.find(function (p) {
+          return String(p.codigo || p.codigo_barras || '').trim().toLowerCase() === codigoLimpio;
+        });
+        if (dup) {
+          _toast('Ese código ya existe: "' + dup.nombre + '". Revisá antes de guardar.', 'warning', 6000);
+        } else {
+          _toast('Código escaneado', 'success', 2500);
+        }
+      });
+      return;
+    }
+
+    inp.value = _generarCodigoBarrasEAN13Simulado();
+    _toast('Código interno generado (escáner no disponible)', 'info', 3000);
   };
 
   window.p04CalcularMargenGanancia = function () {
@@ -26457,6 +26649,11 @@
   /* [v3-11] _bindEstaticos se llama en finally, no en try. */
   async function initStock() {
     try {
+      /* [FIX-STORAGE-14c] Eviction proactiva al arrancar Stock.
+       * Limpia dead-code y caches de otros comercios antes de que
+       * el storage se sature. */
+      _intentarLiberarEspacio(0);
+
       /* [v4-A] Diagnóstico temprano del DOM. */
       _diagnosticoDOM();
 
@@ -30434,19 +30631,56 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
   };
 
   /* ─── Impresora del sistema ──────────────────────────────── */
-  Impresora.detectarImpresoras = function () {
+  Impresora.detectarImpresoras = async function () {
     var sel = _el('p08-impresora-detectada');
     if (!sel) return;
+
+    /* [FIX-IMP-16] Intento real de detección vía navigator.printers
+     * (Chrome 120+). Si no está disponible o falla, cae a genéricas. */
+    var detectadas = [];
+    try {
+      if (navigator.printers && typeof navigator.printers.getPrinters === 'function') {
+        _toast('Detectando impresoras del sistema...', 'info', 2000);
+        var lista = await navigator.printers.getPrinters();
+        if (Array.isArray(lista) && lista.length > 0) {
+          detectadas = lista.map(function (p) {
+            return { id: p.id || p.name, nombre: p.name || p.id };
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('[Impresora] navigator.printers no disponible:', e);
+    }
+
+    var opcionesDetectadas = detectadas.map(function (p) {
+      return '<option value="' + _escapeAttr(p.id) + '">' +
+             _escapeHtml(p.nombre) + '</option>';
+    }).join('');
+
     sel.innerHTML =
+      (opcionesDetectadas
+        ? '<optgroup label="Detectadas por el navegador">' + opcionesDetectadas + '</optgroup>'
+        : '') +
+      '<optgroup label="Genéricas">' +
       '<option value="system">Impresora del sistema (recomendado)</option>' +
-      '<option value="default">Impresora predeterminada</option>';
-    sel.value = 'system';
-    Impresora.config.impresora_nombre = 'system';
+      '<option value="default">Impresora predeterminada</option>' +
+      '</optgroup>';
+
+    if (detectadas.length > 0) {
+      sel.value = detectadas[0].id;
+      Impresora.config.impresora_nombre = detectadas[0].id;
+      _toast('Detectadas ' + detectadas.length + ' impresora(s)', 'success', 3000);
+    } else {
+      sel.value = 'system';
+      Impresora.config.impresora_nombre = 'system';
+      _toast(
+        'El navegador no expone impresoras. Al imprimir, elegí tu térmica en el diálogo del SO. ' +
+        'Si no aparece, instalá el driver del fabricante a nivel sistema operativo.',
+        'info', 9000
+      );
+    }
+
     Impresora.guardarImpresoraSeleccionada();
-    _toast(
-      'La impresora se elige en el diálogo del navegador al imprimir. El nombre es opcional, solo para referencia.',
-      'info', 7000
-    );
     var manual = _el('p08-impresora-manual');
     if (manual && !manual.value.trim()) manual.focus();
   };
@@ -35371,8 +35605,14 @@ body.dark-mode .escaner-manual-input {
             var config = {
                 fps: 10,
                 qrbox: { width: 250, height: 150 },
-                aspectRatio: 1.777778,
-                formatsToSupport: [
+                aspectRatio: 1.777778
+            };
+
+            /* [FIX-CAM-18] Solo restringir formatos si
+             * Html5QrcodeSupportedFormats existe. Si no,
+             * dejar todos (funciona igual, un poco más lento). */
+            if (typeof Html5QrcodeSupportedFormats !== 'undefined') {
+                config.formatsToSupport = [
                     Html5QrcodeSupportedFormats.EAN_13,
                     Html5QrcodeSupportedFormats.EAN_8,
                     Html5QrcodeSupportedFormats.UPC_A,
@@ -35380,8 +35620,8 @@ body.dark-mode .escaner-manual-input {
                     Html5QrcodeSupportedFormats.CODE_128,
                     Html5QrcodeSupportedFormats.CODE_39,
                     Html5QrcodeSupportedFormats.QR_CODE
-                ]
-            };
+                ];
+            }
             
             await _html5QrCode.start(
                 { facingMode: "environment" },
@@ -35645,1119 +35885,6 @@ body.dark-mode .escaner-manual-input {
     
 })();
 </script>
-
-<!-- ═══════════════════════════════════════════════════════════════════ -->
-<!-- BLOQUE 19 — DATA.JS MEJORADO CON FIRESTORE EN TIEMPO REAL          -->
-<!--                                                                    -->
-<!-- Reemplaza el sistema localStorage por Firestore para sincronizar   -->
-<!-- inventario, ventas y actividades entre Administrator y Cashier.    -->
-<!--                                                                    -->
-<!-- 🔴 FIX-SYNC-01: Productos compartidos vía Firestore en tiempo real -->
-<!-- 🔴 FIX-SYNC-02: Ventas registradas y visibles para ambos roles     -->
-<!-- 🔴 FIX-SYNC-03: Actividades del Cashier reflejadas en Admin        -->
-<!-- 🔴 FIX-SYNC-04: Fallback a localStorage si Firestore falla         -->
-<!-- 🔴 FIX-SYNC-05: Listener onSnapshot para updates automáticos       -->
-<!-- ═══════════════════════════════════════════════════════════════════ -->
-
-<script id="bloque-19-js">
-(function () {
-    'use strict';
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* GUARD DE IDEMPOTENCIA                                       */
-    /* ═══════════════════════════════════════════════════════════ */
-    if (window.DataSync) {
-        console.warn('[DataSync] Ya inicializado, se omite la segunda carga.');
-        return;
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* ESTADO                                                      */
-    /* ═══════════════════════════════════════════════════════════ */
-    var _unsubProductos = null;
-    var _unsubVentas = null;
-    var _unsubActividades = null;
-    var _listenersUI = [];
-    var _cacheLocal = {
-        productos: [],
-        ventas: [],
-        actividades: []
-    };
-    var _firebaseOk = false;
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* HELPERS                                                     */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _toast(msg, tipo, dur) {
-        if (window.App && typeof App.toast === 'function') {
-            App.toast(msg, tipo || 'info', dur);
-        }
-    }
-    
-    function _db() {
-        return (window.firebase && window.firebase.firestore) ? window.firebase.firestore() : null;
-    }
-    
-    function _uid() {
-        if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
-        return 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
-    }
-    
-    function _now() {
-        return (window.firebase && firebase.firestore && firebase.firestore.Timestamp)
-            ? firebase.firestore.Timestamp.now()
-            : new Date();
-    }
-    
-    function _tsToDate(ts) {
-        if (!ts) return new Date();
-        if (ts.toDate) return ts.toDate();
-        if (ts instanceof Date) return ts;
-        return new Date(ts);
-    }
-    
-    function _guardarLocal(coleccion, data) {
-        try {
-            localStorage.setItem('m2_' + coleccion, JSON.stringify(data));
-        } catch (e) {
-            console.warn('[DataSync] Error guardando local:', e);
-        }
-    }
-    
-    function _cargarLocal(coleccion) {
-        try {
-            var raw = localStorage.getItem('m2_' + coleccion);
-            return raw ? JSON.parse(raw) : [];
-        } catch (e) {
-            return [];
-        }
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* NOTIFICAR A UI                                              */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _notificar(tipo, data) {
-        _listenersUI.forEach(function (fn) {
-            try { fn(tipo, data); } catch (e) { console.warn('[DataSync] listener error:', e); }
-        });
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* PRODUCTOS                                                   */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _suscribirProductos() {
-        var db = _db();
-        if (!db) {
-            _cacheLocal.productos = _cargarLocal('productos');
-            _notificar('productos', _cacheLocal.productos);
-            return;
-        }
-        
-        try {
-            _unsubProductos = db.collection('productos')
-                .orderBy('nombre', 'asc')
-                .onSnapshot(function (snap) {
-                    var lista = [];
-                    snap.forEach(function (doc) {
-                        lista.push(Object.assign({ id: doc.id }, doc.data()));
-                    });
-                    _cacheLocal.productos = lista;
-                    _guardarLocal('productos', lista);
-                    _notificar('productos', lista);
-                }, function (err) {
-                    console.error('[DataSync] Error productos:', err);
-                    _toast('Error de sincronización de productos', 'error');
-                });
-            _firebaseOk = true;
-        } catch (e) {
-            console.error('[DataSync] Excepción productos:', e);
-        }
-    }
-    
-    async function _agregarProducto(prod) {
-        var item = Object.assign({
-            id: prod.id || _uid(),
-            codigo: (prod.codigo || '').trim(),
-            nombre: (prod.nombre || '').trim(),
-            categoria: prod.categoria || 'General',
-            precio: Number(prod.precio) || 0,
-            costo: Number(prod.costo) || 0,
-            stock: Number(prod.stock) || 0,
-            stockMinimo: Number(prod.stockMinimo) || 0,
-            creadoEn: _now(),
-            actualizadoEn: _now()
-        }, prod);
-        
-        var db = _db();
-        if (db && _firebaseOk) {
-            try {
-                await db.collection('productos').doc(item.id).set(item);
-                return item;
-            } catch (e) {
-                console.error('[DataSync] Error guardando producto:', e);
-                _toast('Error al guardar producto', 'error');
-                return null;
-            }
-        }
-        
-        // Fallback local
-        _cacheLocal.productos.push(item);
-        _guardarLocal('productos', _cacheLocal.productos);
-        _notificar('productos', _cacheLocal.productos);
-        return item;
-    }
-    
-    async function _actualizarProducto(id, cambios) {
-        cambios.actualizadoEn = _now();
-        var db = _db();
-        if (db && _firebaseOk) {
-            try {
-                await db.collection('productos').doc(id).update(cambios);
-                return true;
-            } catch (e) {
-                console.error('[DataSync] Error actualizando producto:', e);
-                _toast('Error al actualizar producto', 'error');
-                return false;
-            }
-        }
-        
-        var idx = _cacheLocal.productos.findIndex(function (p) { return p.id === id; });
-        if (idx >= 0) {
-            Object.assign(_cacheLocal.productos[idx], cambios);
-            _guardarLocal('productos', _cacheLocal.productos);
-            _notificar('productos', _cacheLocal.productos);
-        }
-        return true;
-    }
-    
-    async function _eliminarProducto(id) {
-        var db = _db();
-        if (db && _firebaseOk) {
-            try {
-                await db.collection('productos').doc(id).delete();
-                return true;
-            } catch (e) {
-                console.error('[DataSync] Error eliminando producto:', e);
-                _toast('Error al eliminar producto', 'error');
-                return false;
-            }
-        }
-        
-        _cacheLocal.productos = _cacheLocal.productos.filter(function (p) { return p.id !== id; });
-        _guardarLocal('productos', _cacheLocal.productos);
-        _notificar('productos', _cacheLocal.productos);
-        return true;
-    }
-    
-    function _buscarPorCodigo(codigo) {
-        var c = (codigo || '').trim();
-        if (!c) return null;
-        return _cacheLocal.productos.find(function (p) {
-            return (p.codigo || '').trim() === c;
-        }) || null;
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* VENTAS                                                      */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _suscribirVentas() {
-        var db = _db();
-        if (!db) {
-            _cacheLocal.ventas = _cargarLocal('ventas');
-            _notificar('ventas', _cacheLocal.ventas);
-            return;
-        }
-        
-        try {
-            _unsubVentas = db.collection('ventas')
-                .orderBy('fecha', 'desc')
-                .limit(500)
-                .onSnapshot(function (snap) {
-                    var lista = [];
-                    snap.forEach(function (doc) {
-                        var d = doc.data();
-                        lista.push(Object.assign({ id: doc.id }, d, {
-                            fecha: _tsToDate(d.fecha)
-                        }));
-                    });
-                    _cacheLocal.ventas = lista;
-                    _guardarLocal('ventas', lista);
-                    _notificar('ventas', lista);
-                }, function (err) {
-                    console.error('[DataSync] Error ventas:', err);
-                });
-        } catch (e) {
-            console.error('[DataSync] Excepción ventas:', e);
-        }
-    }
-    
-    async function _registrarVenta(venta) {
-        var item = {
-            id: venta.id || _uid(),
-            numero: venta.numero || ('V-' + Date.now()),
-            fecha: _now(),
-            cajeroId: venta.cajeroId || (window.App && App.usuarioActual ? App.usuarioActual.id : 'desconocido'),
-            cajeroNombre: venta.cajeroNombre || (window.App && App.usuarioActual ? App.usuarioActual.nombre : 'Desconocido'),
-            items: Array.isArray(venta.items) ? venta.items : [],
-            subtotal: Number(venta.subtotal) || 0,
-            descuento: Number(venta.descuento) || 0,
-            total: Number(venta.total) || 0,
-            pago: Number(venta.pago) || 0,
-            vuelto: Number(venta.vuelto) || 0,
-            metodoPago: venta.metodoPago || 'Efectivo',
-            cliente: venta.cliente || 'Consumidor Final'
-        };
-        
-        var db = _db();
-        if (db && _firebaseOk) {
-            try {
-                await db.collection('ventas').doc(item.id).set(item);
-                return item;
-            } catch (e) {
-                console.error('[DataSync] Error registrando venta:', e);
-                _toast('Error al registrar venta', 'error');
-                return null;
-            }
-        }
-        
-        _cacheLocal.ventas.unshift(item);
-        _guardarLocal('ventas', _cacheLocal.ventas);
-        _notificar('ventas', _cacheLocal.ventas);
-        return item;
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* ACTIVIDADES (LOG)                                           */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _suscribirActividades() {
-        var db = _db();
-        if (!db) {
-            _cacheLocal.actividades = _cargarLocal('actividades');
-            _notificar('actividades', _cacheLocal.actividades);
-            return;
-        }
-        
-        try {
-            _unsubActividades = db.collection('actividades')
-                .orderBy('fecha', 'desc')
-                .limit(200)
-                .onSnapshot(function (snap) {
-                    var lista = [];
-                    snap.forEach(function (doc) {
-                        var d = doc.data();
-                        lista.push(Object.assign({ id: doc.id }, d, {
-                            fecha: _tsToDate(d.fecha)
-                        }));
-                    });
-                    _cacheLocal.actividades = lista;
-                    _guardarLocal('actividades', lista);
-                    _notificar('actividades', lista);
-                }, function (err) {
-                    console.error('[DataSync] Error actividades:', err);
-                });
-        } catch (e) {
-            console.error('[DataSync] Excepción actividades:', e);
-        }
-    }
-    
-    async function _registrarActividad(tipo, descripcion, extra) {
-        var usuario = (window.App && App.usuarioActual) ? App.usuarioActual : { id: 'anon', nombre: 'Anónimo', rol: 'desconocido' };
-        var item = {
-            id: _uid(),
-            fecha: _now(),
-            tipo: tipo || 'info',
-            descripcion: descripcion || '',
-            usuarioId: usuario.id,
-            usuarioNombre: usuario.nombre,
-            rol: usuario.rol || 'desconocido',
-            extra: extra || {}
-        };
-        
-        var db = _db();
-        if (db && _firebaseOk) {
-            try {
-                await db.collection('actividades').doc(item.id).set(item);
-                return item;
-            } catch (e) {
-                console.error('[DataSync] Error registrando actividad:', e);
-                return null;
-            }
-        }
-        
-        _cacheLocal.actividades.unshift(item);
-        _guardarLocal('actividades', _cacheLocal.actividades);
-        _notificar('actividades', _cacheLocal.actividades);
-        return item;
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* API PÚBLICA                                                 */
-    /* ═══════════════════════════════════════════════════════════ */
-    var DataSync = {
-        // Productos
-        getProductos: function () { return _cacheLocal.productos.slice(); },
-        agregarProducto: _agregarProducto,
-        actualizarProducto: _actualizarProducto,
-        eliminarProducto: _eliminarProducto,
-        buscarPorCodigo: _buscarPorCodigo,
-        
-        // Ventas
-        getVentas: function () { return _cacheLocal.ventas.slice(); },
-        registrarVenta: _registrarVenta,
-        
-        // Actividades
-        getActividades: function () { return _cacheLocal.actividades.slice(); },
-        registrarActividad: _registrarActividad,
-        
-        // Listeners UI
-        onCambio: function (fn) {
-            if (typeof fn === 'function') _listenersUI.push(fn);
-        },
-        offCambio: function (fn) {
-            _listenersUI = _listenersUI.filter(function (f) { return f !== fn; });
-        },
-        
-        // Estado
-        estaOnline: function () { return _firebaseOk; },
-        
-        // Cleanup
-        destruir: function () {
-            if (_unsubProductos) _unsubProductos();
-            if (_unsubVentas) _unsubVentas();
-            if (_unsubActividades) _unsubActividades();
-            _listenersUI = [];
-        }
-    };
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* ARRANQUE                                                    */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _arrancar() {
-        _suscribirProductos();
-        _suscribirVentas();
-        _suscribirActividades();
-        console.info('[DataSync] Sincronización Firestore iniciada.');
-    }
-    
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', _arrancar);
-    } else {
-        _arrancar();
-    }
-    
-    window.DataSync = DataSync;
-    
-})();
-</script>
-
-<!-- ═══════════════════════════════════════════════════════════════════ -->
-<!-- BLOQUE 20 — INTEGRACIÓN ESCÁNER EN POS Y STOCK                     -->
-<!--                                                                    -->
-<!-- Conecta el módulo Escaner con los paneles Mi Caja (POS) y Stock.   -->
-<!-- Reemplaza el botón "Generar código aleatorio" por escaneo real.    -->
-<!--                                                                    -->
-<!-- 🔴 FIX-POS-01: Botón escáner en Mi Caja agrega producto al ticket  -->
-<!-- 🔴 FIX-STOCK-01: Botón "+ Nuevo Producto" escanea código real      -->
-<!-- 🔴 FIX-STOCK-02: Auto-relleno de campos tras escaneo               -->
-<!-- 🔴 FIX-STOCK-03: Validación de código duplicado                    -->
-<!-- ═══════════════════════════════════════════════════════════════════ -->
-
-<script id="bloque-20-js">
-(function () {
-    'use strict';
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* GUARD DE IDEMPOTENCIA                                       */
-    /* ═══════════════════════════════════════════════════════════ */
-    if (window.IntegracionEscaner) {
-        console.warn('[IntegracionEscaner] Ya inicializado.');
-        return;
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* HELPERS                                                     */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _el(id) { return document.getElementById(id); }
-    function _toast(msg, tipo, dur) {
-        if (window.App && typeof App.toast === 'function') App.toast(msg, tipo || 'info', dur);
-    }
-    function _esperarDataSync(reintentos) {
-        return new Promise(function (resolve) {
-            var i = 0;
-            (function intentar() {
-                if (window.DataSync || i >= (reintentos || 20)) return resolve();
-                i++;
-                setTimeout(intentar, 200);
-            })();
-        });
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* POS — AGREGAR AL TICKET                                     */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _agregarAlTicket(codigo) {
-        if (!window.DataSync) {
-            _toast('Sistema no listo', 'error');
-            return;
-        }
-        
-        var producto = DataSync.buscarPorCodigo(codigo);
-        
-        if (!producto) {
-            _toast('Producto no encontrado: ' + codigo, 'warning', 4000);
-            // Permitir agregar manual si no existe
-            if (window.POS && typeof POS.agregarProductoManual === 'function') {
-                POS.agregarProductoManual({ codigo: codigo, nombre: 'Producto ' + codigo, precio: 0 });
-            }
-            return;
-        }
-        
-        if (producto.stock <= 0) {
-            _toast('Sin stock: ' + producto.nombre, 'warning');
-            return;
-        }
-        
-        if (window.POS && typeof POS.agregarProducto === 'function') {
-            POS.agregarProducto(producto);
-            _toast('Agregado: ' + producto.nombre, 'success', 2000);
-        } else {
-            _toast('Módulo POS no disponible', 'error');
-        }
-    }
-    
-    function _abrirEscanerPOS() {
-        if (!window.Escaner) {
-            _toast('Módulo de escaneo no disponible', 'error');
-            return;
-        }
-        Escaner.escanear(function (codigo) {
-            _agregarAlTicket(codigo);
-        });
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* STOCK — NUEVO PRODUCTO CON ESCÁNER                          */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _aplicarCodigoEnFormulario(codigo) {
-        // Buscar inputs de código en el modal de nuevo producto
-        var inputs = [
-            _el('pinIngresadoCodigo'),
-            _el('nuevoProductoCodigo'),
-            _el('stockCodigo'),
-            _el('productoCodigo'),
-            _el('inputCodigoProducto')
-        ].filter(Boolean);
-        
-        var input = inputs[0];
-        if (!input) {
-            // Fallback: buscar por name/placeholder
-            input = document.querySelector('input[name="codigo"], input[placeholder*="código" i], input[placeholder*="codigo" i]');
-        }
-        
-        if (input) {
-            input.value = codigo;
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-            input.dispatchEvent(new Event('change', { bubbles: true }));
-            _toast('Código aplicado: ' + codigo, 'success', 2000);
-        } else {
-            _toast('No se encontró el campo de código', 'warning');
-        }
-        
-        // Verificar duplicado
-        if (window.DataSync) {
-            var existe = DataSync.buscarPorCodigo(codigo);
-            if (existe) {
-                _toast('⚠️ Ya existe un producto con ese código: ' + existe.nombre, 'warning', 5000);
-            }
-        }
-    }
-    
-    function _abrirEscanerStock() {
-        if (!window.Escaner) {
-            _toast('Módulo de escaneo no disponible', 'error');
-            return;
-        }
-        Escaner.escanear(function (codigo) {
-            _aplicarCodigoEnFormulario(codigo);
-        });
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* INYECTAR BOTONES DE ESCÁNER                                 */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _inyectarBotonPOS() {
-        // Buscar la barra de acciones del POS
-        var contenedores = [
-            _el('posAcciones'),
-            _el('cajaAcciones'),
-            _el('accionesTicket'),
-            _el('pos-barra-acciones')
-        ].filter(Boolean);
-        
-        var cont = contenedores[0];
-        if (!cont) {
-            // Fallback: buscar por clase
-            cont = document.querySelector('.pos-acciones, .caja-acciones, [data-role="pos-actions"]');
-        }
-        
-        if (!cont) {
-            console.warn('[IntegracionEscaner] No se encontró contenedor POS para inyectar botón.');
-            return;
-        }
-        
-        if (_el('btnEscanerPOS')) return; // Ya existe
-        
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.id = 'btnEscanerPOS';
-        btn.className = 'btn btn-primary';
-        btn.innerHTML = '<i class="fa-solid fa-barcode"></i> Escanear';
-        btn.setAttribute('aria-label', 'Escanear código de barras');
-        btn.addEventListener('click', _abrirEscanerPOS);
-        
-        cont.appendChild(btn);
-        console.info('[IntegracionEscaner] Botón POS inyectado.');
-    }
-    
-    function _reemplazarBotonRandomStock() {
-        // Buscar el botón "Generar código aleatorio"
-        var candidatos = Array.from(document.querySelectorAll('button'))
-            .filter(function (b) {
-                var t = (b.textContent || '').toLowerCase();
-                return t.includes('aleatorio') || t.includes('random') || t.includes('generar código');
-            });
-        
-        candidatos.forEach(function (btn) {
-            // Reemplazar contenido y acción
-            btn.innerHTML = '<i class="fa-solid fa-barcode"></i> Escanear código';
-            btn.classList.remove('btn-secondary');
-            btn.classList.add('btn-primary');
-            btn.setAttribute('aria-label', 'Escanear código de barras');
-            
-            // Clonar para remover listeners previos
-            var nuevo = btn.cloneNode(true);
-            btn.parentNode.replaceChild(nuevo, btn);
-            
-            nuevo.addEventListener('click', function (e) {
-                e.preventDefault();
-                _abrirEscanerStock();
-            });
-        });
-        
-        // Si no había botón, inyectar uno junto al input de código
-        if (candidatos.length === 0) {
-            var inputCodigo = document.querySelector('input[name="codigo"], #nuevoProductoCodigo, #stockCodigo');
-            if (inputCodigo && inputCodigo.parentNode) {
-                var wrapper = inputCodigo.parentNode;
-                var btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'btn btn-primary';
-                btn.innerHTML = '<i class="fa-solid fa-barcode"></i> Escanear';
-                btn.addEventListener('click', _abrirEscanerStock);
-                wrapper.appendChild(btn);
-            }
-        }
-        
-        console.info('[IntegracionEscaner] Botón Stock reemplazado/inyectado.');
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* ATAJOS DE TECLADO                                           */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _configurarAtajos() {
-        document.addEventListener('keydown', function (e) {
-            // F2 en POS → escanear
-            if (e.key === 'F2') {
-                var posVisible = document.querySelector('[data-panel="pos"].active, #panel-pos.active, .panel-pos.active');
-                if (posVisible) {
-                    e.preventDefault();
-                    _abrirEscanerPOS();
-                }
-            }
-            // F3 en Stock → escanear
-            if (e.key === 'F3') {
-                var stockVisible = document.querySelector('[data-panel="stock"].active, #panel-stock.active, .panel-stock.active');
-                if (stockVisible) {
-                    e.preventDefault();
-                    _abrirEscanerStock();
-                }
-            }
-        });
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* ARRANQUE                                                    */
-    /* ═══════════════════════════════════════════════════════════ */
-    async function _arrancar() {
-        await _esperarDataSync(30);
-        
-        // Esperar a que el DOM esté listo para los paneles
-        setTimeout(function () {
-            _inyectarBotonPOS();
-            _reemplazarBotonRandomStock();
-            _configurarAtajos();
-            console.info('[IntegracionEscaner] Integración POS/Stock lista.');
-        }, 500);
-        
-        // Reintentar inyección cuando se cambie de panel (SPA)
-        if (window.App && typeof App.on === 'function') {
-            App.on('panel-activado', function (nombre) {
-                if (nombre === 'pos') setTimeout(_inyectarBotonPOS, 200);
-                if (nombre === 'stock') setTimeout(_reemplazarBotonRandomStock, 200);
-            });
-        }
-    }
-    
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', _arrancar);
-    } else {
-        _arrancar();
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* EXPOSICIÓN                                                  */
-    /* ═══════════════════════════════════════════════════════════ */
-    window.IntegracionEscaner = {
-        escanearEnPOS: _abrirEscanerPOS,
-        escanearEnStock: _abrirEscanerStock,
-        agregarAlTicket: _agregarAlTicket,
-        aplicarCodigo: _aplicarCodigoEnFormulario
-    };
-    
-})();
-</script>
-
-<!-- ═══════════════════════════════════════════════════════════════════ -->
-<!-- BLOQUE 21 — IMPRESIÓN TÉRMICA REAL (window.print + CSS 58/80mm)    -->
-<!--                                                                    -->
-<!-- Sistema de impresión que detecta impresoras del sistema y genera   -->
-<!-- ticket con formato térmico 58/80mm usando window.print().          -->
-<!--                                                                    -->
-<!-- 🔴 FIX-PRINT-01: Detección real de impresoras vía navigator.printers -->
-<!-- 🔴 FIX-PRINT-02: CSS específico para impresión térmica 58/80mm     -->
-<!-- 🔴 FIX-PRINT-03: Vista previa antes de imprimir                    -->
-<!-- 🔴 FIX-PRINT-04: Selección de impresora por nombre                 -->
-<!-- 🔴 FIX-PRINT-05: Funciona en Administrator y Cashier               -->
-<!-- ═══════════════════════════════════════════════════════════════════ -->
-
-<style id="bloque-21-css-print">
-/* ═══════════════════════════════════════════════════════════ */
-/* ESTILOS DE IMPRESIÓN TÉRMICA                                */
-/* ═══════════════════════════════════════════════════════════ */
-@media print {
-    body * {
-        visibility: hidden !important;
-    }
-    
-    #zona-impresion-ticket,
-    #zona-impresion-ticket * {
-        visibility: visible !important;
-    }
-    
-    #zona-impresion-ticket {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 58mm !important;
-        margin: 0 !important;
-        padding: 2mm !important;
-        font-family: 'Courier New', monospace !important;
-        font-size: 10pt !important;
-        color: #000 !important;
-        background: #fff !important;
-    }
-    
-    #zona-impresion-ticket .ticket-header,
-    #zona-impresion-ticket .ticket-footer {
-        text-align: center !important;
-        border-bottom: 1px dashed #000 !important;
-        padding-bottom: 3mm !important;
-        margin-bottom: 3mm !important;
-    }
-    
-    #zona-impresion-ticket .ticket-empresa {
-        font-size: 14pt !important;
-        font-weight: bold !important;
-        margin-bottom: 2mm !important;
-    }
-    
-    #zona-impresion-ticket .ticket-item {
-        display: flex !important;
-        justify-content: space-between !important;
-        margin-bottom: 1mm !important;
-        font-size: 9pt !important;
-    }
-    
-    #zona-impresion-ticket .ticket-total {
-        font-size: 12pt !important;
-        font-weight: bold !important;
-        border-top: 1px dashed #000 !important;
-        padding-top: 2mm !important;
-        margin-top: 2mm !important;
-    }
-    
-    @page {
-        size: 58mm auto;
-        margin: 0;
-    }
-}
-
-/* Clase para 80mm */
-.ticket-80mm #zona-impresion-ticket {
-    width: 80mm !important;
-}
-
-@media print and (min-width: 80mm) {
-    #zona-impresion-ticket {
-        width: 80mm !important;
-    }
-    @page {
-        size: 80mm auto;
-    }
-}
-</style>
-
-<!-- Zona oculta de impresión -->
-<div id="zona-impresion-ticket" style="display:none;" aria-hidden="true"></div>
-
-<!-- Modal de selección de impresora -->
-<div id="modal-impresora" class="modal" role="dialog" aria-modal="true" aria-labelledby="impresora-titulo">
-    <div class="modal-content" style="max-width: 500px;">
-        <div class="modal-header">
-            <h3 id="impresora-titulo">
-                <i class="fa-solid fa-print" aria-hidden="true"></i>
-                Seleccionar Impresora
-            </h3>
-            <button type="button" class="modal-close" id="impresora-close" aria-label="Cerrar">×</button>
-        </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label for="selectImpresora">Impresora:</label>
-                <select id="selectImpresora" class="form-control">
-                    <option value="">— Detectando impresoras... —</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="selectTamanoPapel">Tamaño de papel:</label>
-                <select id="selectTamanoPapel" class="form-control">
-                    <option value="58">58 mm (térmica pequeña)</option>
-                    <option value="80" selected>80 mm (térmica estándar)</option>
-                </select>
-            </div>
-            
-            <div id="impresora-estado" class="alert alert-info" style="margin-top: 15px;">
-                <i class="fa-solid fa-info-circle"></i>
-                Al imprimir se abrirá el diálogo nativo del sistema. Seleccioná tu impresora térmica ahí.
-            </div>
-            
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" id="btnCancelarImpresion">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="btnConfirmarImpresion">
-                    <i class="fa-solid fa-print"></i> Imprimir
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script id="bloque-21-js">
-(function () {
-    'use strict';
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* GUARD DE IDEMPOTENCIA                                       */
-    /* ═══════════════════════════════════════════════════════════ */
-    if (window.Impresion) {
-        console.warn('[Impresion] Ya inicializado.');
-        return;
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* HELPERS                                                     */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _el(id) { return document.getElementById(id); }
-    function _toast(msg, tipo, dur) {
-        if (window.App && typeof App.toast === 'function') App.toast(msg, tipo || 'info', dur);
-    }
-    function _abrirModal(id) { if (window.App) App.abrirModal(id); }
-    function _cerrarModal(id) { if (window.App) App.cerrarModal(id); }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* DETECCIÓN DE IMPRESORAS                                     */
-    /* ═══════════════════════════════════════════════════════════ */
-    async function _detectarImpresoras() {
-        var impresoras = [];
-        
-        // API moderna (Chrome 120+)
-        if (navigator.printers && typeof navigator.printers.getPrinters === 'function') {
-            try {
-                var lista = await navigator.printers.getPrinters();
-                impresoras = lista.map(function (p) {
-                    return { id: p.id || p.name, nombre: p.name || p.id };
-                });
-            } catch (e) {
-                console.warn('[Impresion] navigator.printers no disponible:', e);
-            }
-        }
-        
-        // Si no hay, ofrecer opciones genéricas
-        if (impresoras.length === 0) {
-            impresoras = [
-                { id: 'default', nombre: 'Impresora predeterminada del sistema' },
-                { id: 'thermal-58', nombre: 'Térmica 58mm (ESC/POS)' },
-                { id: 'thermal-80', nombre: 'Térmica 80mm (ESC/POS)' },
-                { id: 'pdf', nombre: 'Guardar como PDF' }
-            ];
-        }
-        
-        return impresoras;
-    }
-    
-    async function _cargarImpresoras() {
-        var select = _el('selectImpresora');
-        if (!select) return;
-        
-        select.innerHTML = '<option value="">— Detectando... —</option>';
-        select.disabled = true;
-        
-        var impresoras = await _detectarImpresoras();
-        
-        select.innerHTML = '';
-        impresoras.forEach(function (p) {
-            var opt = document.createElement('option');
-            opt.value = p.id;
-            opt.textContent = p.nombre;
-            select.appendChild(opt);
-        });
-        
-        // Seleccionar la primera térmica si existe
-        var termica = impresoras.find(function (p) {
-            return /thermal|termica|esc\/pos|58|80/i.test(p.nombre);
-        });
-        if (termica) select.value = termica.id;
-        
-        select.disabled = false;
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* GENERAR HTML DEL TICKET                                     */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _generarTicketHTML(venta) {
-        var empresa = (window.App && App.empresa) ? App.empresa : {
-            nombre: 'Mi Negocio',
-            direccion: '',
-            telefono: '',
-            cuit: ''
-        };
-        
-        var fecha = venta.fecha instanceof Date ? venta.fecha : new Date();
-        var fechaStr = fecha.toLocaleDateString() + ' ' + fecha.toLocaleTimeString();
-        
-        var itemsHTML = '';
-        (venta.items || []).forEach(function (it) {
-            var subtotal = (Number(it.precio) || 0) * (Number(it.cantidad) || 0);
-            itemsHTML += '<div class="ticket-item">' +
-                '<span>' + (it.cantidad || 0) + ' x ' + (it.nombre || '').substring(0, 20) + '</span>' +
-                '<span>$' + subtotal.toFixed(2) + '</span>' +
-                '</div>';
-        });
-        
-        return '' +
-            '<div class="ticket-header">' +
-                '<div class="ticket-empresa">' + (empresa.nombre || 'Mi Negocio') + '</div>' +
-                (empresa.direccion ? '<div>' + empresa.direccion + '</div>' : '') +
-                (empresa.telefono ? '<div>Tel: ' + empresa.telefono + '</div>' : '') +
-                (empresa.cuit ? '<div>CUIT: ' + empresa.cuit + '</div>' : '') +
-                '<div style="margin-top:2mm;">================================</div>' +
-                '<div>TICKET N°: ' + (venta.numero || '') + '</div>' +
-                '<div>' + fechaStr + '</div>' +
-                '<div>Cajero: ' + (venta.cajeroNombre || '') + '</div>' +
-                (venta.cliente && venta.cliente !== 'Consumidor Final' ? '<div>Cliente: ' + venta.cliente + '</div>' : '') +
-                '<div style="margin-top:2mm;">================================</div>' +
-            '</div>' +
-            '<div class="ticket-items">' + itemsHTML + '</div>' +
-            '<div class="ticket-total">' +
-                '<div class="ticket-item"><span>Subtotal:</span><span>$' + (Number(venta.subtotal) || 0).toFixed(2) + '</span></div>' +
-                (venta.descuento ? '<div class="ticket-item"><span>Descuento:</span><span>-$' + (Number(venta.descuento) || 0).toFixed(2) + '</span></div>' : '') +
-                '<div class="ticket-item" style="font-size:14pt;"><span>TOTAL:</span><span>$' + (Number(venta.total) || 0).toFixed(2) + '</span></div>' +
-                '<div class="ticket-item"><span>Pago (' + (venta.metodoPago || 'Efectivo') + '):</span><span>$' + (Number(venta.pago) || 0).toFixed(2) + '</span></div>' +
-                (venta.vuelto > 0 ? '<div class="ticket-item"><span>Vuelto:</span><span>$' + (Number(venta.vuelto) || 0).toFixed(2) + '</span></div>' : '') +
-            '</div>' +
-            '<div class="ticket-footer">' +
-                '<div style="margin-top:3mm;">================================</div>' +
-                '<div>¡Gracias por su compra!</div>' +
-                '<div style="font-size:8pt;margin-top:2mm;">Conserve este ticket</div>' +
-            '</div>';
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* IMPRIMIR                                                    */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _imprimir(venta) {
-        var zona = _el('zona-impresion-ticket');
-        if (!zona) {
-            _toast('Zona de impresión no disponible', 'error');
-            return;
-        }
-        
-        var tamano = (_el('selectTamanoPapel') || {}).value || '80';
-        document.body.classList.remove('ticket-58mm', 'ticket-80mm');
-        document.body.classList.add('ticket-' + tamano + 'mm');
-        
-        zona.innerHTML = _generarTicketHTML(venta);
-        zona.style.display = 'block';
-        
-        // Guardar preferencia
-        try {
-            localStorage.setItem('m2_impresora_pref', JSON.stringify({
-                impresora: (_el('selectImpresora') || {}).value || 'default',
-                tamano: tamano
-            }));
-        } catch (e) {}
-        
-        // Registrar actividad
-        if (window.DataSync) {
-            DataSync.registrarActividad('impresion', 'Ticket ' + (venta.numero || '') + ' impreso', {
-                ventaId: venta.id,
-                total: venta.total
-            });
-        }
-        
-        // Llamar a window.print()
-        setTimeout(function () {
-            try {
-                window.print();
-                _toast('Enviado a imprimir', 'success');
-            } catch (e) {
-                console.error('[Impresion] Error al imprimir:', e);
-                _toast('Error al imprimir: ' + e.message, 'error');
-            }
-            
-            setTimeout(function () {
-                zona.style.display = 'none';
-                zona.innerHTML = '';
-            }, 1000);
-        }, 300);
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* API PÚBLICA                                                 */
-    /* ═══════════════════════════════════════════════════════════ */
-    var Impresion = {
-        imprimirTicket: function (venta) {
-            if (!venta) {
-                _toast('No hay ticket para imprimir', 'warning');
-                return;
-            }
-            
-            // Cargar preferencias guardadas
-            try {
-                var pref = JSON.parse(localStorage.getItem('m2_impresora_pref') || '{}');
-                if (pref.tamano && _el('selectTamanoPapel')) {
-                    _el('selectTamanoPapel').value = pref.tamano;
-                }
-            } catch (e) {}
-            
-            _abrirModal('modal-impresora');
-            _cargarImpresoras();
-            
-            // Guardar venta temporalmente
-            _el('modal-impresora').dataset.ventaActual = JSON.stringify(venta);
-        },
-        
-        imprimirDirecto: function (venta) {
-            if (!venta) return;
-            _imprimir(venta);
-        }
-    };
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* LISTENERS                                                   */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _configurarListeners() {
-        var btnConfirmar = _el('btnConfirmarImpresion');
-        if (btnConfirmar && !btnConfirmar.dataset.bound) {
-            btnConfirmar.dataset.bound = '1';
-            btnConfirmar.addEventListener('click', function () {
-                var modal = _el('modal-impresora');
-                var venta = null;
-                try {
-                    venta = JSON.parse(modal.dataset.ventaActual || 'null');
-                } catch (e) {}
-                
-                if (!venta) {
-                    _toast('No hay ticket para imprimir', 'warning');
-                    return;
-                }
-                
-                _cerrarModal('modal-impresora');
-                _imprimir(venta);
-            });
-        }
-        
-        var btnCancelar = _el('btnCancelarImpresion');
-        if (btnCancelar && !btnCancelar.dataset.bound) {
-            btnCancelar.dataset.bound = '1';
-            btnCancelar.addEventListener('click', function () {
-                _cerrarModal('modal-impresora');
-            });
-        }
-        
-        var btnClose = _el('impresora-close');
-        if (btnClose && !btnClose.dataset.bound) {
-            btnClose.dataset.bound = '1';
-            btnClose.addEventListener('click', function () {
-                _cerrarModal('modal-impresora');
-            });
-        }
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* INTEGRACIÓN CON POS                                         */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _integrarConPOS() {
-        // Hook en el flujo de finalización de venta
-        if (window.POS && typeof POS.on === 'function') {
-            POS.on('venta-finalizada', function (venta) {
-                Impresion.imprimirTicket(venta);
-            });
-        }
-        
-        // Botón de reimprimir último ticket
-        document.addEventListener('click', function (e) {
-            var btn = e.target.closest('[data-action="reimprimir-ultimo"]');
-            if (btn && window.DataSync) {
-                var ventas = DataSync.getVentas();
-                if (ventas.length > 0) {
-                    Impresion.imprimirTicket(ventas[0]);
-                } else {
-                    _toast('No hay ventas para reimprimir', 'warning');
-                }
-            }
-        });
-    }
-    
-    /* ═══════════════════════════════════════════════════════════ */
-    /* ARRANQUE                                                    */
-    /* ═══════════════════════════════════════════════════════════ */
-    function _arrancar() {
-        _configurarListeners();
-        _integrarConPOS();
-        console.info('[Impresion] Módulo de impresión térmica inicializado.');
-    }
-    
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', _arrancar);
-    } else {
-        _arrancar();
-    }
-    
-    window.Impresion = Impresion;
-    
-})();
-</script>
-
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!-- BLOQUE FINAL v3 — MODO OSCURO + NOTIFICACIONES + VERSION   -->
 <!--                                                            -->
