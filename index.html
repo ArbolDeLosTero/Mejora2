@@ -304,7 +304,7 @@
   <!-- app-version: leída por App.getVersion() (B10) y por el
        VersionChecker del bloque final. Sincronizable desde
        version.json vía GitHub Action (§5.2 auditoría). -->
-  <meta name="app-version" content="1.0.62">
+  <meta name="app-version" content="1.0.44">
 
   <title>Sistema de Gestión para Kioscos y Almacenes</title>
 
@@ -419,6 +419,8 @@
        cuando corre su IIFE.
        Los tres scripts DEBEN cargar en este orden:
          firebase-app → firebase-auth → firebase-firestore.       -->
+  <!-- localForage: IndexedDB para evitar el límite de 5MB de localStorage -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
   <script defer
           src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"
           crossorigin="anonymous"
@@ -2507,6 +2509,7 @@
     }
   }
 </style>
+
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <!-- BLOQUE 04 v4 — CSS FRAMEWORK DE VISTAS + HTML DE AUTH Y LEGALES         -->
 <!--                                                                         -->
@@ -8572,6 +8575,12 @@
   /* ─────────────────────────────────────────────────────────── */
   /* 9. [v7-H] BOTÓN "INGRESAR MANUALMENTE" DEL ESCÁNER          */
   /* ─────────────────────────────────────────────────────────── */
+  /* [FALLBACK] Este handler solo se ejecuta si B18 (Escaner) NO cargó
+   * (CDN caído, Html5Qrcode no disponible) y B13 abre el modal legacy
+   * #modal-p03-escanear. Cuando B18 está activo, B13 usa Escaner.escanear()
+   * y este modal nunca se abre, así que este binding queda inactivo.
+   * Se mantiene como red de seguridad. El botón #p03-btn-ingresar-manual
+   * del modal legacy cierra ese modal y enfoca el buscador del POS. */
   function _configurarBotonManualEscaner() {
     var btn = _el('p03-btn-ingresar-manual');
     if (!btn) return;
@@ -10901,7 +10910,7 @@
             return;
           }
         }
-      });
+      };
 
       /* Sincronización cross-tab vía `storage`. */
       if (!_storageHandler) {
@@ -15516,6 +15525,16 @@
       _auth = firebase.auth();
       _db = firebase.firestore();
 
+      // Activar persistencia offline nativa de Firestore
+      _db.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
+        if (err.code === 'failed-precondition') {
+          console.warn('[App] Persistencia offline deshabilitada: múltiples pestañas abiertas.');
+        } else if (err.code === 'unimplemented') {
+          console.warn('[App] El navegador no soporta persistencia offline.');
+        }
+      });
+
+
       if (firebase.functions && typeof firebase.functions === 'function') {
         try { _functions = firebase.functions(); }
         catch (e) { _functions = null; }
@@ -18033,6 +18052,12 @@
           .forEach(function (k) {
             try { localStorage.removeItem(k); } catch (e) {}
           });
+        // [MEJORA-1] Limpiar también IndexedDB (productos_v1).
+        if (window.Stock && typeof Stock.limpiarProductosLocal === 'function') {
+          Stock.limpiarProductosLocal().catch(function (e) {
+            console.warn('[Auth] No se pudo limpiar IndexedDB:', e);
+          });
+        }
         _deviceActual = null;
       }
 
@@ -19051,13 +19076,16 @@
   }
 
   /* [13-KK] Generador de código interno numérico con CSPRNG.
-   * Rango: [100000, 999999]. Cierra alerta CodeQL. */
+   * [FIX-MENOR-7] Delega en B14 si está disponible (fuente única).
+   * Fallback local idéntico para cuando B14 aún no cargó. */
   function _generarCodigoInterno () {
+    if (window.Stock && typeof Stock._generarCodigoInterno === 'function') {
+      try { return Stock._generarCodigoInterno(); } catch (e) {}
+    }
     var buf = new Uint32Array(1);
     try {
       crypto.getRandomValues(buf);
     } catch (e) {
-      /* Fallback: timestamp en el rango. Sin Math.random. */
       return 'INT-' + String(100000 + (Date.now() % 900000));
     }
     var num = 100000 + (buf[0] % 900000);
@@ -22066,42 +22094,84 @@
   }
 
   /* [FIX-STORAGE-14b] setItem con eviction automática + retry. */
-  function _safeLocalStorageSet(key, value) {
+  /* [FIX-INDEXEDDB-14] Redirige el guardado de productos a IndexedDB.
+   * El resto de las claves (config, impresora, cajeros) sigue en localStorage
+   * para no romper las lecturas síncronas existentes. */
+  /* [FIX-MEDIO-2] Antes devolvía true sincrónicamente aunque
+ * localforage.setItem() fallara, mintiendo al caller. Ahora es
+ * async y espera la resolución real. Si IndexedDB falla, hace
+ * fallback a localStorage para no perder el dato. */
+async function _safeLocalStorageSet(key, value) {
+  // Si es el catálogo de productos, usamos IndexedDB (sin límite de 5MB)
+  if (key === 'productos_v1' && window.localforage) {
     try {
-      localStorage.setItem(key, value);
+      await localforage.setItem(key, value);
       return true;
     } catch (e) {
-      if (e && e.name === 'QuotaExceededError') {
-        var necesitado = (value ? value.length : 0) * 2;
-        var liberado = _intentarLiberarEspacio(necesitado);
-
-        if (liberado > 0) {
-          try {
-            localStorage.setItem(key, value);
-            console.info('[Stock] Reintento exitoso tras liberar ' +
-                         (liberado / 1024).toFixed(1) + ' KB.');
-            return true;
-          } catch (e2) { /* Cae al reporte de error. */ }
-        }
-
-        console.error('[Stock] localStorage lleno tras eviction en "' + key +
-                      '" (necesitado ~' + (necesitado / 1024).toFixed(1) +
-                      ' KB, liberado ' + (liberado / 1024).toFixed(1) + ' KB)');
+      console.warn('[Stock] Error al guardar productos en IndexedDB:', e);
+      // Fallback a localStorage si IndexedDB falla (cuota, navegador viejo, etc.)
+      try {
+        localStorage.setItem(key, value);
+        console.info('[Stock] Fallback a localStorage tras fallo de IndexedDB.');
+        return true;
+      } catch (e2) {
         _err('E-DATA-009', {
-          detalles: {
-            key: key,
-            origen: 'localStorage_set_tras_eviction',
-            liberado_bytes: liberado,
-            necesitado_bytes: necesitado
-          }
+          detalles: { key: key, origen: 'indexeddb_y_localStorage_fallaron' }
         });
-      } else {
-        console.warn('[Stock] Error al escribir ' + key + ':', e);
+        return false;
       }
-      return false;
     }
   }
 
+  // Para todo lo demás, localStorage normal con eviction
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (e) {
+    if (e && e.name === 'QuotaExceededError') {
+      var necesitado = (value ? value.length : 0) * 2;
+      var liberado = _intentarLiberarEspacio(necesitado);
+
+      if (liberado > 0) {
+        try {
+          localStorage.setItem(key, value);
+          console.info('[Stock] Reintento exitoso tras liberar ' +
+                       (liberado / 1024).toFixed(1) + ' KB.');
+          return true;
+        } catch (e2) {}
+      }
+
+      console.error('[Stock] localStorage lleno tras eviction en "' + key + '"');
+      _err('E-DATA-009', {
+        detalles: { key: key, origen: 'localStorage_set_tras_eviction' }
+      });
+    } else {
+      console.warn('[Stock] Error al escribir ' + key + ':', e);
+    }
+    return false;
+  }
+}
+/* [MEJORA-1] Helper simétrico a _safeLocalStorageSet.
+ * Remueve la key de AMBOS storages: IndexedDB (productos) y
+ * localStorage (resto de claves + residuos de migración). */
+async function _safeLocalStorageRemove(key) {
+  // Productos viven en IndexedDB
+  if (key === 'productos_v1' && window.localforage) {
+    try {
+      await localforage.removeItem(key);
+    } catch (e) {
+      console.warn('[Stock] Error al remover productos de IndexedDB:', e);
+    }
+  }
+  // Siempre intentar remover de localStorage también
+  try {
+    localStorage.removeItem(key);
+    return true;
+  } catch (e) {
+    console.warn('[Stock] Error al remover ' + key + ' de localStorage:', e);
+    return false;
+  }
+}
   /* [v3-18] ¿El foco está en input/textarea con contenido? */
   function _focoEnInputConContenido() {
     var el = document.activeElement;
@@ -22384,12 +22454,13 @@
   var Storage = {
 
     async getProductos() {
+      // 1. Intentar desde Firestore si hay conexión y comercio
       if (_dataLista() && window.Data && typeof Data.todos === 'function') {
         try {
           var res = await Data.todos('productos');
           if (Array.isArray(res)) {
             var norm = res.map(_normalizarProducto).filter(Boolean);
-            _safeLocalStorageSet('productos_v1', JSON.stringify(norm));
+            await _safeLocalStorageSet('productos_v1', JSON.stringify(norm));
             return norm;
           }
         } catch (e) {
@@ -22397,11 +22468,37 @@
           _reportarFallaCarga('productos', e);
         }
       }
+
+      // 2. Fallback: leer de IndexedDB (localForage)
       try {
-        var raw = localStorage.getItem('productos_v1');
-        var arr = raw ? JSON.parse(raw) : [];
+        var rawIndexedDB = await localforage.getItem('productos_v1');
+        var arr = rawIndexedDB ? JSON.parse(rawIndexedDB) : [];
+
+        // 3. Si IndexedDB está vacío (primera vez tras la migración),
+        //    leer el localStorage viejo para no perder el catálogo existente.
+        if (arr.length === 0) {
+          var rawLocal = localStorage.getItem('productos_v1');
+          arr = rawLocal ? JSON.parse(rawLocal) : [];
+
+          // [FIX-MEDIO-4] Migrar a IndexedDB y limpiar localStorage
+          // para evitar que una lectura posterior lea datos stale.
+          if (Array.isArray(arr) && arr.length > 0) {
+            try {
+              await localforage.setItem('productos_v1', JSON.stringify(arr));
+              localStorage.removeItem('productos_v1');
+              console.info('[Stock] Migración de productos_v1: localStorage → IndexedDB completada (' +
+                           arr.length + ' productos).');
+            } catch (eMig) {
+              console.warn('[Stock] No se pudo migrar productos a IndexedDB (queda en localStorage):', eMig);
+            }
+          }
+        }
+
         return Array.isArray(arr) ? arr.map(_normalizarProducto).filter(Boolean) : [];
-      } catch (e) { return []; }
+      } catch (e) {
+        console.warn('[Stock] Error al leer IndexedDB:', e);
+        return [];
+      }
     },
 
     async getProveedores() {
@@ -22409,7 +22506,7 @@
         try {
           var res = await Data.todos('proveedores');
           if (Array.isArray(res)) {
-            _safeLocalStorageSet('proveedores_v1', JSON.stringify(res));
+            await _safeLocalStorageSet('proveedores_v1', JSON.stringify(res));
             return res;
           }
         } catch (e) {
@@ -22429,7 +22526,7 @@
         try {
           var res = await Data.todos('historico_compras');
           if (Array.isArray(res)) {
-            _safeLocalStorageSet('historico_compras_v1', JSON.stringify(res));
+            await _safeLocalStorageSet('historico_compras_v1', JSON.stringify(res));
             return res;
           }
         } catch (e) {
@@ -22455,7 +22552,7 @@
       var idx = StockState.productos.findIndex(function (p) { return p.id === norm.id; });
       if (idx !== -1) StockState.productos[idx] = norm;
       else StockState.productos.push(norm);
-      _safeLocalStorageSet('productos_v1', JSON.stringify(StockState.productos));
+      await _safeLocalStorageSet('productos_v1', JSON.stringify(StockState.productos));
 
       /* Firestore. */
       if (!_dataLista()) {
@@ -22481,7 +22578,7 @@
 
     async deleteProducto(id) {
       StockState.productos = StockState.productos.filter(function (p) { return p.id !== id; });
-      _safeLocalStorageSet('productos_v1', JSON.stringify(StockState.productos));
+      await _safeLocalStorageSet('productos_v1', JSON.stringify(StockState.productos));
 
       if (_dataLista() && window.Data && typeof Data.delete === 'function') {
         try {
@@ -22604,7 +22701,7 @@
          * tenga sesión con comercio activo. */
         var finalesSinData = Array.from(mapFinal.values());
         StockState.productos = finalesSinData;
-        _safeLocalStorageSet('productos_v1', JSON.stringify(finalesSinData));
+        await _safeLocalStorageSet('productos_v1', JSON.stringify(finalesSinData));
         return {
           ok: unicos.length,
           fail: 0,
@@ -22644,7 +22741,7 @@
       var estadoFinal = new Map(mapOriginal);
       saved.forEach(function (p) { estadoFinal.set(p.id, p); });
       StockState.productos = Array.from(estadoFinal.values());
-      _safeLocalStorageSet('productos_v1', JSON.stringify(StockState.productos));
+      await _safeLocalStorageSet('productos_v1', JSON.stringify(StockState.productos));
 
       return {
         ok: ok,
@@ -22660,7 +22757,7 @@
       if (!registro.id) registro.id = _genId('compra');
       if (!Array.isArray(StockState.historicoCompras)) StockState.historicoCompras = [];
       StockState.historicoCompras.unshift(registro);
-      _safeLocalStorageSet('historico_compras_v1', JSON.stringify(StockState.historicoCompras));
+      await _safeLocalStorageSet('historico_compras_v1', JSON.stringify(StockState.historicoCompras));
 
       if (_dataLista() && window.Data && typeof Data.set === 'function') {
         try {
@@ -22672,7 +22769,97 @@
         }
       }
       return false;
-      },
+    },
+
+    /* [MEJORA-1] Limpieza local del catálogo al cerrar sesión.
+     * B12 llama a este método desde _limpiarSesionLocal() para
+     * asegurar que IndexedDB también se limpia (antes solo se
+     * borraba de localStorage, causando fuga de datos entre
+     * cuentas si el siguiente login era offline). */
+    async limpiarProductosLocal() {
+      await _safeLocalStorageRemove('productos_v1');
+      console.info('[Stock] Catálogo local limpiado (IndexedDB + localStorage).');
+      return true;
+    },
+
+    /* [MEJORA-2] Diagnóstico completo del almacenamiento local. */
+    async diagnosticoStorage() {
+      var resultado = {
+        localStorage_bytes: 0,
+        localStorage_keys: 0,
+        productos_indexedDB: 0,
+        productos_localStorage: 0,
+        migracion_completa: false,
+        caches_otros_comercios: 0,
+        comercioId_actual: (window.Data && typeof Data.getComercioId === 'function')
+          ? Data.getComercioId() : null
+      };
+
+      try {
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          resultado.localStorage_keys++;
+          resultado.localStorage_bytes += (localStorage.getItem(k) || '').length;
+          if (k && k.indexOf('_cache_v1::') !== -1) {
+            resultado.caches_otros_comercios++;
+          }
+        }
+        var rawLS = localStorage.getItem('productos_v1');
+        if (rawLS) {
+          try { resultado.productos_localStorage = (JSON.parse(rawLS) || []).length; }
+          catch (e) {}
+        }
+      } catch (e) {}
+
+      if (window.localforage) {
+        try {
+          var rawIDB = await localforage.getItem('productos_v1');
+          if (rawIDB) {
+            try { resultado.productos_indexedDB = (JSON.parse(rawIDB) || []).length; }
+            catch (e) {}
+          }
+          resultado.migracion_completa =
+            resultado.productos_indexedDB > 0 &&
+            resultado.productos_localStorage === 0;
+        } catch (e) {}
+      }
+
+      resultado.localStorage_kb = (resultado.localStorage_bytes / 1024).toFixed(2);
+      return resultado;
+    },
+
+    /* [MEJORA-3] Fuerza la migración de productos de localStorage a IndexedDB. */
+    async forzarMigracionIndexedDB() {
+      if (!window.localforage) {
+        return { ok: false, motivo: 'localforage_no_disponible' };
+      }
+      try {
+        var rawIDB = await localforage.getItem('productos_v1');
+        if (rawIDB) {
+          try {
+            var arrIDB = JSON.parse(rawIDB);
+            if (Array.isArray(arrIDB) && arrIDB.length > 0) {
+              return { ok: true, motivo: 'ya_migrado', productos: arrIDB.length };
+            }
+          } catch (e) {}
+        }
+        var rawLS = localStorage.getItem('productos_v1');
+        if (!rawLS) {
+          return { ok: true, motivo: 'nada_que_migrar', productos: 0 };
+        }
+        var arrLS = JSON.parse(rawLS);
+        if (!Array.isArray(arrLS) || arrLS.length === 0) {
+          return { ok: true, motivo: 'nada_que_migrar', productos: 0 };
+        }
+        await localforage.setItem('productos_v1', JSON.stringify(arrLS));
+        localStorage.removeItem('productos_v1');
+        console.info('[Stock] Migración forzada completada: ' + arrLS.length + ' productos.');
+        return { ok: true, motivo: 'migrado', productos: arrLS.length };
+      } catch (e) {
+        console.error('[Stock] Error en migración forzada:', e);
+        return { ok: false, motivo: 'exception', error: e.message };
+      }
+    },
 
     async getConfigComercio() {
       if (_dataLista() && window.Data && typeof Data.get === 'function') {
@@ -22690,18 +22877,16 @@
     async updateConfigComercio(datos) {
       var actual = await this.getConfigComercio();
       actual = Object.assign({}, actual, datos);
-      _safeLocalStorageSet('config_comercio_v1', JSON.stringify(actual));
+      await _safeLocalStorageSet('config_comercio_v1', JSON.stringify(actual));
 
       if (_dataLista() && window.Data && typeof Data.update === 'function') {
         try {
-          var res = await Data.update('config', 'comercio', datos);
-          return _fuePersistido(res);
+          await Data.update('config', 'comercio', actual);
         } catch (e) {
-          console.warn('[Stock] updateConfig falló:', e);
-          return false;
+          console.warn('[Stock] No se pudo actualizar config en Firestore:', e);
         }
       }
-      return false;
+      return true;
     }
   };
 
@@ -22880,7 +23065,7 @@
       }
 
       await Storage.updateConfigComercio({ catalogo_url: urlLimpia });
-      _safeLocalStorageSet('catalogo_url_v1', urlLimpia);
+      await _safeLocalStorageSet('catalogo_url_v1', urlLimpia);
 
       await this.importarCatalogoDesdeURL(urlLimpia);
     },
@@ -23080,6 +23265,9 @@
   /* [v3-16] Exponer normalización como API pública para B13/B15. */
   CoreStockAPI.normalizarProducto = _normalizarProducto;
   CoreStockAPI.sumarLotes = _sumarLotes;
+  /* [FIX-MENOR-7] Exponer _generarCodigoInterno para que B13 la consuma
+   * y no duplique la lógica. Cambio de rango en un solo lugar. */
+  CoreStockAPI._generarCodigoInterno = _generarCodigoInterno;
   /* [v3-21] destroy() público. */
   CoreStockAPI.destroy = function () {
     if (_destroyed) return;
@@ -23125,11 +23313,16 @@
   /* [Wizard-F1] Nuevos métodos públicos. */
   CoreStockAPI.calcularCamposFaltantes = _calcularCamposFaltantes;
   CoreStockAPI.esDuplicado = _esDuplicado;
+  /* [API PÚBLICA] Consumibles por B13 (POS) y consumidores externos.
+   * No se usan internamente en B14 (que hace el conteo in-line en
+   * _actualizarDraftCount), pero se exponen por contrato. */
   CoreStockAPI.contarDrafts = function () {
     return StockState.productos.filter(function (p) {
       return p._import_status === 'draft';
     }).length;
   };
+  /* [API PÚBLICA] Atajo para abrir el modal de edición desde el POS
+   * (B13.completarProductoRapido lo usa como fallback). */
   CoreStockAPI.completarProducto = function (prodId) {
     window.p04AbrirModalProducto(prodId);
   };
@@ -23391,7 +23584,7 @@
     if (r.ok && r.cambios) {
       try {
         await Data.update('productos', prod.id, r.cambios);
-        _safeLocalStorageSet('productos_v1', JSON.stringify(StockState.productos));
+        await _safeLocalStorageSet('productos_v1', JSON.stringify(StockState.productos));
       } catch (e) {
         console.warn('[Enricher] Data.update falló para ' + prod.id + ':', e);
         return { ok: false, motivo: 'persistencia_fallida', error: e && e.message };
@@ -23505,7 +23698,7 @@
     }
 
     /* Persistir cache local + refrescar UI. */
-    _safeLocalStorageSet('productos_v1', JSON.stringify(StockState.productos));
+    await _safeLocalStorageSet('productos_v1', JSON.stringify(StockState.productos));
     try { renderListaProductos(); } catch (e) {}
 
     return resultado;
@@ -25161,7 +25354,7 @@
   window.p04GuardarMetodoDescuento = async function () {
     var val = _val('p04-metodo-descuento-select', 'FIFO');
     StockState.metodoDescuento = val;
-    _safeLocalStorageSet('metodo_descuento_v1', val);
+    await _safeLocalStorageSet('metodo_descuento_v1', val);
     await Storage.updateConfigComercio({ metodo_descuento: val });
     _toast('Criterio de descuento: ' + val, 'info');
   };
@@ -25344,7 +25537,7 @@
     var eliminados = originales.length - filtrados.length;
 
     StockState.historicoCompras = filtrados;
-    _safeLocalStorageSet('historico_compras_v1', JSON.stringify(filtrados));
+    await _safeLocalStorageSet('historico_compras_v1', JSON.stringify(filtrados));
 
     renderTablaFacturas();
     _toast('Depuración completada. Eliminados: ' + eliminados + '.', 'info', 4000);
@@ -26532,14 +26725,18 @@
     }
 
     try {
-      Data.onSnapshot('productos', function (items) {
-        if (_destroyed) return;
-        if (!Array.isArray(items)) return;
-        StockState.productos = items.map(_normalizarProducto).filter(Boolean);
-        _safeLocalStorageSet('productos_v1', JSON.stringify(StockState.productos));
-        renderListaProductos();
-        renderTablaVencimientos();
-      });
+      Data.onSnapshot('productos', async function (items) {
+    if (_destroyed) return;
+    if (!Array.isArray(items)) return;
+    StockState.productos = items.map(_normalizarProducto).filter(Boolean);
+    try {
+        await _safeLocalStorageSet('productos_v1', JSON.stringify(StockState.productos));
+    } catch (e) {
+        console.warn('[Stock] No se pudo cachear el snapshot:', e);
+    }
+    renderListaProductos();
+    renderTablaVencimientos();
+});
       _snapshotRegistrado = true;
       _snapshotComercioId = cid;
       console.info('[Stock] onSnapshot registrado para comercio ' + cid);
@@ -29764,6 +29961,13 @@
   /* ─────────────────────────────────────────────────────────── */
   function _safeSetInterval(fn, ms) {
     if (_STATE.destroyed) return null;
+    /* [FIX-MEDIO-6] Guard contra acumulación inadvertida. B16 crea
+     * ~6 intervalos en toda su vida; si el Set supera 20, algo está
+     * mal (re-init en bucle, creación dinámica, etc.). */
+    if (_STATE.intervals.size >= 20) {
+      console.warn('[B16] _STATE.intervals tiene ' + _STATE.intervals.size +
+                   ' IDs. Posible leak — revisá quién llama _safeSetInterval.');
+    }
     var id = setInterval(fn, ms);
     _STATE.intervals.add(id);
     return id;
@@ -30028,15 +30232,31 @@ function _genId(prefix) {
   async function _conDeteccionPopupUno(fn) {
     var original = window.open;
     var abiertas = 0;
-    window.open = function () {
-      var w = original.apply(window, arguments);
-      if (w) abiertas++;
-      return w;
-    };
+    var parcheInstalado = false;
+
     try {
+      try {
+        window.open = function () {
+          var w = original.apply(window, arguments);
+          if (w) abiertas++;
+          return w;
+        };
+        parcheInstalado = true;
+      } catch (ePatch) {
+        /* [FIX-MENOR-10] window.open es read-only (Object.freeze(window))
+         * o similar. Ejecutamos fn() sin detección y devolvemos false
+         * para que el caller haga fallback (encolar en vez de imprimir). */
+        console.warn('[B16] No se pudo parchear window.open para detección:', ePatch);
+        await fn();
+        return false;
+      }
       await fn();
     } finally {
-      window.open = original;
+      if (parcheInstalado) {
+        try { window.open = original; } catch (eRestore) {
+          console.warn('[B16] No se pudo restaurar window.open:', eRestore);
+        }
+      }
     }
     return abiertas > 0;
   }
@@ -30837,43 +31057,16 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
     _configurarDragDropPreview();
   };
 
+  /* [FIX-MENOR-8] _contenidoElemento era una copia casi literal de
+   * _nodoContenidoElemento con formato distinto (string vs Fragment).
+   * Ahora serializa el Fragment producido por la versión DOM-based,
+   * eliminando la duplicación de lógica de negocio. */
   function _contenidoElemento(elem, c, contexto, venta) {
-    contexto = contexto || 'preview';
-    var esPrint = contexto === 'print';
-
-    switch (elem) {
-      case 'logo':
-        return c.logo
-          ? '<img src="' + _escapeAttr(c.logo) + '" style="max-width:100%;max-height:80px;">'
-          : '';
-      case 'nombre':
-        if (c.nombre_negocio) return _escapeHtml(c.nombre_negocio);
-        return esPrint ? '' : '<span class="p08-placeholder">[Nombre del Negocio]</span>';
-      case 'ubicacion':
-        if (c.ubicacion) return _escapeHtml(c.ubicacion);
-        return esPrint ? '' : '<span class="p08-placeholder">[Ubicación]</span>';
-      case 'telefono':
-        if (c.telefono) return _escapeHtml(c.telefono);
-        return esPrint ? '' : '<span class="p08-placeholder">[Teléfono]</span>';
-      case 'horarios':
-        return c.mostrar_horarios
-          ? '<pre style="margin:0;font-family:inherit;">' + _escapeHtml(_formatearHorarios(c)) + '</pre>'
-          : '';
-      case 'mensaje_pie':
-        return c.mensaje_pie ? _escapeHtml(c.mensaje_pie) : '';
-      case 'fecha':
-        if (!c.mostrar_fecha) return '';
-        var tsFecha = (esPrint && venta && venta.fecha) ? venta.fecha : Date.now();
-        return _escapeHtml(App.formatearFechaHora(tsFecha));
-      case 'numero':
-        if (!c.mostrar_numero) return '';
-        if (esPrint && venta && venta.ticket_numero !== undefined && venta.ticket_numero !== null) {
-          return 'Ticket #' + String(venta.ticket_numero).padStart(5, '0');
-        }
-        return 'Ticket #—————';
-      default:
-        return '';
-    }
+    var frag = _nodoContenidoElemento(elem, c, contexto, venta);
+    if (!frag || !frag.childNodes || frag.childNodes.length === 0) return '';
+    var div = document.createElement('div');
+    div.appendChild(frag);
+    return div.innerHTML;
   }
 
   function _formatearHorarios(c) {
@@ -33397,11 +33590,21 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
     }
   }
 
-  function _actualizarBadgeLogsMenu() {
+function _actualizarBadgeLogsMenu() {
     _aplicarVisibilidadBadge();
     var badge = _el('menu-badge-logs');
     if (!badge) return;
-    if (!_esAdmin()) return;
+
+    /* [FIX-MEDIO-5] Para no-admin, resetear el badge a vacío/oculto.
+     * Antes se retornaba temprano y el badge quedaba con el valor
+     * del último admin que usó la pestaña (hasta 15 s de ventana
+     * tras un cambio de rol sin reload). */
+    if (!_esAdmin()) {
+      if (badge.textContent) badge.textContent = '';
+      if (badge.style.display !== 'none') badge.style.display = 'none';
+      return;
+    }
+
     var logs = (App.getLogs ? App.getLogs() : []);
     var nuevos = logs.filter(function (l) { return l.estado === 'nuevo'; }).length;
     if (nuevos > 0) {
@@ -33423,6 +33626,11 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
    * Este hook queda disponible para consumidores externos
    * (extensiones, scripts de test) que prefieran notificar por
    * evento en vez de llamar a la API. */
+  /* [API EXTERNA — sin emisores internos]
+   * B12 usa la API directa Bloque16.refrescarBadgeLogs() desde
+   * _actualizarMenuUsuario. Este CustomEvent queda expuesto para
+   * consumidores externos (extensiones, tests, scripts) que prefieran
+   * notificar por evento en vez de llamar a la API. */
   window.addEventListener('b16:refrescar-badge-logs', function () {
     try { _actualizarBadgeLogsMenu(); } catch (e) {}
   });
@@ -33889,15 +34097,32 @@ function _iniciarVerificacionHookArca() {
   /* ═══════════════════════════════════════════════════════════ */
   /* 11. ARRANQUE                                                */
   /* ═══════════════════════════════════════════════════════════ */
-  var _arrancadoFinal = false;
+var _arrancadoFinal = false;
+var _arranqueIntentos = 0;
+var _MAX_ARRANQUE_INTENTOS = 60;   /* 60 × 100 ms = 6 s */
 
-  function _arrancarFinal() {
-    if (_arrancadoFinal || _STATE.destroyed) return;
-    if (!window.App) {
-      _safeSetTimeout(_arrancarFinal, 100);
+function _arrancarFinal() {
+  if (_arrancadoFinal || _STATE.destroyed) return;
+  if (!window.App) {
+    _arranqueIntentos++;
+    if (_arranqueIntentos >= _MAX_ARRANQUE_INTENTOS) {
+      console.error(
+        '[B16] window.App no disponible tras ' + _MAX_ARRANQUE_INTENTOS +
+        ' intentos. Abortando arranque de B16.'
+      );
+      _reportarError('E-SYS-001', {
+        detalles: {
+          contexto: 'B16_arranque',
+          motivo: 'App_timeout',
+          intentos: _arranqueIntentos
+        }
+      });
       return;
     }
-    _arrancadoFinal = true;
+    _safeSetTimeout(_arrancarFinal, 100);
+    return;
+  }
+  _arrancadoFinal = true;
 
     _configurarUxModalesB16();
     _configurarNavegacionPaneles();
@@ -35260,6 +35485,9 @@ _safeSetTimeout(_actualizarBadgeLogsMenu, 3000);
   function _onVisibilityChange() {
     if (document.visibilityState === 'visible') {
       _poblarFooter();
+      /* [FIX-MENOR-11] Si la pestaña queda abierta cruzando el
+       * 31 de diciembre, el año del footer se actualiza al volver. */
+      _actualizarAño();
     }
   }
 
@@ -35885,6 +36113,722 @@ body.dark-mode .escaner-manual-input {
     
 })();
 </script>
+
+<!-- ═══════════════════════════════════════════════════════════════════ --><!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- BLOQUE 18.5 — WEBUSB + ESC/POS: IMPRESIÓN DIRECTA EN ANDROID      -->
+<!--                                                                    -->
+<!-- Agrega impresión directa por USB (sin pasar por el diálogo del SO) -->
+<!-- usando la API WebUSB del navegador.                                -->
+<!--                                                                    -->
+<!-- · Compatible con Chrome / Edge / Opera / Brave en Android y       -->
+<!--   escritorio. NO funciona en Firefox, Safari ni iOS.               -->
+<!-- · Genera los comandos ESC/POS a mano (no requiere librerías).     -->
+<!-- · Se integra con Impresora.imprimirTicket() vía flag               -->
+<!--   `usar_usb_directo` guardado en config_ticket.                    -->
+<!-- · Si el ticket falla por USB, cae automáticamente a window.print().-->
+<!-- · Agrega sección "Impresora USB Directa" al panel P08.             -->
+<!--                                                                    -->
+<!-- CONTRATOS PRESERVADOS:                                             -->
+<!--   · Impresora.imprimirTicket() sigue devolviendo boolean.          -->
+<!--   · Impresora.config se lee/escribe igual (agrega 1 campo nuevo).  -->
+<!--   · La cola de impresión existente sigue funcionando.              -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<script id="bloque-18-5-usb">
+(function () {
+  'use strict';
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* GUARD DE IDEMPOTENCIA                                       */
+  /* ─────────────────────────────────────────────────────────── */
+  if (window.PrinterUSB) {
+    console.warn('[PrinterUSB] Ya instalado, se omite la segunda carga.');
+    return;
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* CONSTANTES                                                  */
+  /* ─────────────────────────────────────────────────────────── */
+  var CHUNK_SIZE = 4096;
+
+  /* Comandos ESC/POS (los más compatibles con XPRINTER/genéricas) */
+  var CMD = {
+    INIT:           [0x1B, 0x40],              // ESC @ (inicializar)
+    ALIGN_LEFT:     [0x1B, 0x61, 0x00],        // ESC a 0
+    ALIGN_CENTER:   [0x1B, 0x61, 0x01],        // ESC a 1
+    ALIGN_RIGHT:    [0x1B, 0x61, 0x02],        // ESC a 2
+    BOLD_ON:        [0x1B, 0x45, 0x01],        // ESC E 1
+    BOLD_OFF:       [0x1B, 0x45, 0x00],        // ESC E 0
+    NORMAL:         [0x1B, 0x21, 0x00],        // ESC ! 0
+    DOUBLE_H:       [0x1B, 0x21, 0x10],        // ESC ! 0x10 (doble alto)
+    DOUBLE_W:       [0x1B, 0x21, 0x20],        // ESC ! 0x20 (doble ancho)
+    DOUBLE_HW:      [0x1B, 0x21, 0x30],        // ESC ! 0x30 (doble ambos)
+    BOLD_DOUBLE_H:  [0x1B, 0x21, 0x18],        // ESC ! 0x18 (bold + doble alto)
+    FEED_3:         [0x1B, 0x64, 0x03],        // ESC d 3 (avanzar 3 líneas)
+    CUT_PARTIAL:    [0x1D, 0x56, 0x42, 0x00],  // GS V 66 0 (corte parcial)
+    CUT_FULL:       [0x1D, 0x56, 0x00]         // GS V 0 (corte completo)
+  };
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* OBJETO PÚBLICO                                              */
+  /* ─────────────────────────────────────────────────────────── */
+  var PrinterUSB = {
+    _device: null,
+    _endpointOut: null,
+    _interfaceNumber: null,
+    _printQueue: Promise.resolve(),
+    _initialized: false,
+    _isSupported: !!(typeof navigator !== 'undefined' &&
+                     navigator.usb &&
+                     typeof navigator.usb.requestDevice === 'function')
+  };
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* HELPERS                                                     */
+  /* ─────────────────────────────────────────────────────────── */
+  function _el(id) { return document.getElementById(id); }
+
+  function _toast(msg, tipo, dur) {
+    if (window.App && typeof App.toast === 'function') {
+      App.toast(msg, tipo || 'info', dur);
+    } else {
+      console.log('[PrinterUSB:' + (tipo || 'info') + '] ' + msg);
+    }
+  }
+
+  function _escapeHtml(s) {
+    if (s === null || s === undefined) return '';
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  /* Normaliza caracteres no-ASCII a versiones seguras.
+   * Evita problemas de encoding con impresoras que no soportan CP850. */
+  function _normalizarTexto(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')   // Quita acentos
+      .replace(/¿/g, '?')
+      .replace(/¡/g, '!')
+      .replace(/×/g, 'x')
+      .replace(/÷/g, '/')
+      .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, ''); // Solo ASCII imprimible
+  }
+
+  function _fmtPlain(n) {
+    var num = parseFloat(n) || 0;
+    var fixed = num.toFixed(2);
+    var parts = fixed.split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return '$' + parts[0] + '.' + parts[1];
+  }
+
+  function _formatFechaHora(ts) {
+    if (window.App && typeof App.formatearFechaHora === 'function') {
+      return App.formatearFechaHora(ts);
+    }
+    try { return new Date(ts).toLocaleString('es-AR'); }
+    catch (e) { return String(ts); }
+  }
+
+  function _padLeft(str, len) {
+    str = String(str);
+    while (str.length < len) str = ' ' + str;
+    return str;
+  }
+
+  function _wrapText(str, width) {
+    str = String(str);
+    if (str.length <= width) return [str];
+    var parts = [];
+    while (str.length > 0) {
+      parts.push(str.substring(0, width));
+      str = str.substring(width);
+    }
+    return parts;
+  }
+
+  /* Coloca dos valores en la misma línea, uno a la izquierda y otro
+   * a la derecha. Si no caben, los trunca o los separa en 2 líneas. */
+  function _twoColLine(left, right, width) {
+    left = String(left || '');
+    right = String(right || '');
+    var space = width - left.length - right.length;
+
+    if (space >= 1) {
+      return left + ' '.repeat(space) + right;
+    }
+
+    // Left muy largo: truncar
+    var maxLeft = width - right.length - 1;
+    if (maxLeft > 0) {
+      return left.substring(0, maxLeft) + ' ' + right;
+    }
+
+    // Ambos muy largos: 2 líneas
+    return left + '\n' + _padLeft(right, width);
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* GENERACIÓN DE COMANDOS ESC/POS                              */
+  /* ─────────────────────────────────────────────────────────── */
+  function _buildTicketBytes(venta, config) {
+    var lineWidth = (config && config.tamano_papel === '80') ? 48 : 32;
+    var parts = [];
+
+    function B(arr) {
+      parts.push(new Uint8Array(arr));
+    }
+    function T(str) {
+      str = _normalizarTexto(str);
+      var arr = new Uint8Array(str.length);
+      for (var i = 0; i < str.length; i++) {
+        arr[i] = str.charCodeAt(i) & 0xFF;
+      }
+      parts.push(arr);
+    }
+    function L(str) { T(str); T('\n'); }
+    function SEP() { L('-'.repeat(lineWidth)); }
+
+    /* Init */
+    B(CMD.INIT);
+
+    /* ─── Encabezado centrado ─── */
+    B(CMD.ALIGN_CENTER);
+
+    var nombre = _normalizarTexto(config.nombre_negocio || 'MI COMERCIO');
+    var nombreLines = _wrapText(nombre, lineWidth);
+    B(CMD.DOUBLE_H);
+    nombreLines.forEach(function (l) { L(l); });
+    B(CMD.NORMAL);
+
+    if (config.ubicacion) {
+      _wrapText(_normalizarTexto(config.ubicacion), lineWidth)
+        .forEach(function (l) { L(l); });
+    }
+    if (config.telefono) {
+      L('Tel: ' + _normalizarTexto(config.telefono));
+    }
+
+    /* ─── Datos del ticket ─── */
+    B(CMD.ALIGN_LEFT);
+    SEP();
+
+    var numTicket = String(venta.ticket_numero || 0).padStart(5, '0');
+    L('Ticket #' + numTicket);
+
+    if (config.mostrar_fecha !== false) {
+      L(_formatFechaHora(venta.fecha || Date.now()));
+    }
+    if (venta.cajero) {
+      L('Cajero: ' + _normalizarTexto(venta.cajero));
+    }
+    SEP();
+
+    /* ─── Ítems ─── */
+    var items = Array.isArray(venta.items) ? venta.items : [];
+    items.forEach(function (it) {
+      var nombreIt = _normalizarTexto(it.nombre || 'Producto');
+      _wrapText(nombreIt, lineWidth).forEach(function (l) { L(l); });
+
+      var cant = String(it.cantidad || 1);
+      var precio = _fmtPlain(it.precioUnitario || 0);
+      var sub = _fmtPlain(it.subtotal || ((it.cantidad || 1) * (it.precioUnitario || 0)));
+
+      L(_twoColLine(cant + ' x ' + precio, sub, lineWidth));
+    });
+    SEP();
+
+    /* ─── Total (doble altura) ─── */
+    var total = _fmtPlain(venta.total || 0);
+    B(CMD.BOLD_DOUBLE_H);
+    L(_twoColLine('TOTAL:', total, lineWidth));
+    B(CMD.NORMAL);
+
+    if (venta.metodo_pago) {
+      L(_twoColLine('Pago:', _normalizarTexto(String(venta.metodo_pago)), lineWidth));
+    }
+    if (venta.monto_recibido) {
+      L(_twoColLine('Recibido:', _fmtPlain(venta.monto_recibido), lineWidth));
+    }
+    if (venta.vuelto) {
+      L(_twoColLine('Vuelto:', _fmtPlain(venta.vuelto), lineWidth));
+    }
+    SEP();
+
+    /* ─── Footer centrado ─── */
+    if (config.mensaje_pie) {
+      B(CMD.ALIGN_CENTER);
+      _wrapText(_normalizarTexto(config.mensaje_pie), lineWidth)
+        .forEach(function (l) { L(l); });
+    }
+
+    /* Feed + corte */
+    B(CMD.FEED_3);
+    B(CMD.CUT_FULL);
+
+    /* Concatenar todo en un Uint8Array */
+    var totalLen = 0;
+    parts.forEach(function (p) { totalLen += p.length; });
+    var result = new Uint8Array(totalLen);
+    var offset = 0;
+    parts.forEach(function (p) {
+      result.set(p, offset);
+      offset += p.length;
+    });
+    return result;
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* WEBUSB — CONEXIÓN AL DISPOSITIVO                            */
+  /* ─────────────────────────────────────────────────────────── */
+  function _findOutEndpoint(device) {
+    if (!device.configuration) return null;
+    var interfaces = device.configuration.interfaces;
+    for (var i = 0; i < interfaces.length; i++) {
+      var iface = interfaces[i];
+      for (var a = 0; a < iface.alternates.length; a++) {
+        var alt = iface.alternates[a];
+        for (var e = 0; e < alt.endpoints.length; e++) {
+          var ep = alt.endpoints[e];
+          if (ep.direction === 'out' && ep.type === 'bulk') {
+            return {
+              interfaceNumber: iface.interfaceNumber,
+              endpointNumber: ep.endpointNumber
+            };
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  PrinterUSB._openDevice = async function () {
+    if (!this._device) return false;
+    try {
+      if (!this._device.opened) {
+        await this._device.open();
+      }
+      if (this._device.configuration === null) {
+        await this._device.selectConfiguration(1);
+      }
+      var found = _findOutEndpoint(this._device);
+      if (!found) {
+        console.error('[PrinterUSB] No se encontró endpoint OUT');
+        return false;
+      }
+      this._interfaceNumber = found.interfaceNumber;
+      this._endpointOut = found.endpointNumber;
+
+      /* Algunos printers requieren claimInterface, otros no.
+       * Si falla, seguimos igual. */
+      try {
+        await this._device.claimInterface(this._interfaceNumber);
+      } catch (e) {
+        console.warn('[PrinterUSB] No se pudo claim la interfaz (algunos no lo requieren):', e);
+      }
+      return true;
+    } catch (e) {
+      console.error('[PrinterUSB] Error al abrir:', e);
+      return false;
+    }
+  };
+
+  PrinterUSB.init = async function () {
+    if (!this._isSupported) return false;
+    if (this._initialized) return !!this._device;
+    this._initialized = true;
+
+    try {
+      var devices = await navigator.usb.getDevices();
+      if (devices.length > 0) {
+        for (var i = 0; i < devices.length; i++) {
+          this._device = devices[i];
+          var ok = await this._openDevice();
+          if (ok) {
+            console.info('[PrinterUSB] Dispositivo recuperado: ' +
+                         (this._device.productName || 'USB'));
+            return true;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[PrinterUSB] Error al recuperar dispositivos:', e);
+    }
+    this._device = null;
+    return false;
+  };
+
+  PrinterUSB.pair = async function () {
+    if (!this._isSupported) {
+      throw new Error('WebUSB no está disponible en este navegador');
+    }
+    try {
+      var device = await navigator.usb.requestDevice({ filters: [] });
+      this._device = device;
+      var ok = await this._openDevice();
+      if (!ok) {
+        throw new Error('No se pudo abrir el dispositivo');
+      }
+      var nombre = device.productName || device.manufacturerName || 'Impresora USB';
+      _toast('Impresora USB conectada: ' + nombre, 'success', 4000);
+      return true;
+    } catch (e) {
+      if (e.name === 'NotFoundError') {
+        /* Usuario canceló el diálogo. No es error. */
+        return false;
+      }
+      console.error('[PrinterUSB] Error al conectar:', e);
+      throw e;
+    }
+  };
+
+  PrinterUSB.forget = async function () {
+    if (this._device) {
+      try { await this._device.close(); } catch (e) {}
+      this._device = null;
+      this._endpointOut = null;
+      this._interfaceNumber = null;
+      _toast('Impresora USB olvidada', 'info');
+      return true;
+    }
+    return false;
+  };
+
+  PrinterUSB.isConnected = function () {
+    return !!(this._device && this._device.opened && this._endpointOut !== null);
+  };
+
+  PrinterUSB.isSupported = function () {
+    return this._isSupported;
+  };
+
+  PrinterUSB.getDeviceInfo = function () {
+    if (!this._device) return null;
+    return {
+      vendorId: this._device.vendorId,
+      productId: this._device.productId,
+      productName: this._device.productName,
+      manufacturerName: this._device.manufacturerName,
+      serialNumber: this._device.serialNumber
+    };
+  };
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* ENVÍO DE BYTES                                              */
+  /* ─────────────────────────────────────────────────────────── */
+  PrinterUSB._send = async function (bytes) {
+    if (!this._device || !this._endpointOut) return false;
+
+    /* Enviar en chunks de 4 KB para no desbordar el buffer USB */
+    for (var i = 0; i < bytes.length; i += CHUNK_SIZE) {
+      var chunk = bytes.slice(i, Math.min(i + CHUNK_SIZE, bytes.length));
+      try {
+        var result = await this._device.transferOut(this._endpointOut, chunk);
+        if (result.status !== 'ok') {
+          console.error('[PrinterUSB] transferOut status:', result.status);
+          return false;
+        }
+      } catch (e) {
+        console.error('[PrinterUSB] transferOut error:', e);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  /* Cola serializada para evitar race conditions si se imprimen
+   * varios tickets seguidos. */
+  PrinterUSB.printTicket = function (venta, config) {
+    var self = this;
+    var next = this._printQueue.then(async function () {
+      if (!self.isConnected()) {
+        console.warn('[PrinterUSB] No hay impresora conectada');
+        return false;
+      }
+      try {
+        var bytes = _buildTicketBytes(venta, config);
+        console.info('[PrinterUSB] Enviando ' + bytes.length + ' bytes al printer');
+        return await self._send(bytes);
+      } catch (e) {
+        console.error('[PrinterUSB] Error al construir/enviar:', e);
+        return false;
+      }
+    });
+    /* Mantener la cadena viva aunque falle */
+    this._printQueue = next.catch(function () { return false; });
+    return next;
+  };
+
+  PrinterUSB.printTicketPrueba = function (config) {
+    var testVenta = {
+      ticket_numero: 1,
+      fecha: Date.now(),
+      items: [
+        { nombre: 'Producto de prueba', cantidad: 2, precioUnitario: 1500, subtotal: 3000 },
+        { nombre: 'Pan lactal', cantidad: 1, precioUnitario: 2000, subtotal: 2000 }
+      ],
+      total: 5000,
+      metodo_pago: 'efectivo',
+      monto_recibido: 5000,
+      vuelto: 0,
+      cajero: 'Test'
+    };
+    return this.printTicket(testVenta, config);
+  };
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* UI — SECCIÓN EN EL PANEL P08                                */
+  /* ─────────────────────────────────────────────────────────── */
+  function _actualizarUI() {
+    var status = _el('p08-usb-status');
+    var btnConectar = _el('p08-usb-btn-conectar');
+    var btnDesconectar = _el('p08-usb-btn-desconectar');
+    var chkDirecto = _el('p08-usb-directo');
+
+    if (!status) return;
+
+    if (!PrinterUSB.isSupported()) {
+      status.innerHTML =
+        'Estado: <strong style="color:var(--m2-error);">' +
+        '⚠️ WebUSB no disponible en este navegador</strong>' +
+        '<br><small>Usá Chrome, Edge, Opera o Brave en Android/escritorio. ' +
+        'Safari, Firefox e iOS no lo soportan.</small>';
+      if (btnConectar) btnConectar.disabled = true;
+      if (btnDesconectar) btnDesconectar.style.display = 'none';
+      if (chkDirecto) chkDirecto.disabled = true;
+      return;
+    }
+
+    if (PrinterUSB.isConnected()) {
+      var info = PrinterUSB.getDeviceInfo();
+      var nombre = info.productName || info.manufacturerName || 'Impresora USB';
+      var vid = info.vendorId.toString(16).padStart(4, '0').toUpperCase();
+      var pid = info.productId.toString(16).padStart(4, '0').toUpperCase();
+      status.innerHTML =
+        'Estado: <strong style="color:var(--m2-success);">✅ Conectada</strong>' +
+        '<br><small>' + _escapeHtml(nombre) +
+        ' (VID:0x' + vid + ' PID:0x' + pid + ')</small>';
+      if (btnConectar) btnConectar.style.display = 'none';
+      if (btnDesconectar) btnDesconectar.style.display = '';
+      if (chkDirecto) chkDirecto.disabled = false;
+    } else {
+      status.innerHTML =
+        'Estado: <strong>⚪ No conectada</strong>' +
+        '<br><small>Conectá tu impresora térmica por USB/OTG y presioná "Conectar".</small>';
+      if (btnConectar) {
+        btnConectar.style.display = '';
+        btnConectar.disabled = false;
+      }
+      if (btnDesconectar) btnDesconectar.style.display = 'none';
+      if (chkDirecto) {
+        chkDirecto.disabled = true;
+        chkDirecto.checked = false;
+      }
+    }
+  }
+
+  async function _onConectar() {
+    var btn = _el('p08-usb-btn-conectar');
+    if (btn) { btn.disabled = true; btn.textContent = 'Conectando...'; }
+    try {
+      await PrinterUSB.pair();
+    } catch (e) {
+      _toast('Error: ' + (e.message || 'No se pudo conectar'), 'error', 5000);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🔌 Conectar impresora USB';
+      }
+      _actualizarUI();
+    }
+  }
+
+  async function _onOlvidar() {
+    var ok;
+    if (window.App && typeof App.confirmar === 'function') {
+      ok = await App.confirmar('¿Olvidar impresora USB?');
+    } else {
+      ok = window.confirm('¿Olvidar impresora USB?');
+    }
+    if (!ok) return;
+
+    await PrinterUSB.forget();
+    if (window.Impresora && Impresora.config) {
+      Impresora.config.usar_usb_directo = false;
+    }
+    var chk = _el('p08-usb-directo');
+    if (chk) chk.checked = false;
+    _actualizarUI();
+  }
+
+  function _inyectarUI() {
+    if (_el('p08-usb-section')) return true;
+
+    var sel = _el('p08-impresora-detectada');
+    if (!sel) return false;
+
+    var configSection = sel.closest('.p08-config-section');
+    if (!configSection || !configSection.parentNode) return false;
+
+    var section = document.createElement('div');
+    section.id = 'p08-usb-section';
+    section.className = 'p08-config-section';
+    section.innerHTML =
+      '<h3>🔌 Impresora USB Directa</h3>' +
+      '<p class="text-muted text-small">' +
+      'Conectá tu impresora térmica por cable USB (con adaptador USB-C/OTG en el celular) ' +
+      'y presioná "Conectar". Permite imprimir directo desde Android sin pasar por el ' +
+      'diálogo del sistema. Requiere Chrome/Edge/Opera/Brave en Android o escritorio.' +
+      '</p>' +
+      '<div id="p08-usb-status" style="padding:10px;background:var(--m2-card-bg-soft);' +
+      'border-radius:8px;font-size:13px;margin-bottom:10px;">' +
+      'Estado: <strong>Verificando...</strong>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">' +
+      '<button type="button" class="btn btn-primary btn-small" ' +
+      'id="p08-usb-btn-conectar" style="width:auto;">🔌 Conectar impresora USB</button>' +
+      '<button type="button" class="btn btn-secondary btn-small" ' +
+      'id="p08-usb-btn-desconectar" style="width:auto;display:none;">Olvidar impresora</button>' +
+      '</div>' +
+      '<label class="checkbox-label">' +
+      '<input type="checkbox" id="p08-usb-directo">' +
+      '<span>Usar USB directo para imprimir (en vez del diálogo del navegador)</span>' +
+      '</label>';
+
+    configSection.parentNode.insertBefore(section, configSection.nextSibling);
+
+    _el('p08-usb-btn-conectar').addEventListener('click', _onConectar);
+    _el('p08-usb-btn-desconectar').addEventListener('click', _onOlvidar);
+    _el('p08-usb-directo').addEventListener('change', function (e) {
+      if (window.Impresora && Impresora.config) {
+        Impresora.config.usar_usb_directo = !!e.target.checked;
+      }
+    });
+
+    return true;
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* PATCH DE Impresora                                          */
+  /* ─────────────────────────────────────────────────────────── */
+  function _patchImpresora() {
+    if (!window.Impresora) return false;
+    if (Impresora._usbPatched) return true;
+    Impresora._usbPatched = true;
+
+    /* 1. Patch init: sincroniza el checkbox + estado al abrir el panel */
+    var origInit = Impresora.init;
+    Impresora.init = async function () {
+      await origInit.apply(this, arguments);
+      var chk = _el('p08-usb-directo');
+      if (chk) chk.checked = Impresora.config.usar_usb_directo === true;
+      _actualizarUI();
+    };
+
+    /* 2. Patch guardarConfig: persiste el flag del checkbox */
+    var origGuardar = Impresora.guardarConfig;
+    Impresora.guardarConfig = async function () {
+      var chk = _el('p08-usb-directo');
+      if (chk) Impresora.config.usar_usb_directo = !!chk.checked;
+      return await origGuardar.apply(this, arguments);
+    };
+
+    /* 3. Patch imprimirTicket: si usar_usb_directo + conectado, usa USB */
+    var origImprimir = Impresora.imprimirTicket;
+    Impresora.imprimirTicket = function (venta) {
+      var usarUSB = Impresora.config && Impresora.config.usar_usb_directo === true;
+      if (usarUSB && PrinterUSB.isConnected()) {
+        PrinterUSB.printTicket(venta, Impresora.config)
+          .then(function (ok) {
+            if (!ok) {
+              console.warn('[PrinterUSB] Falló la impresión directa, usando window.print()');
+              origImprimir.call(Impresora, venta);
+            } else {
+              _toast('Ticket impreso por USB', 'success', 2500);
+            }
+          })
+          .catch(function (e) {
+            console.error('[PrinterUSB] Error:', e);
+            _toast('Error al imprimir por USB. Usando diálogo del sistema.', 'warning', 4000);
+            origImprimir.call(Impresora, venta);
+          });
+        return true;
+      }
+      return origImprimir.call(Impresora, venta);
+    };
+
+    console.info('[PrinterUSB] Impresora parcheada (init + guardarConfig + imprimirTicket).');
+    return true;
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* ARRANQUE                                                    */
+  /* ─────────────────────────────────────────────────────────── */
+  async function _init() {
+    if (PrinterUSB._isSupported) {
+      await PrinterUSB.init();
+    }
+
+    /* La UI puede necesitar reintentos si B05/B16 todavía no inyectaron
+     * #p08-impresora-detectada. Esperamos hasta 5 segundos. */
+    var intentosUI = 0;
+    var MAX_INTENTOS = 20;
+    while (!_inyectarUI() && intentosUI < MAX_INTENTOS) {
+      await new Promise(function (r) { setTimeout(r, 250); });
+      intentosUI++;
+    }
+
+    /* El patch de Impresora también puede necesitar reintento */
+    var intentosPatch = 0;
+    var MAX_INTENTOS_PATCH = 20;
+    while (!_patchImpresora() && intentosPatch < MAX_INTENTOS_PATCH) {
+      await new Promise(function (r) { setTimeout(r, 250); });
+      intentosPatch++;
+    }
+
+    _actualizarUI();
+
+    /* Listeners globales de connect/disconnect */
+    if (navigator.usb && typeof navigator.usb.addEventListener === 'function') {
+      navigator.usb.addEventListener('connect', function (e) {
+        console.info('[PrinterUSB] Device connected:', e.device);
+        _actualizarUI();
+      });
+      navigator.usb.addEventListener('disconnect', function (e) {
+        console.info('[PrinterUSB] Device disconnected:', e.device);
+        if (PrinterUSB._device === e.device) {
+          PrinterUSB._device = null;
+          PrinterUSB._endpointOut = null;
+          PrinterUSB._interfaceNumber = null;
+        }
+        _actualizarUI();
+      });
+    }
+
+    console.info('[PrinterUSB] Bloque 18.5 inicializado. WebUSB ' +
+                 (PrinterUSB.isSupported() ? 'soportado.' : 'NO soportado.'));
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* EXPOSICIÓN GLOBAL                                           */
+  /* ─────────────────────────────────────────────────────────── */
+  window.PrinterUSB = PrinterUSB;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _init);
+  } else {
+    _init();
+  }
+})();
+</script>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- FIN BLOQUE 18.5                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!-- BLOQUE FINAL v3 — MODO OSCURO + NOTIFICACIONES + VERSION   -->
 <!--                                                            -->
