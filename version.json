@@ -1,11 +1,11 @@
 {
-  "version": "1.0.62",
+  "version": "1.0.63",
   "semver": {
     "mayor": 1,
     "menor": 0,
-    "parche": 62
+    "parche": 63
   },
-  "fecha": "2026-10-31T17:34:48-03:00",
+  "fecha": "2026-11-02T16:35:47-03:00",
   "canal": "stable",
   "obligatoria": false,
   "min_version_compatible": "1.0.0",
