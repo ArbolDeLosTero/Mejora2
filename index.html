@@ -15525,13 +15525,11 @@
       _auth = firebase.auth();
       _db = firebase.firestore();
 
-      // Activar persistencia offline nativa de Firestore
-      _db.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
-        if (err.code === 'failed-precondition') {
-          console.warn('[App] Persistencia offline deshabilitada: múltiples pestañas abiertas.');
-        } else if (err.code === 'unimplemented') {
-          console.warn('[App] El navegador no soporta persistencia offline.');
-        }
+      // Activar persistencia offline nativa de Firestore (Nueva sintaxis)
+      _db.settings({
+        cache: firebase.firestore.PersistentLocalCache({
+          tabManager: firebase.firestore.PersistentMultipleTabManager()
+        })
       });
 
 
