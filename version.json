@@ -1,0 +1,17 @@
+{
+  "version": "1.0.66",
+  "semver": {
+    "mayor": 1,
+    "menor": 0,
+    "parche": 66
+  },
+  "fecha": "2026-11-18T22:14:03-03:00",
+  "canal": "stable",
+  "obligatoria": false,
+  "min_version_compatible": "1.0.0",
+  "notas": [
+    "Fix E-SYS-003: arranque correcto con SDK compat 9.23.0 (enablePersistence multi-pestaña no bloqueante).",
+    "Cierre de la Vía 2 de _subirLogAFirestore: los logs solo suben por el pipeline de B11 (11-A…11-I), con version_app y firma."
+  ],
+  "url_release": null
+}
