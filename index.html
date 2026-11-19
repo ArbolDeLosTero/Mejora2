@@ -304,7 +304,7 @@
   <!-- app-version: leída por App.getVersion() (B10) y por el
        VersionChecker del bloque final. Sincronizable desde
        version.json vía GitHub Action (§5.2 auditoría). -->
-  <meta name="app-version" content="1.0.66">
+  <meta name="app-version" content="1.0.64">
 
   <title>Sistema de Gestión para Kioscos y Almacenes</title>
 
@@ -15876,8 +15876,35 @@
     }
   })();
 </script>
+
+
 <!-- ═══════════════════════════════════════════════════════════ -->
-<!-- BLOQUE 10 v6 — JS CORE (App + Sistema de Errores)          -->
+<!-- BLOQUE 10 v7 — JS CORE (App + Sistema de Errores)          -->
+<!--                                                            -->
+<!-- CHANGELOG RESPECTO A v6:                                   -->
+<!--                                                            -->
+<!-- 🔴 FIX-ESYS003 (BUG CRÍTICO DE ARRANQUE) — _initInterno     -->
+<!--    usa _db.enablePersistence({ synchronizeTabs: true }).   -->
+<!--    Antes: _db.settings({cache: PersistentLocalCache…})     -->
+<!--    — API modular inexistente en el SDK compat 9.23.0 —     -->
+<!--    → TypeError → pantalla E-SYS-003 → __initFallo → B05 y  -->
+<!--    Auth.init abortan → la web no abre. Ahora la llamada    -->
+<!--    es NO bloqueante (.then/.catch), nunca throw, con       -->
+<!--    catch de 'failed-precondition' y 'unimplemented'; un    -->
+<!--    fallo de persistencia no impide el arranque.            -->
+<!--                                                            -->
+<!-- 🟢 FIX-11-34 / 11-H lado B10 — ELIMINADA la «Vía 2» de      -->
+<!--    _subirLogAFirestore (fallback Data.set('logs_errores')  -->
+<!--    directo de v3): subía logs SIN version_app ni firma,    -->
+<!--    fuera del pipeline 11-A…11-I de B11 (invisibles al      -->
+<!--    auto-cierre 11-D y a la migración 11-I; sin             -->
+<!--    _marcarLogComoSubido ni rotación). Queda UN solo        -->
+<!--    camino (Vía 1: hooks de B11); sin hooks, el log         -->
+<!--    queda local (logs_v1 + badge) hasta que Data.init       -->
+<!--    lo sincronice.                                          -->
+<!--                                                            -->
+<!-- ✅ El resto de v6 se preserva íntegro (todos los FIX-*).    -->
+<!--    API pública 100% compatible con v6.                     -->
 <!--                                                            -->
 <!-- CHANGELOG RESPECTO A v5:                                   -->
 <!--                                                            -->
@@ -16499,34 +16526,24 @@
   }
 
   /* [FIX-10-D, preservado] _subirLogAFirestore usa hooks si están registrados. */
+  /* [FIX-11-34 / 11-H lado B10] La «Vía 2» (fallback Data.set('logs_errores')
+   * directo, comportamiento v3) fue ELIMINADA: subía logs SIN version_app ni
+   * firma, fuera del pipeline 11-A…11-I de B11 → invisibles para el
+   * auto-cierre (11-D) y la migración (11-I), sin _marcarLogComoSubido ni
+   * rotación. Queda UN solo camino (Vía 1: hooks de B11). Si B11 aún no
+   * registró hooks (log de arranque muy temprano) el log queda solo local
+   * (logs_v1 + badge), y Data.init lo sincroniza después: comportamiento
+   * local-first esperado. */
   function _subirLogAFirestore(logItem) {
     if (!logItem || !logItem.id) return;
 
-    /* Vía 1: hooks registrados (B11 v4+). */
-    if (_hooksLog.length > 0) {
-      for (var i = 0; i < _hooksLog.length; i++) {
-        try {
-          _hooksLog[i](logItem);
-        } catch (e) {
-          console.warn('[App] Error en hook de log #' + i + ':', e);
-        }
+    /* Vía 1 (única vía): hooks registrados (B11 v4+). */
+    for (var i = 0; i < _hooksLog.length; i++) {
+      try {
+        _hooksLog[i](logItem);
+      } catch (e) {
+        console.warn('[App] Error en hook de log #' + i + ':', e);
       }
-      return;
-    }
-
-    /* Vía 2: fallback Data.set directo (comportamiento v3). */
-    try {
-      if (!window.Data ||
-          typeof Data.set !== 'function' ||
-          typeof Data.getComercioId !== 'function' ||
-          !Data.getComercioId()) {
-        return;
-      }
-      Data.set('logs_errores', logItem.id, logItem).catch(function (e) {
-        console.warn('[App] No se pudo subir log a Firestore:', e);
-      });
-    } catch (e) {
-      console.warn('[App] Error al invocar Data.set para log:', e);
     }
   }
 
@@ -17532,12 +17549,40 @@
       _auth = firebase.auth();
       _db = firebase.firestore();
 
-      // Activar persistencia offline nativa de Firestore (Nueva sintaxis)
-      _db.settings({
-        cache: firebase.firestore.PersistentLocalCache({
-          tabManager: firebase.firestore.PersistentMultipleTabManager()
-        })
-      });
+      /* [FIX-ESYS003 / v7] Persistencia offline con la API de COMPAT.
+       * El bloque anterior usaba _db.settings({cache: firebase.firestore.
+       * PersistentLocalCache({tabManager: PersistentMultipleTabManager()})})
+       * — API MODULAR que NO existe en el build compat 9.23.0 → TypeError
+       * "PersistentMultipleTabManager is not a function" → pantalla
+       * E-SYS-003 → App.__initFallo → B05 y Auth.init abortan → la web no
+       * abre. enablePersistence() es la API correcta para compat, debe
+       * llamarse antes de usar _db y devuelve una promesa: se maneja NO
+       * bloqueante, sin throw, y un fallo de persistencia no impide el
+       * arranque (solo se pierde el caché offline). */
+      try {
+        _db.enablePersistence({ synchronizeTabs: true })
+          .then(function () {
+            console.info('[App] Persistencia offline multi-pestaña activada.');
+          })
+          .catch(function (err) {
+            var code = err && err.code ? String(err.code) : '';
+            if (code === 'failed-precondition') {
+              console.warn('[App] Persistencia multi-pestaña no activada ' +
+                           '(otra pestaña la tiene tomada o el navegador no ' +
+                           'permite multi-tab). La app continúa sin caché ' +
+                           'offline.', err);
+            } else if (code === 'unimplemented') {
+              console.warn('[App] Persistencia offline no soportada por este ' +
+                           'navegador. La app continúa sin caché offline.', err);
+            } else {
+              console.warn('[App] No se pudo activar la persistencia offline. ' +
+                           'La app continúa sin caché offline.', err);
+            }
+          });
+      } catch (e) {
+        console.warn('[App] enablePersistence falló de forma síncrona. La app ' +
+                     'continúa sin caché offline:', e);
+      }
 
 
       if (firebase.functions && typeof firebase.functions === 'function') {
@@ -17642,6 +17687,7 @@
 
 })(window, document);
 </script>
+
 <!-- ═════════════════════════════════════════════════════════════════ -->
 <!-- BLOQUE 11 v5 — JS DATA LAYER + AUTO-CIERRE DE LOGS POR VERSIÓN    -->
 <!-- Generado 17/11/2026 desde Mejora2.html (bloque v4 original).      -->
