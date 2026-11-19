@@ -304,7 +304,7 @@
   <!-- app-version: leída por App.getVersion() (B10) y por el
        VersionChecker del bloque final. Sincronizable desde
        version.json vía GitHub Action (§5.2 auditoría). -->
-  <meta name="app-version" content="1.0.69">
+  <meta name="app-version" content="1.0.64">
 
   <title>Sistema de Gestión para Kioscos y Almacenes</title>
 
@@ -493,10 +493,6 @@
 <!-- El único </head> del documento vive al final del BLOQUE 04,        -->
 <!-- justo antes de <body>.                                             -->
 <!-- ═══════════════════════════════════════════════════════════════════ -->
-
-
-
-
 
   <style>
     /* ═══════════════════════════════════════════════════════════ */
@@ -2672,7 +2668,6 @@
   }
 </style>
 
-
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <!-- BLOQUE 04 v5 — CSS FRAMEWORK DE VISTAS + HTML DE AUTH Y LEGALES         -->
 <!--                                                                         -->
@@ -4131,9 +4126,46 @@
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 
 <!-- ═══════════════════════════════════════════════════════════ -->
-<!-- BLOQUE 05 v5 — HEADER GLOBAL + MENÚ CANÓNICO + VISTAS       -->
+<!-- BLOQUE 05 v6 — HEADER GLOBAL + MENÚ CANÓNICO + VISTAS       -->
 <!-- CANÓNICAS (PROVEEDORES / IMPRESORA / IMPUESTOS / CUENTA)    -->
 <!-- + MODALES + SCRIPT DE CABECERA                              -->
+<!--                                                            -->
+<!-- CHANGELOG RESPECTO A v5 (contexto: BLOQUE 16 v6 ya VIVO en  -->
+<!-- el documento — Impresora/Impuestos/Cuenta existen y        -->
+<!-- arrancan por navegación vía FIX-16-NAV, y sus bindings de  -->
+<!-- botones/tabs de P09/P10 CEDEN ante B05 por los flags       -->
+<!-- dataset.b05* — deferencia FIX-16-05: estos botones y tabs  -->
+<!-- son de B05).                                               -->
+<!--                                                            -->
+<!-- 🔴 FIX-05-A (CRÍTICO — IMPUESTOS) — guardarConfigImpuestos -->
+<!--    guardaba SOLO en localStorage (config_impuestos_v1).    -->
+<!--    Con B16 v6 vivo, Impuestos.init (remote-first:          -->
+<!--    configRemota || configLocal) corre en cada navegación   -->
+<!--    al panel y REESCRIBE el localStorage con el valor de    -->
+<!--    Firestore — campo que B12 siembra al crear el comercio  -->
+<!--    (config_impuestos) — con lo cual el guardado se         -->
+<!--    revertía en silencio al reabrir el panel. Ahora:        -->
+<!--    (1) valida las 3 alícuotas 0–100 (espejo MEJORA-M1 de   -->
+<!--    B16: NaN o fuera de rango → default); (2) persiste la   -->
+<!--    shape canónica de B12/B16 en Firestore vía Data.set     -->
+<!--    config/comercio {config_impuestos} merge:true           -->
+<!--    (admin-only, reglas esDuenioDelComercio, igual que el   -->
+<!--    resto de los guardados de config de B05); (3) mantiene  -->
+<!--    el alias condicion_iva junto a condicion para           -->
+<!--    compatibilidad de lectores; (4) errores diferenciados   -->
+<!--    (permission-denied vs sincronización pendiente).        -->
+<!--                                                            -->
+<!-- 🟠 FIX-05-B (MEDIA — BACKUP) — BACKUP_KEYS no incluía      -->
+<!--    ticket_config_v1 (clave del diseño de ticket de B16     -->
+<!--    v6: logo, tamaño, encabezados, horarios) ni sus         -->
+<!--    variantes namespaced ticket_config_v1::<comercioId>.    -->
+<!--    El export no respaldaba nada del módulo Impresora.      -->
+<!--    Ahora: la clave base entra en BACKUP_KEYS, el export    -->
+<!--    enumera dinámicamente los sufijos '::cid' y el import   -->
+<!--    restaura TODO lo que trae el payload (Object.keys).      -->
+<!--                                                            -->
+<!-- 🟡 FIX-05-C (HIGIENE) — _modalesBound se declara en el     -->
+<!--    literal del objeto (antes se asignaba dinámicamente).   -->
 <!--                                                            -->
 <!-- CHANGELOG RESPECTO A v4:                                    -->
 <!--                                                            -->
@@ -4262,7 +4294,7 @@
 <!--     plan, NO se corrige dentro de B05.                     -->
 <!--                                                            -->
 <!-- ═══════════════════════════════════════════════════════════ -->
-<!-- CONSUMIDORES ACTUALES DE B05 (actualizado en v5)           -->
+<!-- CONSUMIDORES ACTUALES DE B05 (actualizado en v6)           -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!--                                                            -->
 <!-- IDs consumidos por OTROS bloques:                           -->
@@ -4270,12 +4302,14 @@
 <!--                                 body:has(...) : lo oculta). -->
 <!--   · #menu-user-name          → B12 (_actualizarMenuUsuario).-->
 <!--   · #menu-user-role          → B12 (_actualizarMenuUsuario).-->
-<!--   · #menu-badge-cola         → B05 v5 [FIX-15-Q] (B16 P1    -->
-<!--                                 no existe).                 -->
+<!--   · #menu-badge-cola         → B05 [FIX-15-Q]. El badge de  -->
+<!--                                 LOGS es otro elemento y lo  -->
+<!--                                 gestiona B16 v6.            -->
 <!--   · #menu-badge-logs         → B10 (_actualizarBadgeLogs).  -->
 <!--   · [data-panel] (7 botones + "←" de B06/B08)               -->
-<!--                              → B05 v5 [FIX-15-N] (antes     -->
-<!--                                 B16 P2, que no existe).     -->
+<!--                              → B05 [FIX-15-N]. B16 v6       -->
+<!--                                 (FIX-16-05) cede estos      -->
+<!--                                 clicks a B05 (stopProp).    -->
 <!--   · [data-solo-admin]        → B12 (oculta para no-admin).  -->
 <!--   · #p07-* y modales #modal-p07-*                            -->
 <!--                              → B15 (tabs, modales, listas). -->
@@ -6906,6 +6940,7 @@
     _escapeHandlerRef: null,       /* [FIX-15-P/U] Escape para modales B05 */
     _tabsBound: false,             /* [FIX-15-O] */
     _p10Bound: false,              /* [FIX-15-P] */
+    _modalesBound: false,          /* [FIX-05-C] declarado (antes dinámico) */
     _filtroLogs: 'todos',          /* [FIX-15-P] filtro activo del panel */
     _pasoArca: 1,                  /* [FIX-15-P] paso del tutorial ARCA */
     _ultimoCajero: null,           /* [FIX-15-P] {email, password} último creado */
@@ -8019,9 +8054,15 @@
       set('p10-info-online', online);
     },
 
+    /* [FIX-05-B] ticket_config_v1 = diseño de ticket del módulo
+     * Impresora (B16 v6: logo, tamaño, encabezados, horarios).
+     * En comercios con cid vive además como
+     * ticket_config_v1::<comercioId>; esa variante namespaced
+     * se cubre aparte en exportarBackup (enumeración dinámica). */
     BACKUP_KEYS: ['config_comercio_v1', 'config_impuestos_v1',
       'impresora_seleccionada_v1', 'metodo_descuento_v1',
-      'catalogo_url_v1', 'cajero_info_v1', 'p05_ultimo_arqueo_v1'],
+      'catalogo_url_v1', 'cajero_info_v1', 'p05_ultimo_arqueo_v1',
+      'ticket_config_v1'],
 
     exportarBackup: function () {
       var datos = {};
@@ -8032,6 +8073,16 @@
           if (v != null) { datos[k] = v; n++; }
         } catch (e) {}
       });
+      /* [FIX-05-B] Variantes namespaced ticket_config_v1::<cid>. */
+      try {
+        for (var i = 0; i < localStorage.length; i++) {
+          var k2 = localStorage.key(i);
+          if (k2 && k2.indexOf('ticket_config_v1::') === 0 && datos[k2] == null) {
+            datos[k2] = localStorage.getItem(k2);
+            n++;
+          }
+        }
+      } catch (e) {}
       if (!n) {
         _toast('No hay configuración local para respaldar', 'warning');
         return;
@@ -8084,10 +8135,11 @@
       }
       if (!ok) return;
       var n = 0;
-      self.BACKUP_KEYS.forEach(function (k) {
-        if (data.datos[k] != null) {
-          try { localStorage.setItem(k, data.datos[k]); n++; } catch (e) {}
-        }
+      /* [FIX-05-B] Restaurar por las claves QUE TRAE el payload
+       * (Object.keys), no por BACKUP_KEYS: cubre también las
+       * variantes namespaced ticket_config_v1::<cid> exportadas. */
+      Object.keys(data.datos).forEach(function (k) {
+        try { localStorage.setItem(k, data.datos[k]); n++; } catch (e) {}
       });
       _toast('Backup restaurado (' + n + ' claves). Recargá la página para aplicarlo.', 'success', 8000);
       this.sincronizarUsuario();
@@ -8098,7 +8150,8 @@
     /* [FIX-15-O] P09 — Impuestos                              */
     /*                                                         */
     /* Alcance honesto y documentado:                          */
-    /*   · Config fiscal → localStorage (config_impuestos_v1). */
+    /*   · Config fiscal → localStorage + Firestore            */
+    /*     (config_impuestos, [FIX-05-A]).                     */
     /*   · Resumen + Libro IVA: ventas de Data.query('ventas') */
     /*     e ingresos de Data.query('historico_compras'), con  */
     /*     desglose de IVA según el config (regla _desglosarIva)*/
@@ -8113,7 +8166,10 @@
       catch (e) { cfg = {}; }
       var setV = function (id, v) { var el = $(id); if (el && v != null) el.value = v; };
       var setC = function (id, v) { var el = $(id); if (el) el.checked = v === true; };
-      setV('p09-condicion-iva', cfg.condicion_iva);
+      /* [FIX-05-A] La shape canónica (B12/B16) usa `condicion`;
+       * el localStorage histórico de B05 usa `condicion_iva`.
+       * Leer ambas para tolerar cualquier origen del dato. */
+      setV('p09-condicion-iva', cfg.condicion_iva != null ? cfg.condicion_iva : cfg.condicion);
       setV('p09-aliq-gral', cfg.aliq_gral != null ? cfg.aliq_gral : 21);
       setV('p09-aliq-red', cfg.aliq_red != null ? cfg.aliq_red : 10.5);
       setV('p09-aliq-dif', cfg.aliq_dif != null ? cfg.aliq_dif : 27);
@@ -8129,8 +8185,14 @@
         var num = el ? parseFloat(el.value) : NaN;
         return isNaN(num) ? def : num;
       };
+      var condicion = ($('p09-condicion-iva') || {}).value ||
+        cfg.condicion_iva || cfg.condicion || 'responsable';
       return {
-        condicion_iva: ($('p09-condicion-iva') || {}).value || cfg.condicion_iva || 'responsable',
+        /* [FIX-05-A] Shape canónica (condicion, la que B12 siembra
+         * y B16 lee) + alias condicion_iva para los lectores
+         * locales históricos. Mismo valor en ambas claves. */
+        condicion: condicion,
+        condicion_iva: condicion,
         aliq_gral: v('p09-aliq-gral', cfg.aliq_gral != null ? cfg.aliq_gral : 21),
         aliq_red: v('p09-aliq-red', cfg.aliq_red != null ? cfg.aliq_red : 10.5),
         aliq_dif: v('p09-aliq-dif', cfg.aliq_dif != null ? cfg.aliq_dif : 27),
@@ -8138,15 +8200,75 @@
       };
     },
 
-    guardarConfigImpuestos: function () {
+    /* [FIX-05-A] Validación de alícuotas, espejo de MEJORA-M1
+     * (B16): NaN o fuera de 0–100 → default. */
+    _aliqValida: function (raw, def) {
+      var v = parseFloat(raw);
+      if (isNaN(v) || v < 0 || v > 100) return def;
+      return v;
+    },
+
+    /* ─────────────────────────────────────────────────────── */
+    /* [FIX-05-A] Guardar config de impuestos (P09).           */
+    /*                                                         */
+    /* En v5 escribía SOLO localStorage. Con B16 v6 vivo,      */
+    /* Impuestos.init (remote-first) corre en cada visita al   */
+    /* panel y reescribe el localStorage con el valor de       */
+    /* Firestore — campo que B12 siembra al crear el comercio  */
+    /* — con lo cual el guardado local se revertía en          */
+    /* silencio. Ahora se persiste en AMBOS lados con la       */
+    /* shape canónica de B12/B16: localStorage (inmediato) +  */
+    /* Firestore config/comercio.config_impuestos              */
+    /* (Data.set merge:true, admin-only, mismas reglas         */
+    /* esDuenioDelComercio que el resto de los guardados de    */
+    /* config de B05).                                         */
+    /* ─────────────────────────────────────────────────────── */
+    guardarConfigImpuestos: async function () {
+      if (!_esAdmin()) {
+        _toast('Solo el administrador puede editar la configuración fiscal', 'warning');
+        return;
+      }
       var cfg = this._leerConfigImpuestos();
+      /* Re-validación dura de las 3 alícuotas (0–100). */
+      cfg.aliq_gral = this._aliqValida(cfg.aliq_gral, 21);
+      cfg.aliq_red = this._aliqValida(cfg.aliq_red, 10.5);
+      cfg.aliq_dif = this._aliqValida(cfg.aliq_dif, 27);
+
       try {
         localStorage.setItem(CONFIG_IMP_KEY, JSON.stringify(cfg));
-        _toast('Configuración fiscal guardada', 'success');
-        this.renderResumenImpuestos();
       } catch (e) {
-        _toast('No se pudo guardar la configuración', 'error');
+        _toast('No se pudo guardar la configuración localmente', 'error');
+        return;
       }
+
+      var cid = (window.Data && typeof Data.getComercioId === 'function') ? Data.getComercioId() : null;
+      if (!cid || !window.Data || typeof Data.set !== 'function') {
+        _toast('Guardado local. Sin comercio activo no se sincroniza con la nube', 'warning', 6000);
+        this.renderResumenImpuestos();
+        return;
+      }
+      try {
+        await Data.set('config', 'comercio', {
+          config_impuestos: {
+            condicion: cfg.condicion,
+            condicion_iva: cfg.condicion,
+            aliq_gral: cfg.aliq_gral,
+            aliq_red: cfg.aliq_red,
+            aliq_dif: cfg.aliq_dif,
+            precios_con_iva: cfg.precios_con_iva === true
+          }
+        }, { merge: true });
+        _toast('Configuración fiscal guardada', 'success');
+      } catch (e) {
+        console.error('[B05] guardarConfigImpuestos (Firestore):', e);
+        var code = e && e.code ? e.code : '';
+        if (String(code) === 'permission-denied') {
+          _toast('Guardado local, pero la nube rechazó la escritura: verificá tu licencia activa', 'error', 7000);
+        } else {
+          _toast('Guardado local; se sincronizará cuando vuelvas a estar en línea', 'warning', 7000);
+        }
+      }
+      this.renderResumenImpuestos();
     },
 
     renderResumenImpuestos: async function () {
@@ -8603,6 +8725,7 @@
 
 })(window, document);
 </script>
+
 
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <!-- BLOQUE 06 v7.1 — HTML + CSS + JS DEL POS (P03)                      -->
