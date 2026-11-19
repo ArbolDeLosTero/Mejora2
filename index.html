@@ -304,7 +304,7 @@
   <!-- app-version: leída por App.getVersion() (B10) y por el
        VersionChecker del bloque final. Sincronizable desde
        version.json vía GitHub Action (§5.2 auditoría). -->
-  <meta name="app-version" content="1.0.68">
+  <meta name="app-version" content="1.0.64">
 
   <title>Sistema de Gestión para Kioscos y Almacenes</title>
 
@@ -32323,11 +32323,85 @@ async function _safeLocalStorageRemove(key) {
   })();
 </script>
 
-<!-- ═══════════════════════════════════════════════════════════════════ -->
-<!-- BLOQUE 16 v5 — IMPRESORA + IMPUESTOS + CUENTA + ARCA (CONSOLIDADO) -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- BLOQUE 16 v6 — IMPRESORA + IMPUESTOS + CUENTA + ARCA (CONSOLIDADO) -->
 <!--                                                                    -->
-<!-- Reemplaza por completo las 3 piezas de v4:                          -->
+<!-- Reemplaza por completo el BLOQUE 16 v5, que a su vez reemplazó     -->
+<!-- las 3 piezas de v4:                                                -->
 <!--   · <style id="bloque-16-css">                                     -->
+<!--   · <script id="bloque-16-js-p1">                                  -->
+<!--   · <script id="bloque-16-js-p2">                                  -->
+<!--                                                                    -->
+<!-- NUEVAS CORRECCIONES v6 (Chat B16 del plan de acción):              -->
+<!--   🔴 FIX-16-SYN — Cuenta.init: faltaba cerrar el if de admin que   -->
+<!--               suscribía Data.onSnapshotLogs. El "} finally" del    -->
+<!--               try quedaba consumido por ese if y TODO el <script>  -->
+<!--               de B16 no parseaba ("Unexpected token 'finally'"):   -->
+<!--               Impresora/Impuestos/Cuenta/Arca no cargaban.         -->
+<!--   🔴 FIX-16-A  — Hito 4 (16-A): listener de logs para TODOS los    -->
+<!--               roles. Se elimina la suscripción directa a           -->
+<!--               Data.onSnapshotLogs (redundante: Data.init ya        -->
+<!--               registra el snapshot global de logs, B11 v5          -->
+<!--               FIX-11-30/11-E, y emite 'b16:logs-actualizados') y   -->
+<!--               el bind del evento sale del if de admin.             -->
+<!--   🔴 FIX-16-NAV — [data-panel]: B05 marca dataset.b16NavBound='1'  -->
+<!--               en TODOS los botones (para silenciar el fallback de  -->
+<!--               B06), con lo cual esa marca congelaba este binder y  -->
+<!--               los módulos nunca se iniciaban al navegar (ni había  -->
+<!--               guard de caja abierta en el POS). B16 usa su propia  -->
+<!--               marca (b16PanelBound), corta la propagación del      -->
+<!--               click y vuelve a ser el dueño de la navegación.      -->
+<!--   🟠 FIX-16-B  — Hito 4 (16-B): re-render defensivo. Binders       -->
+<!--               idempotentes (guard por elemento+evento en _bindImp, -->
+<!--               flag _dragGlobalBound para los listeners globales de -->
+<!--               drag), los configuradores se re-ejecutan en cada     -->
+<!--               init, y el tick de 15s hace re-pass del binder de    -->
+<!--               navegación: botones nuevos o reemplazados se         -->
+<!--               re-enganchan solos.                                  -->
+<!--   🟠 FIX-16-05 — Coordinación con B05 (que en este documento ya    -->
+<!--               posee tabs/botones/filtros de P09 y P10 con marcas   -->
+<!--               b05Bound/b05TabBound/b05SubBound): B16 no re-bindea  -->
+<!--               lo que B05 ya posee y delega el render de la lista   -->
+<!--               de logs a Bloque05.renderLogs → un solo handler por  -->
+<!--               control, sin dobles guardados ni disputa de markup   -->
+<!--               en #p10-log-lista.                                   -->
+<!--   🟡 FIX-16-06 — RESERVADO (namespacing de cola_impresion_v1 /     -->
+<!--               impresora_seleccionada_v1 por comercioId): NO se     -->
+<!--               aplica en v6 porque B05.sincronizarBadgeCola y las   -->
+<!--               listas de limpieza de B12/B14 leen esas claves       -->
+<!--               globales; hacerlo solo acá rompería el badge de cola -->
+<!--               y el purge al cerrar sesión. Requiere chat           -->
+<!--               multi-bloque (B05 + B12 + B14 + B16).                -->
+<!--   ⚪ FIX-16-07 — RESERVADO (imprimirTicket con detección de popup  -->
+<!--               asíncrona): no se aplica; el check de ventana nula   -->
+<!--               ya cubre el popup bloqueado y el cambio rompería     -->
+<!--               las llamadas síncronas al API de Impresora.          -->
+<!--                                                                    -->
+<!-- Correcciones aplicadas en v5 (conservadas):                        -->
+<!--   🔴 B16-01 — destroy() con AbortController + cleanup de timers     -->
+<!--   🔴 B16-02 — Race de config_ticket resuelta (RMW atómico +         -->
+<!--               preservación de modo_fiscal externo)                  -->
+<!--   ⚪ B16-03 — Número reservado. Fue absorbido por B16-02 durante    -->
+<!--               el desarrollo (el RMW atómico cubrió ambos casos).    -->
+<!--   🟠 B16-04 — _conDeteccionPopup restaura window.open en finally    -->
+<!--   🟠 B16-05 — Poll de logs unificado y throttled                    -->
+<!--   🟠 B16-06 — Retries cancelables con token                        -->
+<!--   🟠 B16-07 — Botón ARCA deshabilitado hasta estar disponible       -->
+<!--   🟡 B16-08 — Stock bajo: 0 no cuenta como "bajo" (documentado)     -->
+<!--   🟡 B16-09 — _inyectarInputImpresoraManual con log si falla        -->
+<!--   🟡 B16-10 — Flags centralizados en window.__B16__                 -->
+<!--   🟡 B16-11 — Validación de rangos en guardarConfig                 -->
+<!--   🟡 B16-12 — _dragState se limpia en destroy()                     -->
+<!--   🟢 B16-13 — Comentarios HTML fuera de <script>                    -->
+<!--   🟢 B16-14 — _leerColeccionDeCache sin guión bajo                  -->
+<!--   🟢 B16-15 — Dominios con alias extraídos a array                  -->
+<!--                                                                    -->
+<!-- Contratos preservados: ver §5 del análisis v5. Integración:        -->
+<!-- reemplazar en Mejora2.html desde este comentario hasta el          -->
+<!-- </script> del bloque (líneas 32327-36778 del archivo v1.0.64).     -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+
+<style id="bloque-16-css">                                     -->
 <!--   · <script id="bloque-16-js-p1">                                  -->
 <!--   · <script id="bloque-16-js-p2">                                  -->
 <!--                                                                    -->
@@ -32480,7 +32554,7 @@ async function _safeLocalStorageRemove(key) {
   Object.assign(window.__B16__, {
     installed: true,
     state: _STATE,
-    version: 'v5',
+    version: 'v6',
     destroy: null /* se asigna al final */
   });
 
@@ -32961,6 +33035,7 @@ function _genId(prefix) {
   }
 
   var _dragState = { activo: false, elemento: null, inicioY: 0, tipo: null };
+  var _dragGlobalBound = false; /* [FIX-16-B] listeners globales de drag ya enganchados */
   var _elementoSeleccionado = null;
   var _pesablesTickets = [];
   var _impresoraInitialized = false;
@@ -32979,6 +33054,14 @@ function _genId(prefix) {
 
   function _bindImp(el, ev, fn, opts) {
     if (!el) return false;
+    /* [FIX-16-B] Idempotencia por elemento+evento (marca b16imp<ev>):
+     * permite re-ejecutar _configurarListenersImpresora() tras un
+     * re-render del panel sin duplicar handlers. */
+    try {
+      var marcaEv = 'b16imp' + ev;
+      if (el.dataset && el.dataset[marcaEv] === '1') return true;
+      if (el.dataset) el.dataset[marcaEv] = '1';
+    } catch (eMarca) {}
     var finalOpts = Object.assign({}, opts || {}, { signal: _getImpSignal() });
     try {
       el.addEventListener(ev, fn, finalOpts);
@@ -33058,10 +33141,12 @@ function _genId(prefix) {
     Impresora.renderCola();
     _actualizarBadgeCola();
 
-    if (!_impresoraInitialized) {
-      _configurarListenersImpresora();
-      _impresoraInitialized = true;
-    }
+    /* [FIX-16-B] Siempre re-ejecutar el configurador: es idempotente
+     * (guard por elemento+evento en _bindImp + _dragGlobalBound), así
+     * un re-render del panel que reemplace nodos se auto-reengancha en
+     * el próximo init en vez de quedar sordo. */
+    _configurarListenersImpresora();
+    _impresoraInitialized = true;
   }
 
   Impresora.cargarConfig = async function () {
@@ -34448,10 +34533,16 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
     }
 
     /* Listeners document-level del drag */
-    _bindImp(document, 'mousemove', _moverDrag);
-    _bindImp(document, 'touchmove', _moverDrag, { passive: false });
-    _bindImp(document, 'mouseup', _finDrag);
-    _bindImp(document, 'touchend', _finDrag);
+    /* [FIX-16-B] Listeners globales de drag: viven en document (sin
+     * dataset para marcar), así que se rigen por _dragGlobalBound.
+     * destroy() los aborta vía controller y resetea el flag. */
+    if (!_dragGlobalBound) {
+      _bindImp(document, 'mousemove', _moverDrag);
+      _bindImp(document, 'touchmove', _moverDrag, { passive: false });
+      _bindImp(document, 'mouseup', _finDrag);
+      _bindImp(document, 'touchend', _finDrag);
+      _dragGlobalBound = true;
+    }
 
     var preview = _el('p08-preview-ticket');
     if (preview) {
@@ -34511,6 +34602,7 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
     }
     _dragState = { activo: false, elemento: null, inicioY: 0, tipo: null };
     _elementoSeleccionado = null;
+    _dragGlobalBound = false; /* [FIX-16-B] re-enganchar drag al próximo init */
     _impresoraInitialized = false;
     _impresoraInitEnCurso = false;
     _syncLiveFn = null;
@@ -34556,10 +34648,9 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
         Impuestos.config = Object.assign({}, _defaultsImpuestos);
       }
       _aplicarConfigImpuestosAFormulario();
-      if (!_impuestosInitialized) {
-        _configurarListenersImpuestos();
-        _impuestosInitialized = true;
-      }
+      /* [FIX-16-B] Configurador idempotente: se re-ejecuta siempre. */
+      _configurarListenersImpuestos();
+      _impuestosInitialized = true;
       return;
     }
 
@@ -34584,10 +34675,9 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
     try { localStorage.setItem('config_impuestos_v1', JSON.stringify(Impuestos.config)); } catch (e) {}
 
     _aplicarConfigImpuestosAFormulario();
-    if (!_impuestosInitialized) {
-      _configurarListenersImpuestos();
-      _impuestosInitialized = true;
-    }
+    /* [FIX-16-B] Configurador idempotente: se re-ejecuta siempre. */
+    _configurarListenersImpuestos();
+    _impuestosInitialized = true;
     Impuestos.renderResumen();
   };
 
@@ -34847,6 +34937,9 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
 
   function _configurarListenersImpuestos() {
     document.querySelectorAll('#vista-impuestos .p09-tab').forEach(function (tab) {
+      /* [FIX-16-05] Si B05 ya posee la tab (marca b05TabBound), no
+       * re-bindear: un solo handler por elemento, sin renders dobles. */
+      if (tab.dataset.b05TabBound === '1') return;
       if (tab.dataset.b16p2Bound === '1') return;
       tab.dataset.b16p2Bound = '1';
       tab.addEventListener('click', function () {
@@ -34863,6 +34956,8 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
       });
     });
     document.querySelectorAll('#vista-impuestos .p07-tab').forEach(function (tab) {
+      /* [FIX-16-05] B05 posee los subtabs del Libro IVA (b05SubBound). */
+      if (tab.dataset.b05SubBound === '1') return;
       if (tab.dataset.b16p2Bound === '1') return;
       tab.dataset.b16p2Bound = '1';
       tab.addEventListener('click', function () {
@@ -34882,17 +34977,21 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
       });
     });
     var btnG = _el('p09-btn-guardar-config');
-    if (btnG && btnG.dataset.b16p2Bound !== '1') {
+    /* [FIX-16-05] B05 ya bindea este botón (guardarConfigImpuestos). */
+    if (btnG && btnG.dataset.b05Bound !== '1' && btnG.dataset.b16p2Bound !== '1') {
       btnG.dataset.b16p2Bound = '1';
       btnG.addEventListener('click', Impuestos.guardarConfig);
     }
     var btnF = _el('p09-btn-filtrar-libro');
-    if (btnF && btnF.dataset.b16p2Bound !== '1') {
+    /* [FIX-16-05] B05 ya bindea este botón (renderLibrosIVA). */
+    if (btnF && btnF.dataset.b05Bound !== '1' && btnF.dataset.b16p2Bound !== '1') {
       btnF.dataset.b16p2Bound = '1';
       btnF.addEventListener('click', Impuestos.renderLibros);
     }
     var selP = _el('p09-libro-periodo');
-    if (selP && selP.dataset.b16p2Bound !== '1') {
+    /* [FIX-16-05] Check defensivo: B05 no bindea este select hoy, pero
+     * si mañana lo hace (b05Bound), B16 cede. */
+    if (selP && selP.dataset.b05Bound !== '1' && selP.dataset.b16p2Bound !== '1') {
       selP.dataset.b16p2Bound = '1';
       selP.addEventListener('change', function () {
         var custom = _el('p09-custom-dates');
@@ -34900,12 +34999,14 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
       });
     }
     var btnT = _el('p09-btn-export-txt');
-    if (btnT && btnT.dataset.b16p2Bound !== '1') {
+    /* [FIX-16-05] B05 ya bindea este botón (exportarReporteFiscal). */
+    if (btnT && btnT.dataset.b05Bound !== '1' && btnT.dataset.b16p2Bound !== '1') {
       btnT.dataset.b16p2Bound = '1';
       btnT.addEventListener('click', function () { Impuestos.exportarReporte('txt'); });
     }
     var btnC = _el('p09-btn-export-csv');
-    if (btnC && btnC.dataset.b16p2Bound !== '1') {
+    /* [FIX-16-05] B05 ya bindea este botón (exportarReporteFiscal). */
+    if (btnC && btnC.dataset.b05Bound !== '1' && btnC.dataset.b16p2Bound !== '1') {
       btnC.dataset.b16p2Bound = '1';
       btnC.addEventListener('click', function () { Impuestos.exportarReporte('csv'); });
     }
@@ -34919,8 +35020,10 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
   var _cuentaInitialized    = false;
   var _cuentaComercioId     = null;
   var _logsFiltroActual     = 'todos';
-  var _unsubscribeLogs      = null;
-  var _logsComercioId       = null;
+  /* [FIX-16-A] _unsubscribeLogs/_logsComercioId eliminados: la
+   * suscripción directa a Data.onSnapshotLogs era redundante con el
+   * snapshot global de logs de B11 v5 (FIX-11-30/11-E) y estaba gated
+   * por rol admin (16-A). Ahora solo se escucha 'b16:logs-actualizados'. */
   var _cuentaInitEnCurso    = false;
   var _cuentaInitPendiente  = false;
   var _cuentaInitRetryHandle = null;
@@ -34936,11 +35039,8 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
     try {
       var cid = _getComercioIdActual();
       if (_cuentaComercioId !== cid) {
-        if (typeof _unsubscribeLogs === 'function') {
-          try { _unsubscribeLogs(); } catch (e) {}
-          _unsubscribeLogs = null;
-          _logsComercioId = null;
-        }
+        /* [FIX-16-A] Sin suscripción directa de logs: nada que
+         * des-suscribir al cambiar de comercio. */
         _cuentaComercioId = cid;
       }
 
@@ -34988,34 +35088,35 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
         Cuenta.actualizarInfo();
       }
 
-      _cargarYRenderLogs();
+      _refrescarLogsUI(); /* [FIX-16-05] un solo renderer */
 
-      if (!_cuentaInitialized) {
-        _configurarListenersCuenta();
-        _cuentaInitialized = true;
-      }
+      /* [FIX-16-B] Configurador idempotente: se re-ejecuta siempre
+       * (guard por elemento); un re-render que reemplace nodos se
+       * re-engancha en el próximo init en vez de quedar sordo. */
+      _configurarListenersCuenta();
+      _cuentaInitialized = true;
 
-      if (rol === 'admin' && window.Data && typeof Data.onSnapshotLogs === 'function') {
-        if (_logsComercioId !== cid) {
-          if (typeof _unsubscribeLogs === 'function') {
-            try { _unsubscribeLogs(); } catch (e) {}
-            _unsubscribeLogs = null;
-          }
-          try {
-            _unsubscribeLogs = Data.onSnapshotLogs(function () { _cargarYRenderLogs(); });
-            _logsComercioId = cid;
-          } catch (e) {
-            console.warn('[Cuenta] No se pudo suscribir a onSnapshotLogs:', e);
-            _unsubscribeLogs = null;
-            _logsComercioId = null;
-          }
-        }
-      // El snapshot global ya está registrado en Data.init.
-      // Solo escuchamos el evento custom para re-renderizar la UI.
+      /* [FIX-16-A] Listener de logs para TODOS los roles (16-A del plan).
+       *
+       * Qué había acá: un if (rol === 'admin') que (a) suscribía un
+       * snapshot propio a Data.onSnapshotLogs y (b) bind-eaba el evento
+       * 'b16:logs-actualizados'. El if tenía una llave sin cerrar
+       * [FIX-16-SYN]: el "} finally" de este try quedaba consumido por
+       * el if y TODO el <script> de B16 no parseaba ("Unexpected token
+       * 'finally'") — ningún módulo de B16 cargaba.
+       *
+       * Qué queda ahora:
+       *  1. La suscripción directa se elimina: es redundante, Data.init
+       *     ya registra un snapshot global de logs para TODOS los roles
+       *     (B11 v5, FIX-11-30/11-E) que emite 'b16:logs-actualizados'.
+       *  2. El bind del evento queda FUERA de todo if de rol: el cajero
+       *     también recibe live updates (objetivo del 16-A).
+       *  3. El render delega en Bloque05.renderLogs si existe
+       *     ([FIX-16-05], un solo renderer); si no, usa el propio. */
       if (!window.__B16_LOGS_EVENT_BOUND__) {
         window.__B16_LOGS_EVENT_BOUND__ = true;
         document.addEventListener('b16:logs-actualizados', function () {
-          if (_dataLista()) _cargarYRenderLogs();
+          if (_dataLista()) _refrescarLogsUI();
         });
       }
     } finally {
@@ -35211,6 +35312,23 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
     _setText('p10-info-cola',         String(Data.obtenerCola ? Data.obtenerCola().length : 0));
     _setText('p10-info-online',       App.esOnline() ? '🟢 Online' : '🔴 Offline');
   };
+
+  /* [FIX-16-05] Un solo renderer para la lista de logs. Si B05 está
+   * presente (window.Bloque05.renderLogs), se delega en él: B05 posee
+   * los botones de filtro y su markup es el que ve el usuario hoy, así
+   * el live-update no disputa el markup de #p10-log-lista. Sin B05,
+   * B16 renderiza con su propio markup (filtrando por device_id/email
+   * para cajero). El badge se actualiza en ambos caminos. */
+  function _refrescarLogsUI() {
+    try {
+      if (window.Bloque05 && typeof Bloque05.renderLogs === 'function') {
+        Bloque05.renderLogs();
+        _actualizarBadgeLogsMenu();
+        return;
+      }
+    } catch (e) { /* cae al render propio de B16 */ }
+    _cargarYRenderLogs();
+  }
 
   function _cargarYRenderLogs() {
     var logs = (App.getLogs ? App.getLogs() : []);
@@ -35607,6 +35725,8 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
 
   function _configurarListenersCuenta() {
     document.querySelectorAll('#vista-cuenta .p10-tabs .p10-tab').forEach(function (tab) {
+      /* [FIX-16-05] B05 posee las tabs de P10 (bindTabs + lazy renders). */
+      if (tab.dataset.b05TabBound === '1') return;
       if (tab.dataset.b16p2Bound === '1') return;
       tab.dataset.b16p2Bound = '1';
       tab.addEventListener('click', function () {
@@ -35619,11 +35739,15 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
         });
         var target = _el('p10-tab-' + tab.dataset.tab);
         if (target) target.style.display = 'block';
-        if (tab.dataset.tab === 'logs') _cargarYRenderLogs();
+        if (tab.dataset.tab === 'logs') _refrescarLogsUI();
       });
     });
 
     document.querySelectorAll('.p10-log-filtro-btn').forEach(function (btn) {
+      /* [FIX-16-05] B05 posee los filtros de logs (y renderiza la lista
+       * con su markup). No re-bindear: dos handlers = dos renders por
+       * click y disputa de markup en #p10-log-lista. */
+      if (btn.dataset.b05Bound === '1') return;
       if (btn.dataset.b16p2Bound === '1') return;
       btn.dataset.b16p2Bound = '1';
       btn.addEventListener('click', function () {
@@ -35632,13 +35756,19 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
         });
         btn.classList.add('active');
         _logsFiltroActual = btn.dataset.filtro;
-        _cargarYRenderLogs();
+        _refrescarLogsUI();
       });
     });
 
     var bind = function (id, handler) {
       var el = _el(id);
-      if (!el || el.dataset.b16p2Bound === '1') return;
+      if (!el) return;
+      /* [FIX-16-05] B05 bindea la mayoría de los botones P10 con su
+       * propia lógica (guardarPerfil, crearCajero, ARCA, backup...).
+       * Si ya tiene marca b05Bound, NO agregar un segundo handler:
+       * sería doble guardado / doble toast / doble creación. */
+      if (el.dataset.b05Bound === '1') return;
+      if (el.dataset.b16p2Bound === '1') return;
       el.dataset.b16p2Bound = '1';
       el.addEventListener('click', handler);
     };
@@ -35652,7 +35782,8 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
     bind('p10-btn-log-copiar',      Cuenta.copiarTodosLosLogs);
 
     var inputBackup = _el('p10-input-backup');
-    if (inputBackup && inputBackup.dataset.b16p2Bound !== '1') {
+    /* [FIX-16-05] B05 también importa backups (importarBackup). */
+    if (inputBackup && inputBackup.dataset.b05Bound !== '1' && inputBackup.dataset.b16p2Bound !== '1') {
       inputBackup.dataset.b16p2Bound = '1';
       inputBackup.addEventListener('change', function (e) {
         Cuenta.restaurarBackup(e.target.files[0]);
@@ -35660,7 +35791,8 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
     }
 
     var btnInv = _el('p10-btn-invitar-cajero');
-    if (btnInv && btnInv.dataset.b16p2Bound !== '1') {
+    /* [FIX-16-05] B05 posee este botón (abrirCrearCajero). */
+    if (btnInv && btnInv.dataset.b05Bound !== '1' && btnInv.dataset.b16p2Bound !== '1') {
       btnInv.dataset.b16p2Bound = '1';
       btnInv.addEventListener('click', function () {
         _setVal('p10-cajero-nombre', '');
@@ -35691,7 +35823,8 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
       });
     }
     var inputEmail = _el('p10-cajero-email-preview');
-    if (inputEmail && inputEmail.dataset.b16p2Bound !== '1') {
+    /* [FIX-16-05] Check defensivo contra doble bind si B05 lo toma. */
+    if (inputEmail && inputEmail.dataset.b05Bound !== '1' && inputEmail.dataset.b16p2Bound !== '1') {
       inputEmail.dataset.b16p2Bound = '1';
       
       // Marcar como editado manualmente
@@ -35732,7 +35865,8 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
     }
     bind('p10-btn-crear-cajero', Cuenta.crearCajero);
     var selectNumeroCajero = _el('p10-cajero-numero');
-    if (selectNumeroCajero && selectNumeroCajero.dataset.b16p2Bound !== '1') {
+    /* [FIX-16-05] B05 bindea este select (actualiza el email preview). */
+    if (selectNumeroCajero && selectNumeroCajero.dataset.b05Bound !== '1' && selectNumeroCajero.dataset.b16p2Bound !== '1') {
       selectNumeroCajero.dataset.b16p2Bound = '1';
       selectNumeroCajero.addEventListener('change', function () {
         Cuenta.generarEmailCajero(true);
@@ -35766,7 +35900,8 @@ Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.c
     bind('p10-btn-desvincular-arca', Arca.desvincular);
 
     var certInput = _el('p10-arca-cert');
-    if (certInput && certInput.dataset.b16p2Bound !== '1') {
+    /* [FIX-16-05] Check defensivo: B05 no bindea este input hoy. */
+    if (certInput && certInput.dataset.b05Bound !== '1' && certInput.dataset.b16p2Bound !== '1') {
       certInput.dataset.b16p2Bound = '1';
       certInput.addEventListener('change', function () {
         var nombre = certInput.files[0] ? certInput.files[0].name.toLowerCase() : '';
@@ -36465,9 +36600,19 @@ function _actualizarBadgeLogsMenu() {
     }
 
     botones.forEach(function (btn) {
-      if (btn.dataset.b16NavBound === '1') return;
-      btn.dataset.b16NavBound = '1';
-      btn.addEventListener('click', async function () {
+      /* [FIX-16-NAV] Marca propia de B16. La marca b16NavBound la
+       * establece B05 en TODOS los [data-panel] para silenciar el
+       * fallback de B06, así que ya no puede servir como marca de
+       * B16: con ella este binder no enganchaba ningún botón y los
+       * módulos nunca se iniciaban al navegar (ni había guard de caja
+       * abierta en el POS). */
+      if (btn.dataset.b16PanelBound === '1') return;
+      btn.dataset.b16PanelBound = '1';
+      btn.addEventListener('click', async function (e) {
+        /* [FIX-16-NAV] B16 es el dueño del click de [data-panel]: corta
+         * la propagación para que la delegación de B05 (App.navegar sin
+         * guard) no navegue dos veces ni perfore el guard del POS. */
+        try { e.stopPropagation(); } catch (eStop) {}
         var panel = btn.dataset.panel;
 
         if (panel === 'pos') {
@@ -36683,13 +36828,16 @@ _safeSetInterval(function () {
   if (window.Impresora && typeof Impresora.renderCola === 'function') {
     Impresora.renderCola();
   }
+  /* [FIX-16-B] Re-pass de navegación: re-engancha botones [data-panel]
+   * nuevos o reemplazados por un re-render (idempotente por marca). */
+  if (!_STATE.destroyed) _configurarNavegacionPaneles();
 }, 15000);
 
 _safeSetTimeout(_actualizarBadgeLogsMenu, 500);
 _safeSetTimeout(_actualizarBadgeLogsMenu, 1500);
 _safeSetTimeout(_actualizarBadgeLogsMenu, 3000);
 
-    console.info('[B16 v5] Arranque final completado.');
+    console.info('[B16 v6] Arranque final completado.');
   }
 
   /* ═══════════════════════════════════════════════════════════ */
@@ -36737,12 +36885,9 @@ _safeSetTimeout(_actualizarBadgeLogsMenu, 3000);
     });
     _STATE.abortables.length = 0;
 
-    /* 7. Cancelar snapshot de logs si lo teníamos */
-    if (typeof _unsubscribeLogs === 'function') {
-      try { _unsubscribeLogs(); } catch (e) {}
-      _unsubscribeLogs = null;
-      _logsComercioId = null;
-    }
+    /* 7. [FIX-16-A] Sin snapshot propio de logs: no hay unsubscribe
+     * que cancelar. El listener de 'b16:logs-actualizados' vive a
+     * nivel document y es intencionalmente permanente en la sesión. */
 
     /* 8. Limpiar estado de drag */
     _dragState = { activo: false, elemento: null, inicioY: 0, tipo: null };
@@ -36762,7 +36907,7 @@ _safeSetTimeout(_actualizarBadgeLogsMenu, 3000);
 
   /* Exponer destroy público. */
   window.Bloque16.destroy = _destroyGlobal;
-  window.Bloque16.version = 'v5';
+  window.Bloque16.version = 'v6';
   window.__B16__.destroy = _destroyGlobal;
 
   /* ═══════════════════════════════════════════════════════════ */
