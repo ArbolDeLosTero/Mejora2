@@ -304,7 +304,7 @@
   <!-- app-version: leída por App.getVersion() (B10) y por el
        VersionChecker del bloque final. Sincronizable desde
        version.json vía GitHub Action (§5.2 auditoría). -->
-  <meta name="app-version" content="1.0.67">
+  <meta name="app-version" content="1.0.64">
 
   <title>Sistema de Gestión para Kioscos y Almacenes</title>
 
@@ -19507,10 +19507,34 @@
       window.Data = Data;
     })();
   </script>
+
 <script id="bloque-12-js">
     /* ═══════════════════════════════════════════════════════════ */
     /* BLOQUE 12 — JS AUTH + LICENCIA                             */
-    /* v5.0 — Cierre de bugs críticos de flujo de auth + licencia */
+    /* v5.1 — Fixes propios del bloque (chat B12) + defensivos    */
+    /*                                                            */
+    /*                                                            */
+    /* CHANGELOG v5.1 (respecto a v5.0):                          */
+    /*                                                            */
+    /* 🔴 FIX-12-J (plan B12, fix #4): bind muerta eliminada.      */
+    /*    _bindLink('link-to-login', ...) apuntaba a un id que    */
+    /*    no existe en el DOM (verificado por grep). Código       */
+    /*    muerto sin efecto en runtime: se elimina. Los links     */
+    /*    reales (#link-back-to-login y                           */
+    /*    #link-back-to-login-forgot) quedan intactos.            */
+    /*                                                            */
+    /* 🟠 FIX-12-K (defensivo): CASO 2 (device desactivado)        */
+    /*    resetea rol a 'pendiente' y refresca el menú, igual     */
+    /*    que CASO 1 y CASO 3 (antes quedaba rol stale).          */
+    /*                                                            */
+    /* 🟠 FIX-12-L (defensivo): Licencia.activar valida que        */
+    /*    el doc del usuario exista antes de leerlo (antes:       */
+    /*    TypeError crudo si userData quedaba undefined).         */
+    /*                                                            */
+    /* 🟡 NOTA Cambio 2.1: el chip device_id copiable del TOAST    */
+    /*    de E-LIC-001 se renderiza en B10 (_mostrarToastError)   */
+    /*    con el detalles.device_id que B12 ya envía. Sin         */
+    /*    cambio funcional en B12 para ese fix.                   */
     /*                                                            */
     /* CHANGELOG RESPECTO A v4.0:                                 */
     /*                                                            */
@@ -20272,7 +20296,11 @@
 
           /* [OBS-2] `_reportarError` ya emite el toast de nivel 1
            * con el mensaje del catálogo. Se elimina el App.toast
-           * adicional para evitar duplicación visual. */
+           * adicional para evitar duplicación visual.
+           * [Cambio 2.1] El chip device_id copiable del toast se
+           * renderiza en B10 (_mostrarToastError) a partir de
+           * detalles.device_id que este bloque ya envía. Acá no
+           * se duplica ni se repite el toast. */
           _reportarError('E-LIC-001', {
             detalles: { device_id: deviceId, comercioId: data.comercioId || null }
           });
@@ -20284,7 +20312,13 @@
         /* CASO 2: Device desactivado por el admin                */
         /* ─────────────────────────────────────────────────────── */
         if (deviceInfo.activa === false) {
-          /* Nivel 3 → pantalla completa, accionCerrar: login */
+          /* [FIX-12-K] Consistencia con CASO 1 y CASO 3: resetear
+           * el rol y refrescar el menú antes de la pantalla de
+           * error (nivel 3 → pantalla completa, accionCerrar:
+           * login). Antes quedaba el rol stale si el menú llegara
+           * a renderizarse durante la pantalla de error. */
+          localStorage.setItem(ROLE_KEY, 'pendiente');
+          _actualizarMenuUsuario({ rol: 'pendiente' });
           _reportarError('E-LIC-006', { detalles: { device_id: deviceId } });
           return;
         }
@@ -20627,13 +20661,21 @@
         }
 
         let userData;
+        let userDoc;
         try {
-          const userDoc = await App.getDb().collection('usuarios').doc(user.uid).get();
-          userData = userDoc.data();
+          userDoc = await App.getDb().collection('usuarios').doc(user.uid).get();
         } catch (e) {
           _reportarError('E-AUTH-008', { detalles: { mensaje: e.message } });
           throw new Error('No se pudo verificar tu cuenta. Revisá tu conexión.');
         }
+        /* [FIX-12-L] Guard FUERA del try: doc inexistente no es un
+         * error de red. Antes userDoc.data() devolvía undefined y
+         * el acceso a userData.comercioId lanzaba TypeError crudo. */
+        if (!userDoc.exists) {
+          _reportarError('E-AUTH-010', { detalles: { user_uid: user.uid } });
+          throw new Error('Usuario no encontrado en la base de datos.');
+        }
+        userData = userDoc.data();
 
         let comercioId = userData.comercioId;
 
@@ -21167,7 +21209,12 @@
 
         /* Navegación entre vistas. */
         _bindLink('link-to-register',            function () { App.navegar('register'); });
-        _bindLink('link-to-login',               function () { App.navegar('login'); });
+        /* [FIX-12-J] Bind muerta eliminada (plan B12, fix #4):
+         * 'link-to-login' no existe en el DOM (verificado por
+         * grep en todo el HTML). Los links reales de vuelta al
+         * login son #link-back-to-login y
+         * #link-back-to-login-forgot, que quedan bindeados sin
+         * cambios más abajo. */
         _bindLink('link-forgot-password',        function () { App.navegar('forgot'); });
         _bindLink('link-back-to-login',          function () { App.navegar('login'); });
         _bindLink('link-back-to-login-forgot',   function () { App.navegar('login'); });
@@ -21342,6 +21389,7 @@
       }
     })();
 </script>
+
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!-- BLOQUE 13 v3.6 — POS (P03) + Control de Caja (P05)         -->
 <!--                                                            -->
@@ -32274,6 +32322,4461 @@ async function _safeLocalStorageRemove(key) {
     window.Devoluciones = Devoluciones;
   })();
 </script>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- BLOQUE 16 v5 — IMPRESORA + IMPUESTOS + CUENTA + ARCA (CONSOLIDADO) -->
+<!--                                                                    -->
+<!-- Reemplaza por completo las 3 piezas de v4:                          -->
+<!--   · <style id="bloque-16-css">                                     -->
+<!--   · <script id="bloque-16-js-p1">                                  -->
+<!--   · <script id="bloque-16-js-p2">                                  -->
+<!--                                                                    -->
+<!-- Correcciones aplicadas:                                            -->
+<!--   🔴 B16-01 — destroy() con AbortController + cleanup de timers     -->
+<!--   🔴 B16-02 — Race de config_ticket resuelta (RMW atómico +         -->
+<!--               preservación de modo_fiscal externo)                  -->
+<!--   ⚪ B16-03 — Número reservado. Fue absorbido por B16-02 durante    -->
+<!--               el desarrollo (el RMW atómico cubrió ambos casos).    -->
+<!--   🟠 B16-04 — _conDeteccionPopup restaura window.open en finally    -->
+<!--   🟠 B16-05 — Poll de logs unificado y throttled                    -->
+<!--   🟠 B16-06 — Retries cancelables con token                        -->
+<!--   🟠 B16-07 — Botón ARCA deshabilitado hasta estar disponible       -->
+<!--   🟡 B16-08 — Stock bajo: 0 no cuenta como "bajo" (documentado)     -->
+<!--   🟡 B16-09 — _inyectarInputImpresoraManual con log si falla        -->
+<!--   🟡 B16-10 — Flags centralizados en window.__B16__                 -->
+<!--   🟡 B16-11 — Validación de rangos en guardarConfig                 -->
+<!--   🟡 B16-12 — _dragState se limpia en destroy()                     -->
+<!--   🟢 B16-13 — Comentarios HTML fuera de <script>                    -->
+<!--   🟢 B16-14 — _leerColeccionDeCache sin guión bajo                  -->
+<!--   🟢 B16-15 — Dominios con alias extraídos a array                  -->
+<!--                                                                    -->
+<!-- Contratos preservados: ver §5 del análisis.                        -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<style id="bloque-16-css">
+  /* ═══════════════════════════════════════════════════════════ */
+  /* Auxiliares del panel Impresora (globales, aplican desde    */
+  /* el parseo, sin esperar a que se abra el panel).            */
+  /* ═══════════════════════════════════════════════════════════ */
+  .p08-elemento-arrastrable {
+    position: relative;
+  }
+
+  .p08-el-botones {
+    position: absolute;
+    top: -14px;
+    right: -8px;
+    display: flex;
+    gap: 4px;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 3px 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    z-index: 30;
+    pointer-events: auto;
+  }
+
+  .p08-el-botones button {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: #f0f1f4;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: #333;
+    line-height: 1;
+    font-family: inherit;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .p08-el-botones button:hover {
+    background: #667eea;
+    color: #ffffff;
+  }
+
+  .p08-placeholder {
+    color: #aaa;
+  }
+
+  body.dark-mode .p08-el-botones {
+    background: #26262e;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  }
+
+  body.dark-mode .p08-el-botones button {
+    background: #32323c;
+    color: #e8e8ec;
+  }
+
+  body.dark-mode .p08-placeholder {
+    color: #6a6a75;
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* [16-NEW-3] Ocultar badge de logs para no-admin.             */
+  /* Aplica desde el arranque sin abrir Impresora.               */
+  /* ─────────────────────────────────────────────────────────── */
+  body.b16-sin-badge-logs #menu-badge-logs {
+    display: none !important;
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* Ajuste móvil para botones de reordenar.                     */
+  /* ─────────────────────────────────────────────────────────── */
+  @media (max-width: 480px) {
+    .p08-el-botones {
+      top: -10px;
+      right: -4px;
+      padding: 2px 4px;
+    }
+    .p08-el-botones button {
+      width: 22px;
+      height: 22px;
+      font-size: 12px;
+    }
+  }
+</style>
+
+
+<script id="bloque-16-js">
+(function () {
+  'use strict';
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 0. GUARD DE IDEMPOTENCIA                                    */
+  /* ═══════════════════════════════════════════════════════════ */
+  if (window.__B16_INSTALLED__) {
+    console.info('[B16] Ya instalado, se omite la segunda carga.');
+    return;
+  }
+  window.__B16_INSTALLED__ = true;
+
+  /* Aliases por retro-compatibilidad: si algún consumidor externo
+   * chequea los flags viejos, siguen funcionando. */
+  window.__B16_P1_INSTALLED__ = true;
+  window.__B16_P2_INSTALLED__ = true;
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 1. ESTADO GLOBAL + RECURSOS TRACKEADOS                      */
+  /* ═══════════════════════════════════════════════════════════ */
+  var _STATE = {
+    destroyed: false,
+    intervals: new Set(),
+    timeouts: new Set(),
+    observers: [],
+    storageListeners: [],
+    abortables: [],
+    retries: []
+  };
+
+  /* Namespace único para flags internos. */
+  window.__B16__ = window.__B16__ || {};
+  Object.assign(window.__B16__, {
+    installed: true,
+    state: _STATE,
+    version: 'v5',
+    destroy: null /* se asigna al final */
+  });
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* 1.1 Helpers de tracking                                     */
+  /* ─────────────────────────────────────────────────────────── */
+  function _safeSetInterval(fn, ms) {
+    if (_STATE.destroyed) return null;
+    /* [FIX-MEDIO-6] Guard contra acumulación inadvertida. B16 crea
+     * ~6 intervalos en toda su vida; si el Set supera 20, algo está
+     * mal (re-init en bucle, creación dinámica, etc.). */
+    if (_STATE.intervals.size >= 20) {
+      console.warn('[B16] _STATE.intervals tiene ' + _STATE.intervals.size +
+                   ' IDs. Posible leak — revisá quién llama _safeSetInterval.');
+    }
+    var id = setInterval(fn, ms);
+    _STATE.intervals.add(id);
+    return id;
+  }
+
+  function _safeSetTimeout(fn, ms) {
+    if (_STATE.destroyed) return null;
+    var id = setTimeout(function () {
+      _STATE.timeouts.delete(id);
+      if (!_STATE.destroyed) {
+        try { fn(); } catch (e) { console.warn('[B16] Error en timeout:', e); }
+      }
+    }, ms);
+    _STATE.timeouts.add(id);
+    return id;
+  }
+
+  function _safeClearInterval(id) {
+    if (id === null || id === undefined) return;
+    try { clearInterval(id); } catch (e) {}
+    _STATE.intervals.delete(id);
+  }
+
+  function _safeClearTimeout(id) {
+    if (id === null || id === undefined) return;
+    try { clearTimeout(id); } catch (e) {}
+    _STATE.timeouts.delete(id);
+  }
+
+  function _safeAddStorageListener(fn) {
+    if (_STATE.destroyed) return;
+    window.addEventListener('storage', fn);
+    _STATE.storageListeners.push(fn);
+  }
+
+  function _safeAddAbortController() {
+    var ctrl = new AbortController();
+    _STATE.abortables.push(ctrl);
+    return ctrl;
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* 1.2 Retry cancelable                                        */
+  /* ─────────────────────────────────────────────────────────── */
+  function _crearRetry(callback, maxAttempts, delayMs) {
+    var cancelado = false;
+    var intento = 0;
+    var timeoutId = null;
+
+    /* [FIX-B16-17] handle se declara ANTES de ejecutar() para que el
+     * auto-cleanup pueda referenciarlo sin TDZ. */
+    var handle = {
+      cancelar: function () {
+        if (cancelado) return;
+        cancelado = true;
+        if (timeoutId) _safeClearTimeout(timeoutId);
+        _autolimpiar();
+      },
+      intento: function () { return intento; }
+    };
+
+    function _autolimpiar() {
+      var idx = _STATE.retries.indexOf(handle);
+      if (idx !== -1) _STATE.retries.splice(idx, 1);
+    }
+
+    function ejecutar() {
+      if (cancelado || _STATE.destroyed) return;
+      intento++;
+      var terminar = false;
+      try {
+        terminar = !!callback(intento);
+      } catch (e) {
+        console.warn('[B16] Error en retry #' + intento + ':', e);
+      }
+      /* [FIX-B16-17] Auto-remover el handle cuando termina (éxito o
+       * agotamiento). Antes se acumulaban hasta destroy(). */
+      if (terminar || intento >= maxAttempts) {
+        _autolimpiar();
+        return;
+      }
+      timeoutId = _safeSetTimeout(ejecutar, delayMs);
+    }
+
+    timeoutId = _safeSetTimeout(ejecutar, delayMs);
+    _STATE.retries.push(handle);
+    return handle;
+  }
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 2. HELPERS GENERALES                                        */
+  /* ═══════════════════════════════════════════════════════════ */
+  function _el(id) { return document.getElementById(id); }
+  function _setText(id, txt) { var el = _el(id); if (el) el.textContent = txt; }
+  function _setVal(id, val) { var el = _el(id); if (el) el.value = val; }
+  function _setChecked(id, val) { var el = _el(id); if (el) el.checked = !!val; }
+  function _valorInput(id, fb) { var el = _el(id); return el ? el.value : fb; }
+  function _checkedInput(id, fb) { var el = _el(id); return el ? el.checked : fb; }
+
+  function _getUser() {
+    try { return JSON.parse(localStorage.getItem('usuario_actual_v1') || '{}'); }
+    catch (e) { return {}; }
+  }
+
+  function _rolActual() {
+    return localStorage.getItem('rol_actual_v1') || _getUser().rol || 'cajero';
+  }
+
+  function _esAdmin() { return _rolActual() === 'admin'; }
+
+  function _dataLista() {
+    return !!(window.Data &&
+              typeof Data.getComercioId === 'function' &&
+              Data.getComercioId());
+  }
+
+  function _getComercioIdActual() {
+    return _dataLista() ? Data.getComercioId() : null;
+  }
+
+  function _escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    if (window.App && typeof App.escapeHtml === 'function') return App.escapeHtml(str);
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function _escapeAttr(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/`/g, '&#96;');
+  }
+
+  function _confirmar(msg) {
+    if (window.App && typeof App.confirmar === 'function') return App.confirmar(msg);
+    return Promise.resolve(window.confirm(msg));
+  }
+
+  function _toast(msg, tipo, dur) {
+    if (window.App && typeof App.toast === 'function') {
+      App.toast(msg, tipo || 'info', dur);
+    } else {
+      console.log('[B16:' + (tipo || 'info') + '] ' + msg);
+    }
+  }
+
+  function _abrirUrlExterna(url) {
+    try {
+      var w = window.open(url, '_blank', 'noopener,noreferrer');
+      if (w) w.opener = null;
+    } catch (e) { window.location.href = url; }
+  }
+
+  function _debounce(fn, ms) {
+    if (window.App && typeof App.debounce === 'function') return App.debounce(fn, ms);
+    var t = null;
+    return function () {
+      var ctx = this, args = arguments;
+      if (t) clearTimeout(t);
+      t = _safeSetTimeout(function () { t = null; fn.apply(ctx, args); }, ms || 200);
+    };
+  }
+
+/* [FIX-B16-27] CSPRNG en el fallback. Antes usaba Math.random(),
+ * que dispara js/insecure-randomness en CodeQL. Se reemplaza por
+ * crypto.getRandomValues() con 6 bytes (48 bits de entropía).
+ * Fallback extremo: timestamp-based sin Math.random() por si
+ * crypto no está disponible (navegador prehistórico, webview). */
+function _genId(prefix) {
+  if (window.App && typeof App.generarId === 'function') return App.generarId(prefix);
+  var p = prefix || 'id';
+  var rand;
+  try {
+    var buf = new Uint8Array(6);
+    crypto.getRandomValues(buf);
+    var hex = '';
+    for (var i = 0; i < buf.length; i++) {
+      hex += ('0' + buf[i].toString(36)).slice(-2);
+    }
+    rand = hex.slice(0, 10);
+  } catch (e) {
+    rand = String(Date.now()).slice(-10);
+  }
+  return p + '_' + Date.now().toString(36) + '_' + rand;
+}
+
+  function _reportarError(codigo, info) {
+    if (window.App && typeof App.error === 'function') {
+      try { App.error(codigo, info || {}); }
+      catch (e) { console.warn('[B16] No se pudo reportar ' + codigo + ':', e); }
+    } else {
+      console.error('[B16] ' + codigo, info || {});
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* 2.1 Fuentes tipográficas (lista blanca)                     */
+  /* ─────────────────────────────────────────────────────────── */
+  var FUENTES_PERMITIDAS = [
+    'Courier New', 'Arial', 'Times New Roman', 'Verdana',
+    'monospace', 'sans-serif', 'serif'
+  ];
+
+  function _fuenteSegura(fuente) {
+    var f = String(fuente || 'Courier New');
+    return FUENTES_PERMITIDAS.indexOf(f) !== -1 ? f : 'Courier New';
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* 2.2 Tamaños de papel (lista blanca)                         */
+  /* ─────────────────────────────────────────────────────────── */
+  var TAMANOS_PAPEL = {
+    '58': 220,
+    '80': 302,
+    '100': 378,
+    'A4': 794
+  };
+
+  function _papelSeguro(tamano) {
+    var t = String(tamano || 'A4');
+    return TAMANOS_PAPEL[t] !== undefined ? t : 'A4';
+  }
+
+  function _anchoPorTamano(tamano) {
+    return TAMANOS_PAPEL[_papelSeguro(tamano)] || TAMANOS_PAPEL.A4;
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* 2.3 Detección de popups                                     */
+  /* ─────────────────────────────────────────────────────────── */
+  /* [B16-04] Parchea window.open temporalmente. Restaura en
+   * finally. LIMITACIÓN: si otro código abre un popup durante
+   * fn(), se cuenta como propio. En la práctica fn() sólo ejecuta
+   * window.open + document.write + close + focus de forma síncrona. */
+  /* [FIX-B16-18] Serialización: dos llamadas concurrentes se pisaban
+   * el parche de window.open (la segunda capturaba como `original`
+   * la versión parchada por la primera, y contaba popups ajenos).
+   * Ahora se encadenan en una promesa-colа: una detección activa
+   * por vez. */
+  var _popupDetectionChain = Promise.resolve();
+
+  function _conDeteccionPopup(fn) {
+    var miTurno = _popupDetectionChain.then(function () {
+      return _conDeteccionPopupUno(fn);
+    });
+    /* La cadena continúa aunque este turno falle, para no bloquear
+     * detecciones futuras. */
+    _popupDetectionChain = miTurno.catch(function (e) {
+      console.warn('[B16] Error en _conDeteccionPopup (cadena):', e);
+    });
+    return miTurno;
+  }
+
+  async function _conDeteccionPopupUno(fn) {
+    var original = window.open;
+    var abiertas = 0;
+    var parcheInstalado = false;
+
+    try {
+      try {
+        window.open = function () {
+          var w = original.apply(window, arguments);
+          if (w) abiertas++;
+          return w;
+        };
+        parcheInstalado = true;
+      } catch (ePatch) {
+        /* [FIX-MENOR-10] window.open es read-only (Object.freeze(window))
+         * o similar. Ejecutamos fn() sin detección y devolvemos false
+         * para que el caller haga fallback (encolar en vez de imprimir). */
+        console.warn('[B16] No se pudo parchear window.open para detección:', ePatch);
+        await fn();
+        return false;
+      }
+      await fn();
+    } finally {
+      if (parcheInstalado) {
+        try { window.open = original; } catch (eRestore) {
+          console.warn('[B16] No se pudo restaurar window.open:', eRestore);
+        }
+      }
+    }
+    return abiertas > 0;
+  }
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* 2.4 Impresión de ventana                                    */
+  /* ─────────────────────────────────────────────────────────── */
+  function _imprimirVentana(ventana) {
+    if (!ventana) return;
+    var _impreso = false;
+    function _hacerPrint() {
+      if (_impreso) return;
+      _impreso = true;
+      try { ventana.focus(); ventana.print(); } catch (e) {}
+    }
+    try {
+      var doc = ventana.document;
+      if (doc && doc.readyState === 'complete') {
+        _safeSetTimeout(_hacerPrint, 100);
+      } else {
+        try {
+          ventana.addEventListener('load', function () {
+            _safeSetTimeout(_hacerPrint, 100);
+          });
+        } catch (e) {}
+        _safeSetTimeout(_hacerPrint, 1500);
+      }
+    } catch (e) {
+      _safeSetTimeout(_hacerPrint, 500);
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 3. HELPERS COMPARTIDOS (contrato __B16_HELPERS__)           */
+  /* ═══════════════════════════════════════════════════════════ */
+  window.__B16_HELPERS__ = {
+    setText: _setText,
+    setVal: _setVal,
+    setChecked: _setChecked,
+    valorInput: _valorInput,
+    checkedInput: _checkedInput,
+    getUser: _getUser,
+    rolActual: _rolActual,
+    esAdmin: _esAdmin,
+    dataLista: _dataLista,
+    getComercioIdActual: _getComercioIdActual,
+    escapeHtml: _escapeHtml,
+    escapeAttr: _escapeAttr,
+    confirmar: _confirmar,
+    abrirUrlExterna: _abrirUrlExterna,
+    debounce: _debounce,
+    genId: _genId,
+    fuenteSegura: _fuenteSegura,
+    conDeteccionPopup: _conDeteccionPopup,
+    imprimirVentana: _imprimirVentana
+  };
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* 3.1 Helper de caché local                                   */
+  /* ─────────────────────────────────────────────────────────── */
+  function _leerColeccionDeCache(coleccion) {
+    var cid = _getComercioIdActual();
+    if (!cid) return [];
+    /* Formato B11 v4: <coleccion>_cache_v1::<cid> */
+    try {
+      var raw = localStorage.getItem(coleccion + '_cache_v1::' + cid);
+      if (raw) {
+        var arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return arr;
+      }
+    } catch (e) {}
+    /* Fallback legacy: <coleccion>_v1 */
+    try {
+      var rawViejo = localStorage.getItem(coleccion + '_v1');
+      if (rawViejo) {
+        var arrViejo = JSON.parse(rawViejo);
+        if (Array.isArray(arrViejo)) return arrViejo;
+      }
+    } catch (e) {}
+    return [];
+  }
+  window._leerColeccionDeCache = _leerColeccionDeCache;
+  window.__B16__.leerColeccionDeCache = _leerColeccionDeCache;
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 4. MÓDULO IMPRESORA — PANEL 08                              */
+  /* ═══════════════════════════════════════════════════════════ */
+  var IMPRESORA_CONFIG_KEY_BASE  = 'ticket_config_v1';
+
+  /* [FIX-B16-22] Clave namespaced por comercioId. Antes era global
+   * y filtraba config entre cuentas que compartían dispositivo:
+   * usuario A configura su ticket, se desloguea; usuario B se
+   * loguea en el mismo device y si el comercio B todavía no tenía
+   * config en Firestore, caía al localStorage y veía la del A. */
+  function _impresoraConfigKey() {
+    var cid = _getComercioIdActual();
+    return cid
+      ? IMPRESORA_CONFIG_KEY_BASE + '::' + cid
+      : IMPRESORA_CONFIG_KEY_BASE;
+  }
+
+  /* [FIX-B16-22] Migración one-shot: si existe la clave legacy y
+   * NO existe la namespaced, copiar el valor. */
+  function _migrarConfigLegacySiHace() {
+    var cid = _getComercioIdActual();
+    if (!cid) return;
+    try {
+      var keyNueva = IMPRESORA_CONFIG_KEY_BASE + '::' + cid;
+      if (localStorage.getItem(keyNueva)) return;
+      var legacy = localStorage.getItem(IMPRESORA_CONFIG_KEY_BASE);
+      if (!legacy) return;
+      localStorage.setItem(keyNueva, legacy);
+      console.info('[Impresora] Config legacy migrada a clave namespaced.');
+    } catch (e) {
+      console.warn('[Impresora] Error al migrar config legacy:', e);
+    }
+  }
+  var COLA_KEY                   = 'cola_impresion_v1';
+  var IMPRESORA_SELECCIONADA_KEY = 'impresora_seleccionada_v1';
+  var MAX_COLA                   = 50;
+  var LOGO_MAX_BYTES             = 300 * 1024;
+  var LOGO_MAX_BASE64            = 450 * 1024;
+  var _DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+  var _defaultsImpresora = {
+    tamano_papel: 'A4',
+    impresora_nombre: '',
+    logo: null,
+    nombre_negocio: '',
+    ubicacion: '',
+    telefono: '',
+    mostrar_horarios: false,
+    horarios: {},
+    horarios_agrupados: false,
+    mensaje_pie: '',
+    mostrar_fecha: true,
+    mostrar_numero: true,
+    fuente: 'Courier New',
+    tamano_letra: 12,
+    negritas: false,
+    tipo_comprobante: 'ticket',
+    modo_fiscal: 'particular',
+    orden_encabezado: ['logo', 'nombre', 'ubicacion', 'telefono', 'horarios'],
+    orden_pie: ['mensaje_pie', 'fecha', 'numero']
+  };
+
+  /* [MEJORA-M2] Congelar los defaults para que ninguna mutación
+   * accidental los contamine. Idempotente. */
+  Object.freeze(_defaultsImpresora.horarios);
+  Object.freeze(_defaultsImpresora.orden_encabezado);
+  Object.freeze(_defaultsImpresora.orden_pie);
+  Object.freeze(_defaultsImpresora);
+
+  /* [FIX-B16-16] Deep-clone de la config de impresora.
+   * Object.assign es shallow: sin esto, `config.horarios` y los
+   * arrays de orden comparten referencia con `_defaultsImpresora`.
+   * Cualquier mutación en una instancia contamina los defaults
+   * globales y se filtra entre comercios. */
+  function _cloneConfigImpresora(base) {
+    var b = (base && typeof base === 'object') ? base : {};
+    var cfg = Object.assign({}, _defaultsImpresora, b);
+    cfg.horarios = Object.assign(
+      {},
+      _defaultsImpresora.horarios,
+      (b.horarios && typeof b.horarios === 'object') ? b.horarios : {}
+    );
+    cfg.orden_encabezado = Array.isArray(b.orden_encabezado)
+      ? b.orden_encabezado.slice()
+      : _defaultsImpresora.orden_encabezado.slice();
+    cfg.orden_pie = Array.isArray(b.orden_pie)
+      ? b.orden_pie.slice()
+      : _defaultsImpresora.orden_pie.slice();
+    return cfg;
+  }
+
+  var _dragState = { activo: false, elemento: null, inicioY: 0, tipo: null };
+  var _elementoSeleccionado = null;
+  var _pesablesTickets = [];
+  var _impresoraInitialized = false;
+  var _impresoraComercioId = null;
+  var _syncLiveFn = null;
+  var _syncManualFn = null;
+  var _lastColaFingerprint = '';
+  var _modalesUxBound = false;
+  var _impresoraInitEnCurso = false;
+  var _impController = null;
+
+  function _getImpSignal() {
+    if (!_impController) _impController = _safeAddAbortController();
+    return _impController.signal;
+  }
+
+  function _bindImp(el, ev, fn, opts) {
+    if (!el) return false;
+    var finalOpts = Object.assign({}, opts || {}, { signal: _getImpSignal() });
+    try {
+      el.addEventListener(ev, fn, finalOpts);
+      return true;
+    } catch (e) {
+      console.warn('[Impresora] No se pudo enganchar listener ' + ev + ':', e);
+      return false;
+    }
+  }
+
+  var Impresora = {
+    /* [FIX-B16-16b] Usar _cloneConfigImpresora() en vez de Object.assign
+     * directo. Object.assign es shallow: `config.horarios` terminaría
+     * compartiendo referencia con el objeto congelado de
+     * `_defaultsImpresora`, y `_inicializarHorarios()` lanzaría
+     * TypeError al intentar agregar días (strict mode). */
+    config: _cloneConfigImpresora(),
+    cola: []
+  };
+
+  Impresora.init = async function () {
+    if (_impresoraInitEnCurso) {
+      console.info('[Impresora] init ya en curso, se ignora la llamada duplicada.');
+      return;
+    }
+    _impresoraInitEnCurso = true;
+    try {
+      await _doImpresoraInit();
+    } catch (e) {
+      console.error('[Impresora] Error en init:', e);
+      _reportarError('E-SYS-001', {
+        detalles: { contexto: 'Impresora.init', mensaje: e && e.message },
+        stack: e && e.stack
+      });
+    } finally {
+      _impresoraInitEnCurso = false;
+    }
+  };
+
+  async function _doImpresoraInit() {
+    var cid = _getComercioIdActual();
+    if (_impresoraComercioId !== cid) {
+      _impresoraComercioId = cid;
+      Impresora.config = _cloneConfigImpresora();
+    }
+
+    /* [FIX-B16-22] Migración one-shot de la clave legacy. */
+    _migrarConfigLegacySiHace();
+
+    if (!_dataLista()) {
+      _toast('Sin comercio asignado. Cargando configuración local.', 'warning', 4000);
+      try {
+        var raw = localStorage.getItem(_impresoraConfigKey());
+        if (raw) Impresora.config = _cloneConfigImpresora(JSON.parse(raw));
+      } catch (e) {
+        Impresora.config = _cloneConfigImpresora();
+      }
+    } else {
+      await Impresora.cargarConfig();
+      try {
+        var comercio = await Data.get('config', 'comercio');
+        var modo = (comercio && comercio.datos_fiscales && comercio.datos_fiscales.modo)
+                || (comercio && comercio.modo_fiscal)
+                || 'particular';
+        Impresora.config.modo_fiscal = modo;
+      } catch (e) {
+        console.warn('[Impresora] No se pudo leer modo_fiscal:', e);
+      }
+    }
+
+    _inyectarInputImpresoraManual();
+    _aplicarConfigAFormulario();
+    _renderLogoPreview();
+    _inicializarHorarios();
+    _renderHorarios();
+    Impresora.cargarCola();
+    Impresora.renderCola();
+    _actualizarBadgeCola();
+
+    if (!_impresoraInitialized) {
+      _configurarListenersImpresora();
+      _impresoraInitialized = true;
+    }
+  }
+
+  Impresora.cargarConfig = async function () {
+    var configRemota = null;
+    try {
+      var comercio = await Data.get('config', 'comercio');
+      if (comercio && comercio.config_ticket && typeof comercio.config_ticket === 'object') {
+        configRemota = comercio.config_ticket;
+      }
+    } catch (e) {
+      console.warn('[Impresora] No se pudo leer config remota:', e);
+    }
+
+    var configLocal = null;
+    try {
+      var raw = localStorage.getItem(_impresoraConfigKey());
+      configLocal = raw ? JSON.parse(raw) : null;
+    } catch (e) { configLocal = null; }
+
+    var base = configRemota || configLocal || {};
+    Impresora.config = _cloneConfigImpresora(base);
+
+    try { localStorage.setItem(_impresoraConfigKey(), JSON.stringify(Impresora.config)); } catch (e) {}
+    return Impresora.config;
+  };
+
+  /* [FIX-B16-24] obtenerConfig hacía shallow copy con Object.assign, lo
+ * que exponía referencias internas (horarios, orden_encabezado,
+ * orden_pie) a mutación externa. Cualquier consumidor que modificara
+ * los arrays o el objeto horarios del retorno corrompía el estado
+ * interno de Impresora. Se usa _cloneConfigImpresora, que ya existe
+ * para este propósito (B16-16). */
+Impresora.obtenerConfig = function () { return _cloneConfigImpresora(Impresora.config); };
+
+  /* Actualización quirúrgica del modo_fiscal. Usado por Cuenta. */
+  Impresora.actualizarModoFiscal = function (modo) {
+    if (!_impresoraInitialized) return false;
+    Impresora.config.modo_fiscal = modo || 'particular';
+    try { Impresora.actualizarPreview(); } catch (e) {}
+    return true;
+  };
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* [B16-02] guardarConfig con RMW atómico                       */
+  /*                                                            */
+  /* Estrategia:                                                 */
+  /*   1. Leer config_ticket fresco de Firestore.                */
+  /*   2. Construir un objeto nuevo que combina los campos       */
+  /*      editados en el formulario con los campos que NO toca   */
+  /*      este panel pero que pueden haber cambiado por otro     */
+  /*      lado (modo_fiscal desde Cuenta).                        */
+  /*   3. Escribir.                                              */
+  /*                                                            */
+  /* Si otro panel cambió modo_fiscal después de que Impresora   */
+  /* cargó su config, se preserva el valor más reciente.         */
+  /* ─────────────────────────────────────────────────────────── */
+  Impresora.guardarConfig = async function () {
+    var c = Impresora.config;
+
+    /* 1. Leer del formulario. */
+    c.tamano_papel       = _papelSeguro(_valorInput('p08-tamano-papel', c.tamano_papel));
+    c.nombre_negocio     = _valorInput('p08-nombre-negocio', c.nombre_negocio);
+    c.ubicacion          = _valorInput('p08-ubicacion', c.ubicacion);
+    c.telefono           = _valorInput('p08-telefono', c.telefono);
+    c.mostrar_horarios   = _checkedInput('p08-mostrar-horarios', c.mostrar_horarios);
+    c.mensaje_pie        = _valorInput('p08-mensaje-pie', c.mensaje_pie);
+    c.mostrar_fecha      = _checkedInput('p08-mostrar-fecha', c.mostrar_fecha);
+    c.mostrar_numero     = _checkedInput('p08-mostrar-numero', c.mostrar_numero);
+    c.fuente             = _fuenteSegura(_valorInput('p08-fuente', c.fuente));
+    c.negritas           = _checkedInput('p08-negritas', c.negritas);
+    c.tipo_comprobante   = _valorInput('p08-tipo-comprobante', c.tipo_comprobante);
+
+    var tamanioRaw = parseInt(_valorInput('p08-tamano-letra', c.tamano_letra), 10);
+    c.tamano_letra = (!isNaN(tamanioRaw) && tamanioRaw >= 8 && tamanioRaw <= 22)
+      ? tamanioRaw : 12;
+
+    var manual = _valorInput('p08-impresora-manual', '');
+    if (manual && String(manual).trim()) {
+      c.impresora_nombre = String(manual).trim();
+    } else {
+      c.impresora_nombre = _valorInput('p08-impresora-detectada', c.impresora_nombre);
+    }
+
+    /* 2. RMW atómico: leer config_ticket fresco y preservar campos externos. */
+    var ctActual = {};
+    try {
+      if (_dataLista()) {
+        var comercio = await Data.get('config', 'comercio');
+        if (comercio && comercio.config_ticket && typeof comercio.config_ticket === 'object') {
+          ctActual = comercio.config_ticket;
+        }
+      }
+    } catch (e) {
+      console.warn('[Impresora] No se pudo leer config_ticket fresco:', e);
+    }
+
+    /* Preservar modo_fiscal si Cuenta lo cambió después de nuestra carga. */
+    var modoFiscalFresco = ctActual.modo_fiscal;
+    if (modoFiscalFresco && modoFiscalFresco !== c.modo_fiscal) {
+      /* Hay divergencia: Firestore tiene un valor distinto al nuestro.
+       * Confiamos en el de Firestore (Cuenta lo escribió con más
+       * reciente intención). */
+      console.info('[Impresora] modo_fiscal divergente: preservando "' +
+                   modoFiscalFresco + '" de Firestore (teníamos "' + c.modo_fiscal + '").');
+      c.modo_fiscal = modoFiscalFresco;
+    }
+
+    try {
+      localStorage.setItem(_impresoraConfigKey(), JSON.stringify(Impresora.config));
+      if (_dataLista()) {
+        /* Escribimos el objeto completo. Los campos que no tocamos
+         * (por ejemplo, si en el futuro se agregan otros) ya están
+         * fusionados con lo que había en Firestore. */
+        var ctNuevo = Object.assign({}, ctActual, Impresora.config);
+        await Data.update('config', 'comercio', { config_ticket: ctNuevo });
+      }
+      Impresora.actualizarPreview();
+      _toast('Configuración guardada', 'success');
+    } catch (e) {
+      _reportarError('E-IMP-004', {
+        detalles: { mensaje: e.message },
+        stack: e.stack
+      });
+    }
+  };
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* [B16-09] Inyección del input de impresora manual            */
+  /* ─────────────────────────────────────────────────────────── */
+  function _inyectarInputImpresoraManual() {
+    if (_el('p08-impresora-manual')) return true;
+    var sel = _el('p08-impresora-detectada');
+    if (!sel) {
+      console.warn('[Impresora] No se encontró #p08-impresora-detectada. No se inyecta input manual.');
+      return false;
+    }
+    var inputGroup = sel.closest('.input-group');
+    if (!inputGroup || !inputGroup.parentNode) {
+      console.warn('[Impresora] #p08-impresora-detectada no tiene .input-group padre. No se inyecta input manual.');
+      return false;
+    }
+
+    var div = document.createElement('div');
+    div.className = 'input-group';
+    div.innerHTML =
+      '<label for="p08-impresora-manual">Nombre de la impresora (opcional)</label>' +
+      '<input type="text" id="p08-impresora-manual" maxlength="60" placeholder="Ej: EPSON TM-T20III (solo referencia)">' +
+      '<small class="text-muted text-small">Solo se guarda como etiqueta. La impresora real la elegís al imprimir.</small>';
+    inputGroup.parentNode.insertBefore(div, inputGroup.nextSibling);
+    return true;
+  }
+
+  function _aplicarConfigAFormulario() {
+    var c = Impresora.config;
+    _setVal('p08-tamano-papel', _papelSeguro(c.tamano_papel));
+    _setVal('p08-nombre-negocio', c.nombre_negocio);
+    _setVal('p08-ubicacion', c.ubicacion);
+    _setVal('p08-telefono', c.telefono);
+    _setChecked('p08-mostrar-horarios', c.mostrar_horarios);
+    _setVal('p08-mensaje-pie', c.mensaje_pie);
+    _setChecked('p08-mostrar-fecha', c.mostrar_fecha);
+    _setChecked('p08-mostrar-numero', c.mostrar_numero);
+    _setVal('p08-fuente', _fuenteSegura(c.fuente));
+    _setVal('p08-tamano-letra', c.tamano_letra);
+    _setText('p08-tamano-valor', String(c.tamano_letra));
+    _setChecked('p08-negritas', c.negritas);
+    _setVal('p08-tipo-comprobante', c.tipo_comprobante);
+
+    if (c.impresora_nombre) {
+      var selImp = _el('p08-impresora-detectada');
+      if (selImp) {
+        var opciones = Array.prototype.map.call(selImp.options, function (o) { return o.value; });
+        if (opciones.indexOf(c.impresora_nombre) !== -1) selImp.value = c.impresora_nombre;
+      }
+      _setVal('p08-impresora-manual', c.impresora_nombre);
+    }
+
+    Impresora.actualizarPreview();
+  }
+
+  /* ─── Logo ───────────────────────────────────────────────── */
+  Impresora.subirLogo = function (file) {
+    if (!file) return;
+    var tipos = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (tipos.indexOf(file.type) === -1) { _reportarError('E-IMP-003'); return; }
+    if (file.size > LOGO_MAX_BYTES) {
+      _toast('El logo no puede superar los 300 KB. Reducilo antes de subirlo.', 'error', 6000);
+      _reportarError('E-IMP-002', { detalles: { tamano_bytes: file.size, limite: LOGO_MAX_BYTES } });
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var dataUrl = e.target.result;
+      if (dataUrl && dataUrl.length > LOGO_MAX_BASE64) {
+        _toast('El logo es muy grande aún después de codificar. Probá con uno más chico.', 'error', 6000);
+        return;
+      }
+      Impresora.config.logo = dataUrl;
+      _renderLogoPreview();
+      Impresora.actualizarPreview();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  Impresora.eliminarLogo = function () {
+    Impresora.config.logo = null;
+    _renderLogoPreview();
+    Impresora.actualizarPreview();
+    var input = _el('p08-logo');
+    if (input) input.value = '';
+  };
+
+  function _renderLogoPreview() {
+    var preview = _el('p08-logo-preview');
+    if (!preview) return;
+    preview.innerHTML = Impresora.config.logo
+      ? '<img src="' + _escapeAttr(Impresora.config.logo) + '" alt="Logo">'
+      : '<span class="text-muted text-small">Sin logo</span>';
+  }
+
+  /* ─── Horarios ───────────────────────────────────────────── */
+  function _inicializarHorarios() {
+    var c = Impresora.config;
+    if (!c.horarios || typeof c.horarios !== 'object') c.horarios = {};
+    _DIAS_SEMANA.forEach(function (dia) {
+      var h = c.horarios[dia];
+      if (!h || typeof h !== 'object') {
+        c.horarios[dia] = {
+          activo: true,
+          turno1: { inicio: '08:00', fin: '12:00' },
+          dobleTurno: false,
+          turno2: { inicio: '16:00', fin: '20:00' }
+        };
+        return;
+      }
+      if (!h.turno1 || typeof h.turno1 !== 'object') h.turno1 = { inicio: '08:00', fin: '12:00' };
+      if (!h.turno2 || typeof h.turno2 !== 'object') h.turno2 = { inicio: '16:00', fin: '20:00' };
+      if (typeof h.activo !== 'boolean') h.activo = true;
+      if (typeof h.dobleTurno !== 'boolean') h.dobleTurno = false;
+    });
+  }
+
+  function _renderHorarios() {
+    var cont = _el('p08-horarios-container');
+    if (!cont) return;
+    var c = Impresora.config;
+    cont.innerHTML = '';
+    _DIAS_SEMANA.forEach(function (dia) {
+      var h = c.horarios[dia];
+      if (!h) return;
+      var div = document.createElement('div');
+      div.className = 'p08-horario-dia ' + (h.activo ? 'activo' : 'cerrado');
+      var inner = '<div class="p08-horario-header">' +
+        '<input type="checkbox" ' + (h.activo ? 'checked' : '') + ' data-toggle-dia="' + dia + '">' +
+        '<label>' + dia + '</label>' +
+        '</div>';
+      if (h.activo) {
+        inner += '<div class="p08-horario-turnos">' +
+          '<div class="p08-horario-turno"><span>Turno 1:</span>' +
+          '<input type="time" value="' + _escapeAttr(h.turno1.inicio) + '" data-cambiar="' + dia + '|turno1|inicio">' +
+          '<span>a</span>' +
+          '<input type="time" value="' + _escapeAttr(h.turno1.fin) + '" data-cambiar="' + dia + '|turno1|fin">' +
+          '</div>' +
+          '<div class="p08-horario-turno">' +
+          '<input type="checkbox" ' + (h.dobleTurno ? 'checked' : '') + ' data-toggle-doble="' + dia + '">' +
+          '<label>Doble turno</label>' +
+          '</div>';
+        if (h.dobleTurno) {
+          inner += '<div class="p08-horario-turno"><span>Turno 2:</span>' +
+            '<input type="time" value="' + _escapeAttr(h.turno2.inicio) + '" data-cambiar="' + dia + '|turno2|inicio">' +
+            '<span>a</span>' +
+            '<input type="time" value="' + _escapeAttr(h.turno2.fin) + '" data-cambiar="' + dia + '|turno2|fin">' +
+            '</div>';
+        }
+        inner += '</div>';
+      } else {
+        inner += '<div style="padding-left:25px;color:var(--m2-error);font-size:13px;">CERRADO</div>';
+      }
+      div.innerHTML = inner;
+      cont.appendChild(div);
+    });
+
+    cont.querySelectorAll('[data-toggle-dia]').forEach(function (inp) {
+      inp.addEventListener('change', function () {
+        Impresora.config.horarios[inp.dataset.toggleDia].activo = inp.checked;
+        _renderHorarios();
+        Impresora.actualizarPreview();
+      });
+    });
+    cont.querySelectorAll('[data-toggle-doble]').forEach(function (inp) {
+      inp.addEventListener('change', function () {
+        Impresora.config.horarios[inp.dataset.toggleDoble].dobleTurno = inp.checked;
+        _renderHorarios();
+        Impresora.actualizarPreview();
+      });
+    });
+    cont.querySelectorAll('[data-cambiar]').forEach(function (inp) {
+      inp.addEventListener('change', function () {
+        var partes = inp.dataset.cambiar.split('|');
+        Impresora.config.horarios[partes[0]][partes[1]][partes[2]] = inp.value;
+        Impresora.actualizarPreview();
+      });
+    });
+  }
+
+  Impresora.agruparHorarios = function () {
+    Impresora.config.horarios_agrupados = true;
+    _toast('Días agrupados', 'info');
+    Impresora.actualizarPreview();
+  };
+  Impresora.desagruparHorarios = function () {
+    Impresora.config.horarios_agrupados = false;
+    _toast('Días desagrupados', 'info');
+    Impresora.actualizarPreview();
+  };
+
+  /* ─── Impresora del sistema ──────────────────────────────── */
+  Impresora.detectarImpresoras = async function () {
+    var sel = _el('p08-impresora-detectada');
+    if (!sel) return;
+
+    /* [FIX-IMP-16] Intento real de detección vía navigator.printers
+     * (Chrome 120+). Si no está disponible o falla, cae a genéricas. */
+    var detectadas = [];
+    try {
+      if (navigator.printers && typeof navigator.printers.getPrinters === 'function') {
+        _toast('Detectando impresoras del sistema...', 'info', 2000);
+        var lista = await navigator.printers.getPrinters();
+        if (Array.isArray(lista) && lista.length > 0) {
+          detectadas = lista.map(function (p) {
+            return { id: p.id || p.name, nombre: p.name || p.id };
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('[Impresora] navigator.printers no disponible:', e);
+    }
+
+    var opcionesDetectadas = detectadas.map(function (p) {
+      return '<option value="' + _escapeAttr(p.id) + '">' +
+             _escapeHtml(p.nombre) + '</option>';
+    }).join('');
+
+    sel.innerHTML =
+      (opcionesDetectadas
+        ? '<optgroup label="Detectadas por el navegador">' + opcionesDetectadas + '</optgroup>'
+        : '') +
+      '<optgroup label="Genéricas">' +
+      '<option value="system">Impresora del sistema (recomendado)</option>' +
+      '<option value="default">Impresora predeterminada</option>' +
+      '</optgroup>';
+
+    if (detectadas.length > 0) {
+      sel.value = detectadas[0].id;
+      Impresora.config.impresora_nombre = detectadas[0].id;
+      _toast('Detectadas ' + detectadas.length + ' impresora(s)', 'success', 3000);
+    } else {
+      sel.value = 'system';
+      Impresora.config.impresora_nombre = 'system';
+      _toast(
+        'El navegador no expone impresoras. Al imprimir, elegí tu térmica en el diálogo del SO. ' +
+        'Si no aparece, instalá el driver del fabricante a nivel sistema operativo.',
+        'info', 9000
+      );
+    }
+
+    Impresora.guardarImpresoraSeleccionada();
+    var manual = _el('p08-impresora-manual');
+    if (manual && !manual.value.trim()) manual.focus();
+  };
+
+  Impresora.guardarImpresoraSeleccionada = function () {
+    var sel = _el('p08-impresora-detectada');
+    if (!sel) return;
+    try {
+      localStorage.setItem(IMPRESORA_SELECCIONADA_KEY, sel.value);
+      Impresora.config.impresora_nombre = sel.value;
+      _toast('Impresora guardada', 'success');
+    } catch (e) {}
+  };
+
+  /* ─── Preview del ticket ─────────────────────────────────── */
+  /* [FIX-B16-29] Refactor de actualizarPreview() para construir el DOM
+   * con createElement + textContent en vez de innerHTML. Cierra la
+   * alerta js/xss-through-dom de CodeQL. Se agrega un helper local
+   * _nodoContenidoElemento() que devuelve un DocumentFragment con los
+   * tags HTML permitidos (<pre>, <img>) pero con texto escapado via
+   * textContent. */
+  function _nodoContenidoElemento(elem, c, contexto, venta) {
+    contexto = contexto || 'preview';
+    var esPrint = contexto === 'print';
+    var frag = document.createDocumentFragment();
+
+    switch (elem) {
+      case 'logo':
+        if (c.logo) {
+          var img = document.createElement('img');
+          img.src = c.logo;
+          img.style.maxWidth = '100%';
+          img.style.maxHeight = '80px';
+          frag.appendChild(img);
+        }
+        break;
+      case 'nombre':
+        if (c.nombre_negocio) {
+          frag.appendChild(document.createTextNode(c.nombre_negocio));
+        } else if (!esPrint) {
+          var ph = document.createElement('span');
+          ph.className = 'p08-placeholder';
+          ph.textContent = '[Nombre del Negocio]';
+          frag.appendChild(ph);
+        }
+        break;
+      case 'ubicacion':
+        if (c.ubicacion) {
+          frag.appendChild(document.createTextNode(c.ubicacion));
+        } else if (!esPrint) {
+          var phU = document.createElement('span');
+          phU.className = 'p08-placeholder';
+          phU.textContent = '[Ubicación]';
+          frag.appendChild(phU);
+        }
+        break;
+      case 'telefono':
+        if (c.telefono) {
+          frag.appendChild(document.createTextNode(c.telefono));
+        } else if (!esPrint) {
+          var phT = document.createElement('span');
+          phT.className = 'p08-placeholder';
+          phT.textContent = '[Teléfono]';
+          frag.appendChild(phT);
+        }
+        break;
+      case 'horarios':
+        if (c.mostrar_horarios) {
+          var pre = document.createElement('pre');
+          pre.style.margin = '0';
+          pre.style.fontFamily = 'inherit';
+          pre.textContent = _formatearHorarios(c);
+          frag.appendChild(pre);
+        }
+        break;
+      case 'mensaje_pie':
+        if (c.mensaje_pie) {
+          frag.appendChild(document.createTextNode(c.mensaje_pie));
+        }
+        break;
+      case 'fecha':
+        if (c.mostrar_fecha) {
+          var tsFecha = (esPrint && venta && venta.fecha) ? venta.fecha : Date.now();
+          frag.appendChild(document.createTextNode(App.formatearFechaHora(tsFecha)));
+        }
+        break;
+      case 'numero':
+        if (c.mostrar_numero) {
+          var texto;
+          if (esPrint && venta && venta.ticket_numero !== undefined && venta.ticket_numero !== null) {
+            texto = 'Ticket #' + String(venta.ticket_numero).padStart(5, '0');
+          } else {
+            texto = 'Ticket #—————';
+          }
+          frag.appendChild(document.createTextNode(texto));
+        }
+        break;
+    }
+    return frag;
+  }
+
+  Impresora.actualizarPreview = function () {
+    var preview = _el('p08-preview-ticket');
+    if (!preview) return;
+    _elementoSeleccionado = null;
+    document.querySelectorAll('.p08-el-botones').forEach(function (b) { b.remove(); });
+
+    var c = Impresora.config;
+    preview.style.fontFamily = _fuenteSegura(c.fuente);
+    preview.style.fontSize = (parseInt(c.tamano_letra, 10) || 12) + 'px';
+    preview.classList.toggle('negrita', !!c.negritas);
+    preview.style.maxWidth = _anchoPorTamano(c.tamano_papel) + 'px';
+
+    /* [FIX-B16-29] Construcción DOM-based sin innerHTML. */
+    while (preview.firstChild) preview.removeChild(preview.firstChild);
+
+    var zonaEnc = document.createElement('div');
+    zonaEnc.className = 'p08-zona-encabezado';
+    zonaEnc.setAttribute('data-zona', 'encabezado');
+    (c.orden_encabezado || _defaultsImpresora.orden_encabezado).forEach(function (elem) {
+      var contenido = _nodoContenidoElemento(elem, c, 'preview', null);
+      if (contenido.childNodes.length > 0) {
+        var div = document.createElement('div');
+        div.className = 'p08-elemento-arrastrable';
+        div.setAttribute('data-elem', elem);
+        div.setAttribute('data-zona', 'encabezado');
+        div.appendChild(contenido);
+        zonaEnc.appendChild(div);
+      }
+    });
+    preview.appendChild(zonaEnc);
+
+    var zonaCentral = document.createElement('div');
+    zonaCentral.className = 'p08-zona-central';
+    zonaCentral.textContent = '[ZONA DE PRODUCTOS - No editable]';
+    preview.appendChild(zonaCentral);
+
+    var zonaPie = document.createElement('div');
+    zonaPie.className = 'p08-zona-pie';
+    zonaPie.setAttribute('data-zona', 'pie');
+    (c.orden_pie || _defaultsImpresora.orden_pie).forEach(function (elem) {
+      var contenido = _nodoContenidoElemento(elem, c, 'preview', null);
+      if (contenido.childNodes.length > 0) {
+        var div = document.createElement('div');
+        div.className = 'p08-elemento-arrastrable';
+        div.setAttribute('data-elem', elem);
+        div.setAttribute('data-zona', 'pie');
+        div.appendChild(contenido);
+        zonaPie.appendChild(div);
+      }
+    });
+    preview.appendChild(zonaPie);
+
+    _configurarDragDropPreview();
+  };
+
+  /* [FIX-MENOR-8] _contenidoElemento era una copia casi literal de
+   * _nodoContenidoElemento con formato distinto (string vs Fragment).
+   * Ahora serializa el Fragment producido por la versión DOM-based,
+   * eliminando la duplicación de lógica de negocio. */
+  function _contenidoElemento(elem, c, contexto, venta) {
+    var frag = _nodoContenidoElemento(elem, c, contexto, venta);
+    if (!frag || !frag.childNodes || frag.childNodes.length === 0) return '';
+    var div = document.createElement('div');
+    div.appendChild(frag);
+    return div.innerHTML;
+  }
+
+  function _formatearHorarios(c) {
+    return _DIAS_SEMANA.map(function (dia) {
+      var h = c.horarios ? c.horarios[dia] : null;
+      if (!h || !h.activo) return dia + ': CERRADO';
+      var txt = dia + ': ' + h.turno1.inicio + '-' + h.turno1.fin;
+      if (h.dobleTurno) txt += ' / ' + h.turno2.inicio + '-' + h.turno2.fin;
+      return txt;
+    }).join('\n');
+  }
+
+  /* ─── Drag & drop del preview ────────────────────────────── */
+  function _configurarDragDropPreview() {
+    var preview = _el('p08-preview-ticket');
+    if (!preview) return;
+    preview.querySelectorAll('.p08-elemento-arrastrable').forEach(function (el) {
+      el.addEventListener('click', function (e) { e.stopPropagation(); _seleccionarElemento(el); });
+      el.addEventListener('mousedown', _iniciarDrag);
+      el.addEventListener('touchstart', _iniciarDrag, { passive: false });
+    });
+  }
+
+  function _seleccionarElemento(el) {
+    document.querySelectorAll('.p08-elemento-arrastrable.seleccionado').forEach(function (e) {
+      e.classList.remove('seleccionado');
+    });
+    document.querySelectorAll('.p08-el-botones').forEach(function (b) { b.remove(); });
+    el.classList.add('seleccionado');
+    _elementoSeleccionado = el;
+    _renderBotonesElemento(el);
+  }
+
+  function _renderBotonesElemento(el) {
+    var cont = document.createElement('div');
+    cont.className = 'p08-el-botones';
+    cont.innerHTML =
+      '<button type="button" data-mover="up" title="Subir">↑</button>' +
+      '<button type="button" data-mover="down" title="Bajar">↓</button>' +
+      '<button type="button" data-mover="swap" title="Mover a la otra zona">↔</button>';
+    cont.querySelectorAll('[data-mover]').forEach(function (btn) {
+      btn.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+      btn.addEventListener('touchstart', function (e) { e.stopPropagation(); }, { passive: true });
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        _moverElemento(el, btn.dataset.mover);
+      });
+    });
+    el.appendChild(cont);
+  }
+
+  function _moverElemento(el, accion) {
+    var elemName = el.dataset.elem;
+    var zona = el.dataset.zona;
+    if (!elemName || !zona) return;
+
+    var c = Impresora.config;
+    var arrKey = zona === 'encabezado' ? 'orden_encabezado' : 'orden_pie';
+    var otroArrKey = zona === 'encabezado' ? 'orden_pie' : 'orden_encabezado';
+    var arr = (c[arrKey] || []).slice();
+    var idx = arr.indexOf(elemName);
+    if (idx === -1) return;
+
+    var cambio = false;
+
+    if (accion === 'up' && idx > 0) {
+      arr.splice(idx, 1);
+      arr.splice(idx - 1, 0, elemName);
+      cambio = true;
+    } else if (accion === 'down' && idx < arr.length - 1) {
+      arr.splice(idx, 1);
+      arr.splice(idx + 1, 0, elemName);
+      cambio = true;
+    } else if (accion === 'swap') {
+      var otroArr = (c[otroArrKey] || []).slice();
+      if (otroArr.indexOf(elemName) !== -1) return;
+      arr.splice(idx, 1);
+      otroArr.push(elemName);
+      c[otroArrKey] = otroArr;
+      cambio = true;
+    }
+
+    if (!cambio) return;
+    c[arrKey] = arr;
+    Impresora.actualizarPreview();
+    _reseleccionarElemento(elemName);
+  }
+
+  function _reseleccionarElemento(elemName) {
+    if (!elemName) return;
+    var el = document.querySelector('.p08-elemento-arrastrable[data-elem="' + elemName + '"]');
+    if (el) _seleccionarElemento(el);
+  }
+
+  function _iniciarDrag(e) {
+    if (e.target && e.target.closest && e.target.closest('.p08-el-botones')) return;
+    var el = e.currentTarget;
+    _dragState.activo = true;
+    _dragState.elemento = el;
+    _dragState.tipo = el.dataset.zona;
+    var pos = _getPos(e);
+    _dragState.inicioY = pos.y;
+    el.style.zIndex = '10';
+    el.style.opacity = '0.7';
+  }
+
+  function _moverDrag(e) {
+    if (!_dragState.activo || !_dragState.elemento) return;
+    e.preventDefault();
+    var pos = _getPos(e);
+    var deltaY = pos.y - _dragState.inicioY;
+    _dragState.elemento.style.transform = 'translateY(' + deltaY + 'px)';
+    var el = _dragState.elemento;
+    var rect = el.getBoundingClientRect();
+    var centroY = rect.top + rect.height / 2;
+    var hermanos = Array.from(el.parentElement.querySelectorAll('.p08-elemento-arrastrable')).filter(function (h) {
+      return h !== el;
+    });
+    hermanos.forEach(function (h) {
+      var hRect = h.getBoundingClientRect();
+      var hCentroY = hRect.top + hRect.height / 2;
+      if (centroY < hCentroY && el.compareDocumentPosition(h) & Node.DOCUMENT_POSITION_FOLLOWING) {
+        el.parentElement.insertBefore(el, h);
+      } else if (centroY > hCentroY && el.compareDocumentPosition(h) & Node.DOCUMENT_POSITION_PRECEDING) {
+        el.parentElement.insertBefore(h, el);
+      }
+    });
+  }
+
+  function _finDrag() {
+    if (!_dragState.activo) return;
+    var el = _dragState.elemento;
+    if (el) {
+      el.style.transform = '';
+      el.style.zIndex = '';
+      el.style.opacity = '';
+      _actualizarOrdenDesdeZona('encabezado');
+      _actualizarOrdenDesdeZona('pie');
+    }
+    _dragState.activo = false;
+    _dragState.elemento = null;
+    _dragState.tipo = null;
+  }
+
+  function _actualizarOrdenDesdeZona(tipo) {
+    var zona = tipo === 'encabezado'
+      ? document.querySelector('.p08-zona-encabezado')
+      : document.querySelector('.p08-zona-pie');
+    if (!zona) return;
+    var nuevoOrden = Array.from(zona.querySelectorAll('.p08-elemento-arrastrable')).map(function (e) {
+      return e.dataset.elem;
+    });
+    if (tipo === 'encabezado') Impresora.config.orden_encabezado = nuevoOrden;
+    else Impresora.config.orden_pie = nuevoOrden;
+  }
+
+  function _getPos(e) {
+    if (e.touches && e.touches[0]) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    return { x: e.clientX, y: e.clientY };
+  }
+
+  /* ─── Cola de impresión ──────────────────────────────────── */
+  Impresora.cargarCola = function () {
+    try {
+      var raw = localStorage.getItem(COLA_KEY);
+      Impresora.cola = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(Impresora.cola)) Impresora.cola = [];
+    } catch (e) { Impresora.cola = []; }
+  };
+
+  Impresora.guardarCola = function () {
+    try { localStorage.setItem(COLA_KEY, JSON.stringify(Impresora.cola)); } catch (e) {}
+    Impresora.renderCola();
+    _actualizarBadgeCola();
+  };
+
+  Impresora.agregarACola = function (ticket) {
+    ticket = ticket || {};
+    ticket.id = ticket.id || _genId('cola');
+    ticket.estado = 'pendiente';
+    ticket.creado = ticket.creado || Date.now();
+    ticket.intentos = 0;
+    Impresora.cola.unshift(ticket);
+    if (Impresora.cola.length > MAX_COLA) Impresora.cola = Impresora.cola.slice(0, MAX_COLA);
+    Impresora.guardarCola();
+    _toast('Ticket en cola de impresión', 'info');
+  };
+
+  Impresora.reimprimirItem = async function (id) {
+    var item = Impresora.cola.find(function (t) { return t.id === id; });
+    if (!item) return;
+    item.intentos = (item.intentos || 0) + 1;
+    item.ultimo_intento = Date.now();
+    try {
+      if (item.tipo === 'venta') {
+        var okImpresion = Impresora.imprimirTicket(item.payload);
+        if (okImpresion === false) throw new Error('Popup bloqueado');
+      } else if (item.tipo === 'pesable') {
+        await Impresora._imprimirPesable(item.payload);
+      } else if (item.tipo === 'pedido') {
+        await Impresora._imprimirPedido(item.payload);
+      }
+      item.estado = 'reimpreso';
+      Impresora.guardarCola();
+      _toast('Reimprimiendo', 'success');
+    } catch (e) {
+      item.estado = 'error';
+      Impresora.guardarCola();
+      _reportarError('E-IMP-001', {
+        detalles: { ticket_id: id, intentos: item.intentos, mensaje: e && e.message }
+      });
+    }
+  };
+
+  Impresora.cancelarItem = async function (id) {
+    var ok = await _confirmar('¿Cancelar este ticket?');
+    if (!ok) return;
+    Impresora.cola = Impresora.cola.filter(function (t) { return t.id !== id; });
+    Impresora.guardarCola();
+    _toast('Ticket cancelado', 'info');
+  };
+
+  Impresora.imprimirTodos = async function () {
+    var pendientes = Impresora.cola.filter(function (t) { return t.estado === 'pendiente'; });
+    if (pendientes.length === 0) { _toast('No hay tickets pendientes', 'info'); return; }
+
+    var ventas = pendientes.filter(function (t) { return t.tipo === 'venta'; });
+    var otros = pendientes.filter(function (t) { return t.tipo !== 'venta'; });
+
+    try {
+      if (ventas.length > 0) {
+        var html = _generarHTMLMultiplesTickets(ventas.map(function (t) { return t.payload; }));
+        var okPopup = await _conDeteccionPopup(function () {
+          var ventana = window.open('', '_blank', 'width=850,height=700');
+          if (!ventana) throw new Error('popup bloqueado');
+          ventana.document.write(html);
+          ventana.document.close();
+          ventana.focus();
+          _imprimirVentana(ventana);
+        });
+        if (!okPopup) {
+          _reportarError('E-IMP-001');
+        } else {
+          ventas.forEach(function (t) {
+            t.estado = 'reimpreso';
+            t.intentos = (t.intentos || 0) + 1;
+          });
+        }
+      }
+
+      for (var i = 0; i < otros.length; i++) {
+        await Impresora.reimprimirItem(otros[i].id);
+      }
+
+      Impresora.guardarCola();
+      _toast('Imprimiendo ' + pendientes.length + ' ticket(s)', 'success');
+    } catch (e) {
+      _reportarError('E-IMP-001', { detalles: { mensaje: e && e.message } });
+    }
+  };
+
+  Impresora.cancelarTodos = async function () {
+    var ok = await _confirmar('¿Cancelar TODOS los tickets?');
+    if (!ok) return;
+    Impresora.cola = [];
+    Impresora.guardarCola();
+    _toast('Cola vaciada', 'info');
+  };
+
+  Impresora.renderCola = function (forzar) {
+    var cont = _el('p08-cola-lista');
+    if (!cont) return;
+
+    if (Impresora.cola.length === 0) {
+      var htmlVacio = '<p class="text-center text-muted">Sin tickets pendientes</p>';
+      if (cont.innerHTML !== htmlVacio || forzar) {
+        cont.innerHTML = htmlVacio;
+        _lastColaFingerprint = '';
+      }
+      return;
+    }
+
+    var fingerprint = Impresora.cola.map(function (t) {
+      return (t.id || '') + ':' + (t.estado || '') + ':' + (t.intentos || 0);
+    }).join('|');
+
+    if (!forzar && fingerprint === _lastColaFingerprint) return;
+    _lastColaFingerprint = fingerprint;
+
+    cont.innerHTML = Impresora.cola.map(function (t) {
+      var titulo = (t.payload && t.payload.ticket_numero)
+        ? 'Ticket #' + String(t.payload.ticket_numero).padStart(5, '0')
+        : (t.tipo || 'Ticket');
+      return '<div class="p08-cola-item ' + _escapeAttr(t.estado || '') + '">' +
+        '<div class="p08-cola-item-icono">' + _emojiPorTipo(t.tipo) + '</div>' +
+        '<div class="p08-cola-item-info">' +
+        '<div class="p08-cola-item-titulo">' + _escapeHtml(titulo) + '</div>' +
+        '<div class="p08-cola-item-meta">' +
+        '<span>' + _escapeHtml(App.formatearFechaHora(t.creado)) + '</span>' +
+        (t.payload && t.payload.total ? '<span>' + _escapeHtml(App.formatearMoneda(t.payload.total)) + '</span>' : '') +
+        (t.intentos > 0 ? '<span>Intentos: ' + t.intentos + '</span>' : '') +
+        '</div></div>' +
+        '<div class="p08-cola-item-acciones">' +
+        '<button class="btn-reimprimir" data-reimprimir="' + _escapeAttr(t.id) + '">🖨️</button>' +
+        '<button class="btn-cancelar-item" data-cancelar="' + _escapeAttr(t.id) + '">🗑️</button>' +
+        '</div></div>';
+    }).join('');
+
+    cont.querySelectorAll('[data-reimprimir]').forEach(function (btn) {
+      btn.addEventListener('click', function () { Impresora.reimprimirItem(btn.dataset.reimprimir); });
+    });
+    cont.querySelectorAll('[data-cancelar]').forEach(function (btn) {
+      btn.addEventListener('click', function () { Impresora.cancelarItem(btn.dataset.cancelar); });
+    });
+  };
+
+  function _emojiPorTipo(tipo) {
+    switch (tipo) {
+      case 'venta':      return '🧾';
+      case 'pesable':    return '⚖️';
+      case 'pedido':     return '📦';
+      case 'devolucion': return '↩️';
+      default:           return '📄';
+    }
+  }
+
+  function _actualizarBadgeCola() {
+    var pendientes = Impresora.cola.filter(function (t) { return t.estado === 'pendiente'; }).length;
+    var badge = _el('p08-cola-badge');
+    if (badge) {
+      if (pendientes > 0) { badge.textContent = String(pendientes); badge.style.display = 'inline-flex'; }
+      else { badge.style.display = 'none'; }
+    }
+    var badgeMenu = _el('menu-badge-cola');
+    if (badgeMenu) {
+      if (pendientes > 0) { badgeMenu.textContent = String(pendientes); badgeMenu.style.display = 'inline-flex'; }
+      else { badgeMenu.style.display = 'none'; }
+    }
+  }
+
+  Impresora.tieneImpresoraConfigurada = function () { return true; };
+
+  /* ─── Impresión de tickets ───────────────────────────────── */
+  Impresora.imprimirTicketPrueba = function () {
+    Impresora.imprimirTicket({
+      ticket_numero: 1,
+      items: [{ nombre: 'Producto de prueba', cantidad: 1, precioUnitario: 100, subtotal: 100 }],
+      total: 100,
+      metodo_pago: 'efectivo',
+      monto_recibido: 100,
+      vuelto: 0,
+      fecha: Date.now()
+    });
+  };
+
+  Impresora.imprimirTicket = function (venta) {
+    try {
+      var html = _generarHTMLTicket(venta, Impresora.config);
+      var ventana = window.open('', '_blank', 'width=850,height=700');
+      if (!ventana) {
+        _reportarError('E-IMP-001');
+        Impresora.agregarACola({ tipo: 'venta', payload: venta });
+        return false;
+      }
+      ventana.document.write(html);
+      ventana.document.close();
+      ventana.focus();
+      _imprimirVentana(ventana);
+      return true;
+    } catch (e) {
+      console.error('[Impresora] Error al imprimir:', e);
+      Impresora.agregarACola({ tipo: 'venta', payload: venta });
+      _reportarError('E-IMP-001', { detalles: { mensaje: (e && e.message) ? e.message : 'desconocido' } });
+      return false;
+    }
+  };
+
+  function _generarHTMLTicket(venta, c) {
+    venta = venta || {};
+    c = c || {};
+    var tipoComp = String(c.tipo_comprobante || 'ticket');
+    var esFiscal = tipoComp.indexOf('factura') === 0 || tipoComp === 'remito';
+    var modoComercio = String(c.modo_fiscal || 'particular');
+    var modoParticular = modoComercio === 'particular' || modoComercio === 'no_fiscal';
+
+    var encabezado = '';
+    (c.orden_encabezado || _defaultsImpresora.orden_encabezado).forEach(function (elem) {
+      var cont = _contenidoElemento(elem, c, 'print', venta);
+      if (cont) encabezado += '<div style="text-align:center;">' + cont + '</div>';
+    });
+    var pie = '';
+    (c.orden_pie || _defaultsImpresora.orden_pie).forEach(function (elem) {
+      var cont = _contenidoElemento(elem, c, 'print', venta);
+      if (cont) pie += '<div style="text-align:center;">' + cont + '</div>';
+    });
+    var leyendaFiscal = modoParticular
+      ? '<div style="text-align:center;font-weight:bold;margin-bottom:10px;">DOCUMENTO NO VÁLIDO COMO FACTURA</div>'
+      : '';
+    var leyendaComprobante = esFiscal
+      ? '<div style="text-align:center;font-size:1.1em;font-weight:bold;margin-bottom:8px;">' + _nombreComprobante(tipoComp) + '</div>'
+      : '';
+
+    return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket</title>' +
+      '<style>@page { margin: 10mm; }' +
+      'body { font-family: "' + _fuenteSegura(c.fuente) + '", monospace; font-size: ' +
+      (parseInt(c.tamano_letra, 10) || 12) + 'px;' +
+      (c.negritas ? ' font-weight: bold;' : '') +
+      ' width: ' + _anchoPorTamano(c.tamano_papel) + 'px; padding: 5mm; margin: 0 auto; }' +
+      '.item { display: flex; justify-content: space-between; }' +
+      'pre { margin: 0; font-family: inherit; font-size: inherit; white-space: pre-wrap; }</style></head><body>' +
+      leyendaFiscal + leyendaComprobante + encabezado +
+      _renderProductosTicket(venta, tipoComp) + pie +
+      '</body></html>';
+  }
+
+  function _generarHTMLMultiplesTickets(ventas) {
+    ventas = Array.isArray(ventas) ? ventas : [];
+    var c = Impresora.config;
+    var tipoComp = String(c.tipo_comprobante || 'ticket');
+    var esFiscal = tipoComp.indexOf('factura') === 0 || tipoComp === 'remito';
+    var modoComercio = String(c.modo_fiscal || 'particular');
+    var modoParticular = modoComercio === 'particular' || modoComercio === 'no_fiscal';
+
+    var piezas = ventas.map(function (venta) {
+      venta = venta || {};
+      var encabezado = '';
+      (c.orden_encabezado || _defaultsImpresora.orden_encabezado).forEach(function (elem) {
+        var cont = _contenidoElemento(elem, c, 'print', venta);
+        if (cont) encabezado += '<div style="text-align:center;">' + cont + '</div>';
+      });
+      var pie = '';
+      (c.orden_pie || _defaultsImpresora.orden_pie).forEach(function (elem) {
+        var cont = _contenidoElemento(elem, c, 'print', venta);
+        if (cont) pie += '<div style="text-align:center;">' + cont + '</div>';
+      });
+      var leyendaFiscal = modoParticular
+        ? '<div style="text-align:center;font-weight:bold;margin-bottom:10px;">DOCUMENTO NO VÁLIDO COMO FACTURA</div>'
+        : '';
+      var leyendaComprobante = esFiscal
+        ? '<div style="text-align:center;font-size:1.1em;font-weight:bold;margin-bottom:8px;">' + _nombreComprobante(tipoComp) + '</div>'
+        : '';
+      return '<div class="ticket-page">' +
+        leyendaFiscal + leyendaComprobante + encabezado +
+        _renderProductosTicket(venta, tipoComp) + pie +
+        '</div>';
+    }).join('<div class="page-break"></div>');
+
+    return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Tickets</title>' +
+      '<style>@page { margin: 10mm; }' +
+      'body { font-family: "' + _fuenteSegura(c.fuente) + '", monospace; font-size: ' +
+      (parseInt(c.tamano_letra, 10) || 12) + 'px;' +
+      (c.negritas ? ' font-weight: bold;' : '') +
+      ' width: ' + _anchoPorTamano(c.tamano_papel) + 'px; padding: 5mm; margin: 0 auto; }' +
+      '.item { display: flex; justify-content: space-between; }' +
+      '.page-break { page-break-after: always; height: 0; }' +
+      'pre { margin: 0; font-family: inherit; font-size: inherit; white-space: pre-wrap; }</style></head><body>' +
+      piezas + '</body></html>';
+  }
+
+  function _nombreComprobante(tipo) {
+    var mapa = {
+      'factura_a': 'FACTURA A',
+      'factura_b': 'FACTURA B',
+      'factura_c': 'FACTURA C',
+      'remito':    'REMITO',
+      'ticket':    'TICKET'
+    };
+    return mapa[tipo] || 'COMPROBANTE';
+  }
+
+  function _renderProductosTicket(venta, tipoComp) {
+    venta = venta || {};
+    var items = Array.isArray(venta.items) ? venta.items : [];
+    var html = '<div style="border-top:1px dashed #000;margin:10px 0;"></div>';
+    items.forEach(function (it) {
+      it = it || {};
+      var nombre = _escapeHtml(it.nombre || 'Producto');
+      var cantidad = parseInt(it.cantidad, 10) || 0;
+      var precio = parseFloat(it.precioUnitario) || 0;
+      var subtotal = parseFloat(it.subtotal) || (cantidad * precio);
+      html += '<div class="item"><span>' + nombre + '</span><span>' + _escapeHtml(App.formatearMoneda(subtotal)) + '</span></div>';
+      html += '<div style="font-size:0.9em;">' + cantidad + ' × ' + _escapeHtml(App.formatearMoneda(precio)) + '</div>';
+    });
+    html += '<div style="border-top:1px dashed #000;margin:10px 0;"></div>';
+    html += '<div class="item" style="font-size:1.2em;"><strong>TOTAL</strong><strong>' +
+      _escapeHtml(App.formatearMoneda(venta.total || 0)) + '</strong></div>';
+    if (venta.metodo_pago) {
+      html += '<div class="item"><span>' + _escapeHtml(venta.metodo_pago) + '</span><span>' +
+        _escapeHtml(App.formatearMoneda(venta.monto_recibido || 0)) + '</span></div>';
+    }
+    if (venta.vuelto) {
+      html += '<div class="item"><span>Vuelto</span><span>' +
+        _escapeHtml(App.formatearMoneda(venta.vuelto)) + '</span></div>';
+    }
+    return html;
+  }
+
+  Impresora._registrarPendiente = function (ticket, tipo) {
+    Impresora.agregarACola({ tipo: tipo, payload: ticket });
+  };
+
+  /* ─── Pesables ───────────────────────────────────────────── */
+  Impresora.abrirModalPesables = function () {
+    _pesablesTickets = [];
+    _renderPesablesLista();
+    App.abrirModal('modal-p08-pesables');
+  };
+
+  function _buscarProductoParaPesable(query) {
+    if (!query) return null;
+    var q = String(query).trim();
+    if (!q) return null;
+
+    if (window.Stock && typeof Stock.obtenerProducto === 'function') {
+      var porId = Stock.obtenerProducto(q);
+      if (porId) return porId;
+    }
+
+    var productos = [];
+    if (window.Stock && typeof Stock.obtenerTodos === 'function') {
+      try { productos = Stock.obtenerTodos(); } catch (e) { productos = []; }
+    }
+    if (!Array.isArray(productos) || productos.length === 0) return null;
+
+    var qLower = q.toLowerCase();
+    var match = productos.find(function (p) {
+      return String(p.codigo || p.codigo_barras || '').toLowerCase() === qLower;
+    });
+    if (match) return match;
+
+    var candidatos = productos.filter(function (p) {
+      return String(p.nombre || '').toLowerCase().indexOf(qLower) !== -1;
+    });
+    if (candidatos.length === 1) return candidatos[0];
+    if (candidatos.length > 1) {
+      _toast(
+        'Varios productos coinciden con "' + q + '". Se agregó "' + candidatos[0].nombre + '".',
+        'info', 4000
+      );
+      return candidatos[0];
+    }
+
+    return null;
+  }
+
+  Impresora.agregarProductoAPesables = function (productoId) {
+    if (!productoId) return;
+
+    var prod = _buscarProductoParaPesable(productoId);
+    if (!prod) {
+      _toast('Producto no encontrado: "' + productoId + '"', 'warning', 4000);
+      _reportarError('E-STK-006', { detalles: { busqueda: productoId } });
+      return;
+    }
+    if (!prod.es_pesable) {
+      _toast('"' + prod.nombre + '" no es pesable', 'warning', 4000);
+      return;
+    }
+
+    var precioKilo = parseFloat(prod.precio_por_kilo)
+                  || parseFloat(prod.precio_venta)
+                  || 0;
+
+    var existente = _pesablesTickets.find(function (p) { return p.productoId === prod.id; });
+    if (existente) {
+      existente.cantidad++;
+    } else {
+      _pesablesTickets.push({
+        productoId: prod.id,
+        nombre: prod.nombre,
+        codigo: prod.codigo_barras || prod.codigo,
+        precioKilo: precioKilo,
+        cantidad: 1
+      });
+    }
+    _renderPesablesLista();
+  };
+
+  function _renderPesablesLista() {
+    var cont = _el('p08-pesables-lista');
+    if (!cont) return;
+    if (_pesablesTickets.length === 0) {
+      cont.innerHTML = '<p class="text-center text-muted">Sin productos en la lista</p>';
+      return;
+    }
+    cont.innerHTML = _pesablesTickets.map(function (p, idx) {
+      return '<div class="p08-pesables-item">' +
+        '<div class="p08-pesables-info">' +
+        '<div class="p08-pesables-nombre">' + _escapeHtml(p.nombre) + '</div>' +
+        '<div class="p08-pesables-codigo">' + _escapeHtml(p.codigo || '') + '</div>' +
+        '<div class="p08-pesables-codigo">$' + (parseFloat(p.precioKilo) || 0).toFixed(2) + ' /kg</div>' +
+        '</div>' +
+        '<div class="p08-pesables-cantidad">' +
+        '<button data-pesable-restar="' + idx + '">−</button>' +
+        '<span>' + (parseInt(p.cantidad, 10) || 1) + '</span>' +
+        '<button data-pesable-sumar="' + idx + '">+</button>' +
+        '</div>' +
+        '<button class="p08-pesables-eliminar" data-pesable-eliminar="' + idx + '">🗑️</button>' +
+        '</div>';
+    }).join('');
+
+    cont.querySelectorAll('[data-pesable-sumar]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var i = parseInt(btn.dataset.pesableSumar, 10);
+        if (_pesablesTickets[i]) { _pesablesTickets[i].cantidad++; _renderPesablesLista(); }
+      });
+    });
+    cont.querySelectorAll('[data-pesable-restar]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var i = parseInt(btn.dataset.pesableRestar, 10);
+        if (!_pesablesTickets[i]) return;
+        if (_pesablesTickets[i].cantidad > 1) _pesablesTickets[i].cantidad--;
+        else _pesablesTickets.splice(i, 1);
+        _renderPesablesLista();
+      });
+    });
+    cont.querySelectorAll('[data-pesable-eliminar]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        _pesablesTickets.splice(parseInt(btn.dataset.pesableEliminar, 10), 1);
+        _renderPesablesLista();
+      });
+    });
+  }
+
+  Impresora.imprimirTicketsPesables = async function () {
+    if (_pesablesTickets.length === 0) { _toast('Agregá al menos un producto', 'warning'); return; }
+    try {
+      var html = _generarHTMLPesables(_pesablesTickets, Impresora.config);
+      var okPopup = await _conDeteccionPopup(function () {
+        var ventana = window.open('', '_blank', 'width=850,height=700');
+        if (!ventana) throw new Error('popup bloqueado');
+        ventana.document.write(html);
+        ventana.document.close();
+        ventana.focus();
+        _imprimirVentana(ventana);
+      });
+      if (!okPopup) {
+        _reportarError('E-IMP-001');
+        Impresora.agregarACola({ tipo: 'pesable', payload: _pesablesTickets.slice() });
+        return;
+      }
+      App.cerrarModal('modal-p08-pesables');
+      _pesablesTickets = [];
+    } catch (e) {
+      _reportarError('E-STK-010', { detalles: { mensaje: (e && e.message) ? e.message : 'desconocido' } });
+    }
+  };
+
+  function _generarHTMLPesables(productos, c) {
+    productos = Array.isArray(productos) ? productos : [];
+    c = c || {};
+    var todas = [];
+    productos.forEach(function (p) {
+      var cant = parseInt(p.cantidad, 10) || 1;
+      for (var i = 0; i < cant; i++) todas.push(p);
+    });
+    var html = '';
+    todas.forEach(function (p) {
+      html += '<div class="etiqueta-pesable">' +
+        '<div class="ep-nombre">' + _escapeHtml(p.nombre) + '</div>' +
+        '<div class="ep-codigo">' + _escapeHtml(p.codigo || '') + '</div>' +
+        '<div class="ep-precio">$' + ((parseFloat(p.precioKilo) || 0).toFixed(2)) + ' /kg</div>' +
+        '<div class="ep-peso">Peso: ______ g  /  ______ kg</div>' +
+        '<div class="ep-fecha">' + _escapeHtml(App.formatearFecha(Date.now())) + '</div></div>';
+    });
+    return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Pesables</title>' +
+      '<style>@page { margin: 8mm; } body { font-family: Arial, sans-serif; font-size: 11px; margin: 0; padding: 0; }' +
+      '.etiqueta-pesable { display: inline-block; width: 62mm; height: 38mm; border: 1px dashed #999; padding: 3mm; margin: 1mm; box-sizing: border-box; vertical-align: top; page-break-inside: avoid; overflow: hidden; }' +
+      '.ep-nombre { font-weight: bold; font-size: 13px; margin-bottom: 2mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }' +
+      '.ep-codigo { font-family: monospace; font-size: 10px; color: #555; margin-bottom: 2mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }' +
+      '.ep-precio { font-weight: bold; margin-bottom: 3mm; }' +
+      '.ep-peso { border-top: 1px solid #333; padding-top: 2mm; margin-bottom: 2mm; }' +
+      '.ep-fecha { font-size: 9px; color: #777; }</style></head><body>' + html + '</body></html>';
+  }
+
+  Impresora._imprimirPesable = async function (payload) {
+    var items = Array.isArray(payload) ? payload : (payload && payload.items) || [];
+    if (items.length === 0) { _toast('Nada para reimprimir', 'warning'); return; }
+    var html = _generarHTMLPesables(items, Impresora.config);
+    var okPopup = await _conDeteccionPopup(function () {
+      var ventana = window.open('', '_blank', 'width=850,height=700');
+      if (!ventana) throw new Error('popup bloqueado');
+      ventana.document.write(html);
+      ventana.document.close();
+      ventana.focus();
+      _imprimirVentana(ventana);
+    });
+    if (!okPopup) {
+      _reportarError('E-IMP-001');
+      throw new Error('Popup bloqueado');
+    }
+  };
+
+  /* ─── Reimpresión de pedidos ─────────────────────────────── */
+  Impresora._imprimirPedido = async function (payload) {
+    if (!payload) { _toast('Nada para reimprimir', 'warning'); return; }
+
+    var html = _generarHTMLPedidoLocal(payload);
+    var ok = await _conDeteccionPopup(function () {
+      var ventana = window.open('', '_blank', 'width=850,height=700');
+      if (!ventana) throw new Error('popup bloqueado');
+      ventana.document.write(html);
+      ventana.document.close();
+      ventana.focus();
+      _imprimirVentana(ventana);
+    });
+
+    if (!ok) {
+      Impresora.agregarACola({ tipo: 'pedido', payload: payload });
+      _reportarError('E-IMP-001');
+      throw new Error('Popup bloqueado');
+    }
+  };
+
+  function _generarHTMLPedidoLocal(payload) {
+    var prov = null;
+    try {
+      if (window.Proveedores && typeof Proveedores.obtener === 'function' && payload.proveedor_id) {
+        prov = Proveedores.obtener(payload.proveedor_id);
+      }
+    } catch (e) {}
+
+    var items = (payload.items || []).map(function (it) {
+      it = it || {};
+      return '<tr><td>' + _escapeHtml(it.productoNombre || it.nombre || 'Producto') + '</td>' +
+        '<td>' + (parseInt(it.cantidad, 10) || 0) + '</td>' +
+        '<td>' + _escapeHtml(App.formatearMoneda(it.precioUnitario || 0)) + '</td>' +
+        '<td>' + _escapeHtml(App.formatearMoneda(it.subtotal || 0)) + '</td></tr>';
+    }).join('');
+
+    return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Pedido</title>' +
+      '<style>body{font-family:monospace;padding:20px;max-width:400px;margin:0 auto;}' +
+      'h2{border-bottom:2px solid #000;padding-bottom:8px;}' +
+      'table{width:100%;border-collapse:collapse;margin:15px 0;}' +
+      'th,td{padding:6px;text-align:left;border-bottom:1px solid #ddd;}' +
+      '.total{font-size:18px;font-weight:bold;text-align:right;margin-top:15px;}</style></head><body>' +
+      '<h2>PEDIDO</h2>' +
+      (prov ? '<p><strong>Proveedor:</strong> ' + _escapeHtml(prov.nombre || '') + '</p>' : '') +
+      (prov && prov.cuit ? '<p><strong>CUIT:</strong> ' + _escapeHtml(prov.cuit) + '</p>' : '') +
+      '<p><strong>Fecha:</strong> ' + _escapeHtml(App.formatearFechaHora(payload.fecha || Date.now())) + '</p>' +
+      '<table><tr><th>Producto</th><th>Cant</th><th>P.Unit</th><th>Subtotal</th></tr>' + items + '</table>' +
+      '<div class="total">TOTAL: ' + _escapeHtml(App.formatearMoneda(payload.total || 0)) + '</div>' +
+      (payload.notas ? '<p><strong>Notas:</strong> ' + _escapeHtml(payload.notas) + '</p>' : '') +
+      '</body></html>';
+  }
+
+  /* ─── Sync en vivo de la preview ─────────────────────────── */
+  function _configurarSyncLive() {
+    if (_syncLiveFn) return;
+    _syncLiveFn = _debounce(function () {
+      var c = Impresora.config;
+      c.nombre_negocio   = _valorInput('p08-nombre-negocio', c.nombre_negocio);
+      c.ubicacion        = _valorInput('p08-ubicacion', c.ubicacion);
+      c.telefono         = _valorInput('p08-telefono', c.telefono);
+      c.mensaje_pie      = _valorInput('p08-mensaje-pie', c.mensaje_pie);
+      c.mostrar_horarios = _checkedInput('p08-mostrar-horarios', c.mostrar_horarios);
+      c.mostrar_fecha    = _checkedInput('p08-mostrar-fecha', c.mostrar_fecha);
+      c.mostrar_numero   = _checkedInput('p08-mostrar-numero', c.mostrar_numero);
+      c.fuente           = _fuenteSegura(_valorInput('p08-fuente', c.fuente));
+      c.tipo_comprobante = _valorInput('p08-tipo-comprobante', c.tipo_comprobante);
+      c.tamano_papel     = _papelSeguro(_valorInput('p08-tamano-papel', c.tamano_papel));
+      Impresora.actualizarPreview();
+    }, 150);
+
+    ['p08-nombre-negocio', 'p08-ubicacion', 'p08-telefono', 'p08-mensaje-pie'].forEach(function (id) {
+      _bindImp(_el(id), 'input', _syncLiveFn);
+    });
+    ['p08-mostrar-horarios', 'p08-mostrar-fecha', 'p08-mostrar-numero',
+     'p08-fuente', 'p08-tipo-comprobante', 'p08-tamano-papel'].forEach(function (id) {
+      _bindImp(_el(id), 'change', _syncLiveFn);
+    });
+  }
+
+  function _configurarSyncManual() {
+    if (_syncManualFn) return;
+    _syncManualFn = _debounce(function () {
+      var manual = _valorInput('p08-impresora-manual', '');
+      if (manual && String(manual).trim()) {
+        Impresora.config.impresora_nombre = String(manual).trim();
+      }
+    }, 250);
+    _bindImp(_el('p08-impresora-manual'), 'input', _syncManualFn);
+  }
+
+  /* ─── Listeners del panel 08 ─────────────────────────────── */
+  function _configurarListenersImpresora() {
+    var ids = [
+      ['p08-btn-detectar',            Impresora.detectarImpresoras],
+      ['p08-btn-guardar',             Impresora.guardarConfig],
+      ['p08-btn-ticket-prueba',       Impresora.imprimirTicketPrueba],
+      ['p08-btn-eliminar-logo',       Impresora.eliminarLogo],
+      ['p08-btn-agrupar',             Impresora.agruparHorarios],
+      ['p08-btn-desagrupar',          Impresora.desagruparHorarios],
+      ['p08-btn-cola-imprimir-todos', Impresora.imprimirTodos],
+      ['p08-btn-cola-cancelar-todos', Impresora.cancelarTodos]
+    ];
+    ids.forEach(function (par) {
+      _bindImp(_el(par[0]), 'click', par[1]);
+    });
+
+    _bindImp(_el('p08-logo'), 'change', function (e) {
+      Impresora.subirLogo(e.target.files[0]);
+    });
+
+    var slider = _el('p08-tamano-letra');
+    if (slider) {
+      _bindImp(slider, 'input', function () {
+        _setText('p08-tamano-valor', slider.value);
+        var v = parseInt(slider.value, 10);
+        Impresora.config.tamano_letra = (!isNaN(v) && v >= 8 && v <= 22) ? v : 12;
+        Impresora.actualizarPreview();
+      });
+    }
+
+    _bindImp(_el('p08-impresora-detectada'), 'change', Impresora.guardarImpresoraSeleccionada);
+
+    var chkNegritas = _el('p08-negritas');
+    if (chkNegritas) {
+      _bindImp(chkNegritas, 'change', function () {
+        Impresora.config.negritas = chkNegritas.checked;
+        Impresora.actualizarPreview();
+      });
+    }
+
+    /* Modal pesables */
+    _bindImp(_el('p08-close-pesables'), 'click', function () { App.cerrarModal('modal-p08-pesables'); });
+    _bindImp(_el('p08-close-pesables-2'), 'click', function () { App.cerrarModal('modal-p08-pesables'); });
+    _bindImp(_el('p08-btn-imprimir-pesables'), 'click', Impresora.imprimirTicketsPesables);
+
+    var btnAddP = _el('p08-btn-agregar-pesable');
+    if (btnAddP) {
+      _bindImp(btnAddP, 'click', function () {
+        var input = _el('p08-pesable-buscar');
+        if (input && input.value.trim()) {
+          Impresora.agregarProductoAPesables(input.value.trim());
+          input.value = '';
+        }
+      });
+    }
+
+    var inputBuscarP = _el('p08-pesable-buscar');
+    if (inputBuscarP) {
+      _bindImp(inputBuscarP, 'keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          Impresora.agregarProductoAPesables(inputBuscarP.value.trim());
+          inputBuscarP.value = '';
+        }
+      });
+    }
+
+    /* Listeners document-level del drag */
+    _bindImp(document, 'mousemove', _moverDrag);
+    _bindImp(document, 'touchmove', _moverDrag, { passive: false });
+    _bindImp(document, 'mouseup', _finDrag);
+    _bindImp(document, 'touchend', _finDrag);
+
+    var preview = _el('p08-preview-ticket');
+    if (preview) {
+      _bindImp(preview, 'click', function (e) {
+        var insideElemento = e.target.closest('.p08-elemento-arrastrable');
+        if (!insideElemento) {
+          document.querySelectorAll('.p08-elemento-arrastrable.seleccionado').forEach(function (el) {
+            el.classList.remove('seleccionado');
+          });
+          document.querySelectorAll('.p08-el-botones').forEach(function (b) { b.remove(); });
+          _elementoSeleccionado = null;
+        }
+      });
+    }
+
+    _configurarSyncLive();
+    _configurarSyncManual();
+  }
+
+  /* ─── UX modales P08 (Escape + backdrop) ─────────────────── */
+  function _configurarUxModalesB16() {
+    if (_modalesUxBound) return;
+    _modalesUxBound = true;
+
+    var modales = ['modal-p08-pesables'];
+    modales.forEach(function (id) {
+      var m = _el(id);
+      if (!m || m.dataset.b16UxBound === '1') return;
+      m.dataset.b16UxBound = '1';
+      m.addEventListener('mousedown', function (e) {
+        if (e.target !== m) return;
+        App.cerrarModal(id);
+      });
+    });
+
+    if (document.body && document.body.dataset.b16UxEscP08Bound !== '1') {
+      document.body.dataset.b16UxEscP08Bound = '1';
+      document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        for (var i = 0; i < modales.length; i++) {
+          var m = _el(modales[i]);
+          if (m && m.classList.contains('active')) {
+            App.cerrarModal(modales[i]);
+            e.stopPropagation();
+            return;
+          }
+        }
+      });
+    }
+  }
+
+  /* ─── Destroy parcial del módulo Impresora ───────────────── */
+  Impresora.destroy = function () {
+    if (_impController) {
+      try { _impController.abort(); } catch (e) {}
+      _impController = null;
+    }
+    _dragState = { activo: false, elemento: null, inicioY: 0, tipo: null };
+    _elementoSeleccionado = null;
+    _impresoraInitialized = false;
+    _impresoraInitEnCurso = false;
+    _syncLiveFn = null;
+    _syncManualFn = null;
+    /* [MEJORA-M4] Resetear el comercio cacheado para que un próximo
+     * init fuerce re-lectura. Sin esto, si se destroy() y vuelve a
+     * init() con el mismo comercio, _doImpresoraInit vería
+     * _impresoraComercioId === cid y no recargaría la config. */
+    _impresoraComercioId = null;
+  };
+
+  window.Impresora = Impresora;
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 5. MÓDULO IMPUESTOS — PANEL 09                              */
+  /* ═══════════════════════════════════════════════════════════ */
+  var _defaultsImpuestos = {
+    condicion: 'responsable',
+    aliq_gral: 21,
+    aliq_red: 10.5,
+    aliq_dif: 27,
+    precios_con_iva: false
+  };
+  var _impuestosInitialized = false;
+  var _impuestosComercioId  = null;
+  var Impuestos = { config: Object.assign({}, _defaultsImpuestos) };
+
+  Impuestos.init = async function () {
+    var cid = _getComercioIdActual();
+    if (_impuestosComercioId !== cid) {
+      _impuestosComercioId = cid;
+      Impuestos.config = Object.assign({}, _defaultsImpuestos);
+    }
+
+    if (!_dataLista()) {
+      _toast('Sin comercio asignado. Usando configuración local.', 'warning', 4000);
+      try {
+        var raw = localStorage.getItem('config_impuestos_v1');
+        Impuestos.config = raw
+          ? Object.assign({}, _defaultsImpuestos, JSON.parse(raw))
+          : Object.assign({}, _defaultsImpuestos);
+      } catch (e) {
+        Impuestos.config = Object.assign({}, _defaultsImpuestos);
+      }
+      _aplicarConfigImpuestosAFormulario();
+      if (!_impuestosInitialized) {
+        _configurarListenersImpuestos();
+        _impuestosInitialized = true;
+      }
+      return;
+    }
+
+    var configRemota = null;
+    try {
+      var comercio = await Data.get('config', 'comercio');
+      if (comercio && comercio.config_impuestos && typeof comercio.config_impuestos === 'object') {
+        configRemota = comercio.config_impuestos;
+      }
+    } catch (e) {
+      console.warn('[Impuestos] No se pudo leer config remota:', e);
+    }
+
+    var configLocal = null;
+    try {
+      var rawLocal = localStorage.getItem('config_impuestos_v1');
+      configLocal = rawLocal ? JSON.parse(rawLocal) : null;
+    } catch (e) { configLocal = null; }
+
+    Impuestos.config = Object.assign({}, _defaultsImpuestos, configRemota || configLocal || {});
+
+    try { localStorage.setItem('config_impuestos_v1', JSON.stringify(Impuestos.config)); } catch (e) {}
+
+    _aplicarConfigImpuestosAFormulario();
+    if (!_impuestosInitialized) {
+      _configurarListenersImpuestos();
+      _impuestosInitialized = true;
+    }
+    Impuestos.renderResumen();
+  };
+
+  function _aplicarConfigImpuestosAFormulario() {
+    var c = Impuestos.config;
+    _setVal('p09-condicion-iva', c.condicion);
+    _setVal('p09-aliq-gral', c.aliq_gral);
+    _setVal('p09-aliq-red', c.aliq_red);
+    _setVal('p09-aliq-dif', c.aliq_dif);
+    _setChecked('p09-precios-con-iva', c.precios_con_iva);
+  }
+
+  Impuestos.calcularIVA = function (monto, tipo) {
+    tipo = tipo || 'debito';
+    if (Impuestos.config.condicion !== 'responsable') return 0;
+    var aliq = (parseFloat(Impuestos.config.aliq_gral) || 21) / 100;
+    if (Impuestos.config.precios_con_iva && tipo === 'debito') {
+      var neto = monto / (1 + aliq);
+      return monto - neto;
+    }
+    return monto * aliq;
+  };
+
+  Impuestos.guardarConfig = async function () {
+    /* [MEJORA-M1] Validar rango 0–100 de las 3 alícuotas. */
+    function _aliqValida(raw, def) {
+      var v = parseFloat(raw);
+      if (isNaN(v) || v < 0 || v > 100) return def;
+      return v;
+    }
+    Impuestos.config.condicion       = _valorInput('p09-condicion-iva', 'responsable');
+    Impuestos.config.aliq_gral       = _aliqValida(_valorInput('p09-aliq-gral', 21), 21);
+    Impuestos.config.aliq_red        = _aliqValida(_valorInput('p09-aliq-red', 10.5), 10.5);
+    Impuestos.config.aliq_dif        = _aliqValida(_valorInput('p09-aliq-dif', 27), 27);
+    Impuestos.config.precios_con_iva = _checkedInput('p09-precios-con-iva', false);
+    try { localStorage.setItem('config_impuestos_v1', JSON.stringify(Impuestos.config)); } catch (e) {}
+    try {
+      if (_dataLista()) {
+        await Data.update('config', 'comercio', { config_impuestos: Impuestos.config });
+      }
+    } catch (e) {}
+    Impuestos.renderResumen();
+    _toast('Configuración guardada', 'success');
+  };
+
+  Impuestos.renderResumen = async function () {
+    if (!_dataLista()) return;
+    var ahora = new Date();
+    var desde = new Date(ahora.getFullYear(), ahora.getMonth(), 1).getTime();
+    var hasta = Date.now();
+    try {
+      var ventas = (await Data.todos('ventas')).filter(function (v) {
+        return v.fecha >= desde && v.fecha <= hasta;
+      });
+      var compras = (await Data.todos('historico_compras')).filter(function (c) {
+        return c.fecha >= desde && c.fecha <= hasta;
+      });
+      var vn = 0, id = 0, cn = 0, ic = 0;
+      ventas.forEach(function (v) {
+        var t = v.total || 0;
+        var iva = Impuestos.calcularIVA(t, 'debito');
+        vn += Impuestos.config.precios_con_iva ? (t - iva) : t;
+        id += iva;
+      });
+      compras.forEach(function (c) {
+        var t = _totalDeCompra(c);
+        var iva = Impuestos.calcularIVA(t, 'credito');
+        cn += t - iva;
+        ic += iva;
+      });
+      _setText('p09-ventas-netas',   App.formatearMoneda(vn));
+      _setText('p09-iva-debito',     App.formatearMoneda(id));
+      _setText('p09-compras-netas',  App.formatearMoneda(cn));
+      _setText('p09-iva-credito',    App.formatearMoneda(ic));
+      _setText('p09-saldo-iva',      App.formatearMoneda(id - ic));
+    } catch (e) {}
+  };
+
+  function _totalDeCompra(c) {
+    if (!c || typeof c !== 'object') return 0;
+    return parseFloat(
+      c.monto_total !== undefined ? c.monto_total :
+      c.total       !== undefined ? c.total :
+      0
+    ) || 0;
+  }
+
+  function _proveedorDeCompra(c) {
+    if (!c || typeof c !== 'object') return '-';
+    return c.proveedor    !== undefined ? c.proveedor :
+           c.proveedor_id !== undefined ? c.proveedor_id :
+           '-';
+  }
+
+  Impuestos.renderLibros = async function () {
+    if (!_dataLista()) return;
+    var periodo = _valorInput('p09-libro-periodo', 'mes_actual');
+    var rango = _obtenerRangoPeriodo(periodo);
+    try {
+      var ventas = (await Data.todos('ventas')).filter(function (v) {
+        return v.fecha >= rango.desde && v.fecha <= rango.hasta;
+      });
+      var compras = (await Data.todos('historico_compras')).filter(function (c) {
+        return c.fecha >= rango.desde && c.fecha <= rango.hasta;
+      });
+
+      var tvn = 0, tvi = 0, tvt = 0;
+      var tbodyV = _el('p09-tbody-ventas');
+      if (tbodyV) {
+        tbodyV.innerHTML = ventas.map(function (v) {
+          var total = v.total || 0;
+          var iva = Impuestos.calcularIVA(total, 'debito');
+          var neto = total - iva;
+          tvn += neto; tvi += iva; tvt += total;
+          return '<tr><td>' + _escapeHtml(App.formatearFecha(v.fecha)) + '</td>' +
+            '<td>#' + _escapeHtml(v.ticket_numero || v.id || '-') + '</td>' +
+            '<td>' + _escapeHtml(App.formatearMoneda(neto)) + '</td>' +
+            '<td>' + _escapeHtml(App.formatearMoneda(iva)) + '</td>' +
+            '<td>' + _escapeHtml(App.formatearMoneda(total)) + '</td></tr>';
+        }).join('');
+      }
+      _setText('p09-tot-ven-neto',  App.formatearMoneda(tvn));
+      _setText('p09-tot-ven-iva',   App.formatearMoneda(tvi));
+      _setText('p09-tot-ven-total', App.formatearMoneda(tvt));
+
+      var tcn = 0, tci = 0, tct = 0;
+      var tbodyC = _el('p09-tbody-compras');
+      if (tbodyC) {
+        tbodyC.innerHTML = compras.map(function (c) {
+          var total = _totalDeCompra(c);
+          var prov  = _proveedorDeCompra(c);
+          var iva   = Impuestos.calcularIVA(total, 'credito');
+          var neto  = total - iva;
+          tcn += neto; tci += iva; tct += total;
+          return '<tr><td>' + _escapeHtml(App.formatearFecha(c.fecha)) + '</td>' +
+            '<td>' + _escapeHtml(String(prov)) + '</td>' +
+            '<td>' + _escapeHtml(App.formatearMoneda(neto)) + '</td>' +
+            '<td>' + _escapeHtml(App.formatearMoneda(iva)) + '</td>' +
+            '<td>' + _escapeHtml(App.formatearMoneda(total)) + '</td></tr>';
+        }).join('');
+      }
+      _setText('p09-tot-comp-neto',  App.formatearMoneda(tcn));
+      _setText('p09-tot-comp-iva',   App.formatearMoneda(tci));
+      _setText('p09-tot-comp-total', App.formatearMoneda(tct));
+    } catch (e) {}
+  };
+
+  function _obtenerRangoPeriodo(periodo) {
+    var ahora = new Date();
+    var desde, hasta;
+    switch (periodo) {
+      case 'mes_actual':
+        desde = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+        hasta = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0, 23, 59, 59);
+        break;
+      case 'mes_anterior':
+        desde = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
+        hasta = new Date(ahora.getFullYear(), ahora.getMonth(), 0, 23, 59, 59);
+        break;
+      case 'trimestre':
+        desde = new Date(ahora.getFullYear(), ahora.getMonth() - 3, 1);
+        hasta = ahora;
+        break;
+      case 'anio':
+        desde = new Date(ahora.getFullYear(), 0, 1);
+        hasta = ahora;
+        break;
+      default:
+        desde = new Date(); hasta = ahora;
+    }
+    return { desde: desde.getTime(), hasta: hasta.getTime() };
+  }
+
+  Impuestos.exportarReporte = async function (formato) {
+    if (!_dataLista()) return;
+    var periodo = _valorInput('p09-reporte-periodo', 'mes_actual');
+    var tipo = _valorInput('p09-reporte-tipo', 'resumen');
+    var rango = _obtenerRangoPeriodo(periodo);
+    try {
+      var ventas = (await Data.todos('ventas')).filter(function (v) {
+        return v.fecha >= rango.desde && v.fecha <= rango.hasta;
+      });
+      var compras = (await Data.todos('historico_compras')).filter(function (c) {
+        return c.fecha >= rango.desde && c.fecha <= rango.hasta;
+      });
+      var nombreBase = 'reporte_' + tipo + '_' + periodo;
+
+      if (formato === 'csv') {
+        var csv = '', algoEscrito = false;
+        if (tipo === 'ventas' || tipo === 'resumen') {
+          csv += 'VENTAS\nFecha,Ticket,Neto,IVA,Total\n';
+          ventas.forEach(function (v) {
+            var total = v.total || 0;
+            var iva = Impuestos.calcularIVA(total, 'debito');
+            csv += '"' + App.formatearFecha(v.fecha) + '","' +
+              (v.ticket_numero || v.id || '') + '","' +
+              (total - iva).toFixed(2) + '","' + iva.toFixed(2) + '","' +
+              total.toFixed(2) + '"\n';
+          });
+          algoEscrito = true;
+        }
+        if (tipo === 'resumen' && algoEscrito) csv += '\n';
+        if (tipo === 'compras' || tipo === 'resumen') {
+          csv += 'COMPRAS\nFecha,Proveedor,Neto,IVA,Total\n';
+          compras.forEach(function (c) {
+            var total = _totalDeCompra(c);
+            var prov  = _proveedorDeCompra(c);
+            var iva   = Impuestos.calcularIVA(total, 'credito');
+            csv += '"' + App.formatearFecha(c.fecha) + '","' + prov + '","' +
+              (total - iva).toFixed(2) + '","' + iva.toFixed(2) + '","' +
+              total.toFixed(2) + '"\n';
+          });
+          algoEscrito = true;
+        }
+        if (!algoEscrito) { _toast('No hay datos', 'warning'); return; }
+        App.descargarArchivo(csv, nombreBase + '.csv', 'text/csv;charset=utf-8');
+      } else {
+        var txt = 'REPORTE FISCAL - ' + tipo.toUpperCase() + '\nPeríodo: ' + periodo + '\n\n';
+        if (tipo === 'ventas' || tipo === 'resumen') {
+          txt += '=== VENTAS ===\n\n';
+          if (ventas.length === 0) txt += '(sin ventas en el período)\n';
+          else {
+            ventas.forEach(function (v) {
+              var total = v.total || 0;
+              var iva = Impuestos.calcularIVA(total, 'debito');
+              txt += 'Fecha: ' + App.formatearFecha(v.fecha) + '\n' +
+                'Ticket: ' + (v.ticket_numero || v.id) + '\n' +
+                'Neto: ' + (total - iva).toFixed(2) + '\n' +
+                'IVA: ' + iva.toFixed(2) + '\n' +
+                'Total: ' + total.toFixed(2) + '\n---\n';
+            });
+          }
+        }
+        if (tipo === 'compras' || tipo === 'resumen') {
+          txt += '\n=== COMPRAS ===\n\n';
+          if (compras.length === 0) txt += '(sin compras en el período)\n';
+          else {
+            compras.forEach(function (c) {
+              var total = _totalDeCompra(c);
+              var prov  = _proveedorDeCompra(c);
+              var iva   = Impuestos.calcularIVA(total, 'credito');
+              txt += 'Fecha: ' + App.formatearFecha(c.fecha) + '\n' +
+                'Proveedor: ' + prov + '\n' +
+                'Neto: ' + (total - iva).toFixed(2) + '\n' +
+                'IVA: ' + iva.toFixed(2) + '\n' +
+                'Total: ' + total.toFixed(2) + '\n---\n';
+            });
+          }
+        }
+        App.descargarArchivo(txt, nombreBase + '.txt', 'text/plain;charset=utf-8');
+      }
+      _toast('Reporte exportado', 'success');
+    } catch (e) {
+      _reportarError('E-TAX-002', { detalles: { mensaje: e.message } });
+    }
+  };
+
+  function _configurarListenersImpuestos() {
+    document.querySelectorAll('#vista-impuestos .p09-tab').forEach(function (tab) {
+      if (tab.dataset.b16p2Bound === '1') return;
+      tab.dataset.b16p2Bound = '1';
+      tab.addEventListener('click', function () {
+        document.querySelectorAll('#vista-impuestos .p09-tab').forEach(function (t) {
+          t.classList.remove('active');
+        });
+        tab.classList.add('active');
+        document.querySelectorAll('#vista-impuestos .p09-tab-content').forEach(function (c) {
+          c.style.display = 'none';
+        });
+        var target = _el('p09-tab-' + tab.dataset.tab);
+        if (target) target.style.display = 'block';
+        if (tab.dataset.tab === 'libros') Impuestos.renderLibros();
+      });
+    });
+    document.querySelectorAll('#vista-impuestos .p07-tab').forEach(function (tab) {
+      if (tab.dataset.b16p2Bound === '1') return;
+      tab.dataset.b16p2Bound = '1';
+      tab.addEventListener('click', function () {
+        document.querySelectorAll('#vista-impuestos .p07-tab').forEach(function (t) {
+          t.classList.remove('active');
+        });
+        tab.classList.add('active');
+        var v = _el('p09-libro-ventas');
+        var c = _el('p09-libro-compras');
+        if (tab.dataset.subtab === 'ventas') {
+          if (v) v.style.display = 'block';
+          if (c) c.style.display = 'none';
+        } else {
+          if (v) v.style.display = 'none';
+          if (c) c.style.display = 'block';
+        }
+      });
+    });
+    var btnG = _el('p09-btn-guardar-config');
+    if (btnG && btnG.dataset.b16p2Bound !== '1') {
+      btnG.dataset.b16p2Bound = '1';
+      btnG.addEventListener('click', Impuestos.guardarConfig);
+    }
+    var btnF = _el('p09-btn-filtrar-libro');
+    if (btnF && btnF.dataset.b16p2Bound !== '1') {
+      btnF.dataset.b16p2Bound = '1';
+      btnF.addEventListener('click', Impuestos.renderLibros);
+    }
+    var selP = _el('p09-libro-periodo');
+    if (selP && selP.dataset.b16p2Bound !== '1') {
+      selP.dataset.b16p2Bound = '1';
+      selP.addEventListener('change', function () {
+        var custom = _el('p09-custom-dates');
+        if (custom) custom.style.display = selP.value === 'custom' ? 'flex' : 'none';
+      });
+    }
+    var btnT = _el('p09-btn-export-txt');
+    if (btnT && btnT.dataset.b16p2Bound !== '1') {
+      btnT.dataset.b16p2Bound = '1';
+      btnT.addEventListener('click', function () { Impuestos.exportarReporte('txt'); });
+    }
+    var btnC = _el('p09-btn-export-csv');
+    if (btnC && btnC.dataset.b16p2Bound !== '1') {
+      btnC.dataset.b16p2Bound = '1';
+      btnC.addEventListener('click', function () { Impuestos.exportarReporte('csv'); });
+    }
+  }
+
+  window.Impuestos = Impuestos;
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 6. MÓDULO CUENTA — PANEL 10                                 */
+  /* ═══════════════════════════════════════════════════════════ */
+  var _cuentaInitialized    = false;
+  var _cuentaComercioId     = null;
+  var _logsFiltroActual     = 'todos';
+  var _unsubscribeLogs      = null;
+  var _logsComercioId       = null;
+  var _cuentaInitEnCurso    = false;
+  var _cuentaInitPendiente  = false;
+  var _cuentaInitRetryHandle = null;
+  var _CUENTA_INIT_MAX_RETRIES = 20;
+
+  var Cuenta = {};
+
+  Cuenta.init = async function () {
+    if (_cuentaInitEnCurso) return;
+    if (_cuentaInitPendiente) return;
+
+    _cuentaInitEnCurso = true;
+    try {
+      var cid = _getComercioIdActual();
+      if (_cuentaComercioId !== cid) {
+        if (typeof _unsubscribeLogs === 'function') {
+          try { _unsubscribeLogs(); } catch (e) {}
+          _unsubscribeLogs = null;
+          _logsComercioId = null;
+        }
+        _cuentaComercioId = cid;
+      }
+
+      if (!_dataLista()) {
+        if (!_cuentaInitRetryHandle) {
+          _toast('Sin comercio asignado. Reintentando...', 'warning', 3000);
+          _cuentaInitPendiente = true;
+          _cuentaInitRetryHandle = _crearRetry(function () {
+            if (_dataLista() || _STATE.destroyed) {
+              _cuentaInitPendiente = false;
+              _cuentaInitRetryHandle = null;
+              if (!_STATE.destroyed) Cuenta.init();
+              return true;
+            }
+            return false;
+          }, _CUENTA_INIT_MAX_RETRIES, 800);
+        }
+        return;
+      }
+
+      if (_cuentaInitRetryHandle) {
+        _cuentaInitRetryHandle.cancelar();
+        _cuentaInitRetryHandle = null;
+      }
+      _cuentaInitPendiente = false;
+
+      var user = _getUser();
+      var rol  = _rolActual();
+
+      document.querySelectorAll('#vista-cuenta .p10-tabs .p10-tab').forEach(function (t) {
+        if (t.dataset.soloAdmin === 'true') t.style.display = rol === 'admin' ? '' : 'none';
+      });
+
+      var cajeroInfo = _getCajeroInfo();
+      _setVal('p10-nombre-cajero', cajeroInfo.nombre || user.nombre || '');
+      _setVal('p10-caja-asignada', cajeroInfo.caja || '');
+      _setText('p10-mi-email', user.email || '-');
+      _setText('p10-mi-rol', rol === 'admin' ? 'Administrador' : 'Cajero');
+      _setText('p10-mi-device', App.getDeviceId());
+
+      if (rol === 'admin') {
+        try { await _cargarDatosComercio(); } catch (e) { console.warn('[Cuenta] comercio:', e); }
+        try { await Arca.renderEstado(); } catch (e) { console.warn('[Cuenta] arca:', e); }
+        try { await _renderListaCajeros(); } catch (e) { console.warn('[Cuenta] cajeros:', e); }
+        Cuenta.actualizarInfo();
+      }
+
+      _cargarYRenderLogs();
+
+      if (!_cuentaInitialized) {
+        _configurarListenersCuenta();
+        _cuentaInitialized = true;
+      }
+
+      if (rol === 'admin' && window.Data && typeof Data.onSnapshotLogs === 'function') {
+        if (_logsComercioId !== cid) {
+          if (typeof _unsubscribeLogs === 'function') {
+            try { _unsubscribeLogs(); } catch (e) {}
+            _unsubscribeLogs = null;
+          }
+          try {
+            _unsubscribeLogs = Data.onSnapshotLogs(function () { _cargarYRenderLogs(); });
+            _logsComercioId = cid;
+          } catch (e) {
+            console.warn('[Cuenta] No se pudo suscribir a onSnapshotLogs:', e);
+            _unsubscribeLogs = null;
+            _logsComercioId = null;
+          }
+        }
+      // El snapshot global ya está registrado en Data.init.
+      // Solo escuchamos el evento custom para re-renderizar la UI.
+      if (!window.__B16_LOGS_EVENT_BOUND__) {
+        window.__B16_LOGS_EVENT_BOUND__ = true;
+        document.addEventListener('b16:logs-actualizados', function () {
+          if (_dataLista()) _cargarYRenderLogs();
+        });
+      }
+    } finally {
+      _cuentaInitEnCurso = false;
+    }
+  };
+
+  function _getCajeroInfo() {
+    try { return JSON.parse(localStorage.getItem('cajero_info_v1') || '{}'); }
+    catch (e) { return {}; }
+  }
+
+  async function _cargarDatosComercio() {
+    try {
+      var comercio = await Data.get('config', 'comercio');
+      if (!comercio) return;
+      var d = comercio.datos_cuenta || {};
+      _setVal('p10-kiosco-nombre',      d.nombre || '');
+      _setVal('p10-kiosco-propietario', d.propietario || '');
+      _setVal('p10-kiosco-cuit',        d.cuit || '');
+      _setVal('p10-kiosco-direccion',   d.direccion || '');
+      _setVal('p10-kiosco-telefono',    d.telefono || '');
+      _setVal('p10-kiosco-email',       d.email || '');
+
+      var f = comercio.datos_fiscales || {};
+      _setVal('p10-fiscal-modo',             f.modo || 'particular');
+      _setVal('p10-fiscal-cuit',             f.cuit || '');
+      _setVal('p10-fiscal-razon-social',     f.razon_social || '');
+      _setVal('p10-fiscal-domicilio',        f.domicilio || '');
+      _setVal('p10-fiscal-condicion',        f.condicion || 'responsable');
+      _setVal('p10-fiscal-iibb',             f.iibb || '');
+      _setVal('p10-fiscal-inicio',           f.inicio_actividades || '');
+      _setVal('p10-fiscal-punto-venta',      f.punto_venta || '');
+      _setVal('p10-fiscal-tipo-comprobante', f.tipo_comprobante || 'ticket');
+    } catch (e) {}
+  }
+
+  Cuenta.guardarPerfil = async function () {
+    var user = _getUser();
+    var nombre = _valorInput('p10-nombre-cajero', '').trim();
+    var caja   = _valorInput('p10-caja-asignada', '').trim();
+    if (!nombre) { _toast('El nombre no puede estar vacío', 'error'); return; }
+
+    try {
+      localStorage.setItem('cajero_info_v1', JSON.stringify({
+        nombre: nombre,
+        caja: caja,
+        rol: user.rol
+      }));
+    } catch (e) {}
+
+    if (!user.uid) {
+      _toast('Perfil guardado localmente', 'success');
+      return;
+    }
+
+    try {
+      await App.getDb().collection('usuarios').doc(user.uid).update({
+        nombre_display: nombre,
+        caja: caja,
+        fecha_actualizacion_perfil: Date.now()
+      });
+      _toast('Perfil guardado', 'success');
+    } catch (e) {
+      console.warn('[Cuenta] No se pudo sincronizar el perfil:', e);
+      _toast('Perfil guardado localmente. Se sincronizará cuando haya conexión.', 'info', 4500);
+    }
+  };
+
+  Cuenta.guardarDatos = async function () {
+    if (!_esAdmin()) return;
+    var datos = {
+      nombre:      _valorInput('p10-kiosco-nombre', '').trim(),
+      propietario: _valorInput('p10-kiosco-propietario', '').trim(),
+      cuit:        _valorInput('p10-kiosco-cuit', '').trim(),
+      direccion:   _valorInput('p10-kiosco-direccion', '').trim(),
+      telefono:    _valorInput('p10-kiosco-telefono', '').trim(),
+      email:       _valorInput('p10-kiosco-email', '').trim()
+    };
+    try {
+      await Data.update('config', 'comercio', {
+        datos_cuenta: datos,
+        fecha_actualizacion: Date.now()
+      });
+      _toast('Datos guardados', 'success');
+    } catch (e) {
+      _reportarError('E-DATA-001', { detalles: { mensaje: e.message } });
+    }
+  };
+
+  /* [B16-02] guardarDatosFiscales con RMW atómico.
+   * Un solo Data.update. merge de config_ticket leído fresco. */
+  Cuenta.guardarDatosFiscales = async function () {
+    if (!_esAdmin()) return;
+
+    var cuitIngresado = _valorInput('p10-fiscal-cuit', '').trim();
+    if (cuitIngresado && !App.validarCUIT(cuitIngresado)) {
+      _toast('CUIT inválido (dígito verificador incorrecto)', 'error', 5000);
+      return;
+    }
+    var cuitFormateado = cuitIngresado ? App.formatearCUIT(cuitIngresado) : '';
+
+    var datos = {
+      modo:               _valorInput('p10-fiscal-modo', 'particular'),
+      cuit:               cuitFormateado,
+      razon_social:       _valorInput('p10-fiscal-razon-social', '').trim(),
+      domicilio:          _valorInput('p10-fiscal-domicilio', '').trim(),
+      condicion:          _valorInput('p10-fiscal-condicion', 'responsable'),
+      iibb:               _valorInput('p10-fiscal-iibb', '').trim(),
+      inicio_actividades: _valorInput('p10-fiscal-inicio', ''),
+      punto_venta:        _valorInput('p10-fiscal-punto-venta', ''),
+      tipo_comprobante:   _valorInput('p10-fiscal-tipo-comprobante', 'ticket')
+    };
+
+    try {
+      var comercio = await Data.get('config', 'comercio');
+      var ctActual = (comercio && comercio.config_ticket && typeof comercio.config_ticket === 'object')
+        ? comercio.config_ticket
+        : {};
+      var modoSaneado = datos.modo || 'particular';
+      var ctNuevo = Object.assign({}, ctActual, { modo_fiscal: modoSaneado });
+
+      await Data.update('config', 'comercio', {
+        datos_fiscales: datos,
+        config_ticket: ctNuevo,
+        fecha_actualizacion: Date.now()
+      });
+
+      if (window.Impresora && typeof Impresora.actualizarModoFiscal === 'function') {
+        Impresora.actualizarModoFiscal(modoSaneado);
+      }
+
+      _toast('Datos fiscales guardados', 'success');
+    } catch (e) {
+      _reportarError('E-DATA-001', { detalles: { mensaje: e.message } });
+    }
+  };
+
+  Cuenta.exportarBackup = function () {
+    var backup = { _version: '1.0', _fecha: Date.now() };
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k.indexOf('_cache_v1') !== -1 || k === 'offline_queue_v1') continue;
+      backup[k] = localStorage.getItem(k);
+    }
+    var nombre = 'mejora2_backup_' + new Date().toISOString().slice(0, 10) + '.json';
+    App.descargarArchivo(JSON.stringify(backup, null, 2), nombre, 'application/json');
+    _toast('Backup exportado', 'success');
+  };
+
+  Cuenta.restaurarBackup = async function (file) {
+    if (!file) return;
+    if (!await _confirmar('¿Restaurar? Se reemplazarán TODOS los datos.')) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        var data = JSON.parse(e.target.result);
+        Object.keys(data).forEach(function (k) {
+          if (k.charAt(0) === '_') return;
+          localStorage.setItem(k, data[k]);
+        });
+        _toast('Backup restaurado. Recargando...', 'success');
+        _safeSetTimeout(function () { location.reload(); }, 1500);
+      } catch (err) {
+        _toast('Backup inválido', 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  Cuenta.actualizarInfo = function () {
+    /* [MEJORA-M3] Preferir la fuente viva (Stock) sobre la caché.
+     * Si el usuario nunca abrió Stock, la caché puede estar vacía
+     * aunque sí haya productos en Firestore. */
+    var productos = [];
+    if (window.Stock && typeof Stock.obtenerTodos === 'function') {
+      try { productos = Stock.obtenerTodos() || []; } catch (e) { productos = []; }
+    }
+    if (!productos.length) productos = _leerColeccionDeCache('productos');
+
+    var ventas = _leerColeccionDeCache('ventas');
+
+    var total = 0;
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      total += (localStorage.getItem(k) || '').length;
+    }
+    _setText('p10-info-version',      App.getVersion ? App.getVersion() : '1.0.0');
+    _setText('p10-info-productos',    String(Array.isArray(productos) ? productos.length : 0));
+    _setText('p10-info-ventas',       String(Array.isArray(ventas) ? ventas.length : 0));
+    _setText('p10-info-storage',      (total / 1024).toFixed(2) + ' KB');
+    _setText('p10-info-ultima-sync',  Data.getUltimaSync ? App.formatearFechaHora(Data.getUltimaSync()) : '-');
+    _setText('p10-info-cola',         String(Data.obtenerCola ? Data.obtenerCola().length : 0));
+    _setText('p10-info-online',       App.esOnline() ? '🟢 Online' : '🔴 Offline');
+  };
+
+  function _cargarYRenderLogs() {
+    var logs = (App.getLogs ? App.getLogs() : []);
+    var rol = _rolActual();
+    var user = _getUser();
+    var deviceId = App.getDeviceId();
+    var filtrados = logs;
+    if (rol === 'cajero') {
+      filtrados = filtrados.filter(function (l) {
+        return l.contexto && (l.contexto.device_id === deviceId || l.contexto.email === user.email);
+      });
+    }
+    if (_logsFiltroActual !== 'todos') {
+      filtrados = filtrados.filter(function (l) { return l.estado === _logsFiltroActual; });
+    }
+    _renderLogsLista(filtrados);
+    _actualizarBadgeLogsMenu();
+  }
+
+  function _renderLogsLista(logs) {
+    var cont = _el('p10-log-lista');
+    if (!cont) return;
+    if (logs.length === 0) {
+      cont.innerHTML = '<p class="p10-log-vacio">Sin errores registrados</p>';
+      return;
+    }
+    cont.innerHTML = logs.map(function (l) {
+      var info = _getInfoErrorLog(l.codigo);
+      var contador = (l.contador && l.contador > 1) ? ' (×' + l.contador + ')' : '';
+      return '<div class="p10-log-item ' + _escapeAttr(l.estado || 'nuevo') + '" data-log-id="' + _escapeAttr(l.id) + '">' +
+        '<div class="p10-log-item-icono">' + info.emoji + '</div>' +
+        '<div class="p10-log-item-info">' +
+        '<div class="p10-log-item-titulo">' + _escapeHtml(l.mensaje || 'Error') + contador + '</div>' +
+        '<div class="p10-log-item-meta">' +
+        '<span class="p10-log-item-codigo">' + _escapeHtml(l.codigo) + '</span>' +
+        '<span>' + _escapeHtml(App.formatearFechaHora(l.timestamp)) + '</span>' +
+        '<span class="p10-log-item-estado">' + _escapeHtml(l.estado || 'nuevo') + '</span>' +
+        '</div></div></div>';
+    }).join('');
+    cont.querySelectorAll('[data-log-id]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = el.dataset.logId;
+        if (App.enviarLogPorWhatsApp) App.enviarLogPorWhatsApp(id);
+      });
+    });
+  }
+
+  function _getInfoErrorLog(codigo) {
+    var prefijo = String(codigo || '').split('-')[1] || '';
+    var mapa = {
+      'AUTH': '🔐', 'LIC': '📱', 'DATA': '💾', 'POS': '💰', 'STK': '📦',
+      'CAJ': '💵', 'PRV': '🏢', 'IMP': '🖨️', 'TAX': '📊', 'ARC': '🔌',
+      'CAT': '📚', 'DEV': '↩️', 'NET': '📶', 'SYS': '⚠️', 'CAM': '📷',
+      'WA': '💬'
+    };
+    return { emoji: mapa[prefijo] || '⚠️' };
+  }
+
+  Cuenta.enviarTodosLosLogs = function () {
+    var logs = (App.getLogs ? App.getLogs() : []);
+    if (logs.length === 0) { _toast('Sin logs para enviar', 'info'); return; }
+    var deviceId = App.getDeviceId();
+    var rol = _rolActual();
+    var user = _getUser();
+    var mensaje = '🚨 *REPORTE DE ERRORES - MEJORA 2*\n\n';
+    mensaje += '*Device:* ' + deviceId + '\n';
+    mensaje += '*Rol:* ' + rol + '\n';
+    mensaje += '*Email:* ' + (user.email || '-') + '\n';
+    mensaje += '*Total:* ' + logs.length + ' errores\n\n';
+    logs.slice(0, 10).forEach(function (l, i) {
+      mensaje += (i + 1) + '. [' + l.codigo + '] ' + (l.mensaje || '') + '\n';
+      mensaje += '   Fecha: ' + App.formatearFechaHora(l.timestamp) + '\n';
+      if (l.contador > 1) mensaje += '   Repetido: ' + l.contador + ' veces\n';
+    });
+    if (logs.length > 10) mensaje += '\n...(y ' + (logs.length - 10) + ' más)';
+    _abrirUrlExterna('https://wa.me/5491125816992?text=' + encodeURIComponent(mensaje));
+  };
+
+  Cuenta.copiarTodosLosLogs = function () {
+    var logs = (App.getLogs ? App.getLogs() : []);
+    if (logs.length === 0) { _toast('Sin logs', 'info'); return; }
+    var texto = JSON.stringify(logs, null, 2);
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(texto)
+        .then(function () { _toast('Logs copiados', 'success'); })
+        .catch(function () { _toast('No se pudo copiar', 'error'); });
+    }
+  };
+
+  async function _renderListaCajeros() {
+    var cont = _el('p10-lista-cajeros');
+    if (!cont) return;
+    var user = _getUser();
+    if (!user.comercioId) {
+      cont.innerHTML = '<p class="text-center text-muted">Sin comercio asignado</p>';
+      return;
+    }
+    try {
+      var comercio = await Data.get('config', 'comercio');
+      var cajerosUids = (comercio && comercio.cajeros) || [];
+      if (cajerosUids.length === 0) {
+        cont.innerHTML = '<p class="text-center text-muted">Sin cajeros vinculados</p>';
+        return;
+      }
+
+      var promesas = cajerosUids.map(function (uid) {
+        return App.getDb().collection('usuarios').doc(uid).get()
+          .then(function (doc) {
+            return doc.exists ? Object.assign({ uid: uid }, doc.data()) : null;
+          })
+          .catch(function (e) {
+            console.warn('[Cuenta] Error al leer cajero ' + uid + ':', e);
+            return null;
+          });
+      });
+      var resultados = await Promise.all(promesas);
+      var cajeros = resultados.filter(Boolean);
+
+      if (cajeros.length === 0) {
+        cont.innerHTML = '<p class="text-center text-muted">Sin cajeros activos</p>';
+        return;
+      }
+      cont.innerHTML = cajeros.map(function (c) {
+        return '<div class="p10-cajero-card">' +
+          '<div class="p10-cajero-header">' +
+          '<span class="p10-cajero-nombre">' +
+          _escapeHtml(((c.nombre || '') + ' ' + (c.apellido || '')).trim()) +
+          '</span></div>' +
+          '<div class="text-small text-muted">' + _escapeHtml(c.email || '') + '</div>' +
+          '<button class="btn btn-danger btn-small mt-sm" data-revocar="' +
+          _escapeAttr(c.uid) + '">🗑️ Revocar</button>' +
+          '</div>';
+      }).join('');
+      cont.querySelectorAll('[data-revocar]').forEach(function (btn) {
+        btn.addEventListener('click', function () { Cuenta.revocarCajero(btn.dataset.revocar); });
+      });
+    } catch (e) {
+      console.warn('[Cuenta] Error al cargar cajeros:', e);
+    }
+  }
+
+  Cuenta.revocarCajero = async function (uid) {
+    if (!uid) return;
+    if (!await _confirmar('¿Revocar a este cajero? Se desvincularán todos sus dispositivos.')) return;
+    try {
+      var docRef = App.getDb().collection('usuarios').doc(uid);
+      var doc = await docRef.get();
+      if (!doc.exists) { _toast('Cajero no encontrado', 'error'); return; }
+      var data = doc.data();
+      var dispositivos = (data.dispositivos || []).map(function (d) {
+        return Object.assign({}, d, { activa: false, fecha_desactivacion: Date.now() });
+      });
+      await docRef.update({ dispositivos: dispositivos });
+      var comercio = await Data.get('config', 'comercio');
+      var nuevos = ((comercio && comercio.cajeros) || []).filter(function (u) { return u !== uid; });
+      await Data.update('config', 'comercio', { cajeros: nuevos });
+      await _renderListaCajeros();
+      _toast('Cajero revocado', 'success');
+    } catch (e) {
+      console.error('[Cuenta] Error al revocar cajero:', e);
+      _reportarError('E-DATA-001', { detalles: { mensaje: e.message, uid: uid } });
+    }
+  };
+
+  /* [B16-15] Dominios con soporte de alias +tag extraídos a array. */
+  var DOMINIOS_ALIAS_SOPORTADOS = [
+    'gmail.com', 'googlemail.com',
+    'outlook.com', 'hotmail.com',
+    'live.com', 'icloud.com'
+  ];
+
+  function _dominioSoportaAlias(dominio) {
+    var d = String(dominio || '').toLowerCase();
+    return DOMINIOS_ALIAS_SOPORTADOS.indexOf(d) !== -1;
+  }
+
+  Cuenta.generarEmailCajero = function (force) {
+    var num = _valorInput('p10-cajero-numero', '1');
+    var user = _getUser();
+    var emailBase = String(user.email || '').trim();
+    var inputEmail = _el('p10-cajero-email-preview');
+
+    // Si el usuario ya ha escrito manualmente, no lo sobrescribimos (a menos que force sea true)
+    if (!force && inputEmail && inputEmail.dataset.manual === '1') {
+      return inputEmail.value;
+    }
+
+    if (!emailBase) {
+      _toast('No hay email de administrador configurado. Reingresá a tu cuenta.', 'error', 5000);
+      _setVal('p10-cajero-email-preview', '');
+      return '';
+    }
+
+    var base = emailBase.split('+')[0].split('@')[0];
+    var dominio = emailBase.split('@')[1] || 'gmail.com';
+    var emailPreview = base + '+cajero' + num + '@' + dominio;
+    
+    if (inputEmail) {
+      inputEmail.value = emailPreview;
+      inputEmail.dataset.manual = '0'; // Resetear la bandera de edición manual
+    }
+
+    var aviso = _el('p10-cajero-email-aviso');
+    if (!aviso && inputEmail && inputEmail.parentNode) {
+      aviso = document.createElement('small');
+      aviso.id = 'p10-cajero-email-aviso';
+      aviso.className = 'text-small';
+      aviso.style.display = 'block';
+      aviso.style.marginTop = '4px';
+      inputEmail.parentNode.appendChild(aviso);
+    }
+    if (aviso) {
+      if (!_dominioSoportaAlias(dominio)) {
+        aviso.textContent = '⚠️ El dominio "' + dominio + '" puede no soportar el alias +cajeroN. ' +
+                            'Si el email rebota, editá el campo antes de crear.';
+        aviso.className = 'text-small text-warning';
+      } else {
+        aviso.textContent = '';
+        aviso.className = 'text-small';
+      }
+    }
+    return emailPreview;
+  };
+
+  Cuenta.crearCajero = async function () {
+    if (!_esAdmin()) { _toast('Solo admin', 'error'); return; }
+
+    var nombre   = _valorInput('p10-cajero-nombre', '').trim();
+    var apellido = _valorInput('p10-cajero-apellido', '').trim();
+    var password = _valorInput('p10-cajero-password', '');
+    var email    = _valorInput('p10-cajero-email-preview', '').trim();
+
+    if (!nombre || !apellido || !email) {
+      _toast('Completá nombre, apellido y email', 'error');
+      return;
+    }
+    if (!App.validarEmail(email)) {
+      _toast('El email no es válido. Revisá el campo antes de crear.', 'error', 5000);
+      return;
+    }
+
+    var btn = _el('p10-btn-crear-cajero');
+    if (btn) { btn.disabled = true; btn.textContent = 'Procesando...'; }
+
+    var secondaryApp = null, secondaryAuth = null, cajeroUid = null, cajeroUser = null;
+    var perfilCreado = false, vinculadoAlComercio = false;
+    var esCuentaExistente = false;
+
+    try {
+      // 1. Verificar si ya existe en Firestore
+      var qSnap = await App.getDb().collection('usuarios').where('email', '==', email).get();
+      esCuentaExistente = !qSnap.empty;
+
+      if (!esCuentaExistente) {
+        // Validar contraseña SOLO si es una cuenta nueva
+        if (!(
+          password.length >= 8 &&
+          /[A-Z]/.test(password) &&
+          /[a-z]/.test(password) &&
+          /[0-9]/.test(password) &&
+          /[@$!%*?&]/.test(password)
+        )) {
+          _toast('Para cuentas nuevas, la contraseña debe tener mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.', 'error', 6000);
+          if (btn) { btn.disabled = false; btn.textContent = '✅ Crear Cuenta'; }
+          return;
+        }
+      }
+
+      var user = _getUser();
+
+      if (esCuentaExistente) {
+        // VINCULAR CUENTA EXISTENTE
+        var existingDoc = qSnap.docs[0];
+        var existingData = existingDoc.data();
+        
+        if (existingData.rol !== 'cajero') {
+           throw new Error('Este email pertenece a un administrador, no a un cajero.');
+        }
+
+        cajeroUid = existingDoc.id;
+        await App.getDb().collection('usuarios').doc(cajeroUid).update({
+          pagador_uid: user.uid,
+          comercioId: user.comercioId,
+          nombre: nombre,
+          apellido: apellido,
+          dispositivos: [], // Resetear a 0 dispositivos para forzar auto-activación
+          licencia_activa: true,
+          fecha_registro: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        perfilCreado = true;
+        vinculadoAlComercio = true;
+        
+        _toast('Cajero existente vinculado exitosamente.', 'success', 5000);
+      } else {
+        // CREAR CUENTA NUEVA
+        var config = App.getFirebaseConfig();
+        var sufijoRand = (typeof crypto.randomUUID === 'function')
+          ? crypto.randomUUID().replace(/-/g, '').slice(0, 8)
+          : String(Date.now()).slice(-8);
+          
+        var appName = 'CajeroCreator_' + Date.now() + '_' + sufijoRand;
+        secondaryApp = firebase.initializeApp(config, appName);
+        secondaryAuth = secondaryApp.auth();
+
+        var cred = await secondaryAuth.createUserWithEmailAndPassword(email, password);
+        cajeroUid = cred.user.uid;
+        cajeroUser = cred.user;
+
+        try { await cajeroUser.sendEmailVerification(); }
+        catch (e) { console.warn('[Cuenta] No se pudo enviar verificación:', e); }
+
+        await App.getDb().collection('usuarios').doc(cajeroUid).set({
+          email: email,
+          nombre: nombre,
+          apellido: apellido,
+          negocio: user.negocio || '',
+          rol: 'cajero',
+          comercioId: user.comercioId,
+          dispositivos: [],
+          licencia_activa: true,
+          licencia_tipo: 'cajero',
+          pagador_uid: user.uid,
+          fecha_registro: firebase.firestore.FieldValue.serverTimestamp(),
+          ultimo_login: null,
+          terminos_version: 'v1.0',
+          terminos_aceptados: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        perfilCreado = true;
+      }
+
+      // Vincular en el documento de configuración del comercio
+      try {
+        var comercio = await Data.get('config', 'comercio');
+        var cajerosActuales = (comercio && Array.isArray(comercio.cajeros))
+          ? comercio.cajeros.slice()
+          : [];
+        if (cajerosActuales.indexOf(cajeroUid) === -1) cajerosActuales.push(cajeroUid);
+        var res = await Data.update('config', 'comercio', { cajeros: cajerosActuales });
+        vinculadoAlComercio = !!(res && (res.id || res.operacion));
+        if (!vinculadoAlComercio) throw new Error('Data.update devolvió un valor inesperado');
+      } catch (eArr) {
+        console.error('[Cuenta] No se pudo vincular el cajero al comercio, rollback:', eArr);
+        try {
+          if (!esCuentaExistente) {
+            await App.getDb().collection('usuarios').doc(cajeroUid).delete();
+          }
+          perfilCreado = false;
+        } catch (errDel) {
+          console.warn('[Cuenta] No se pudo borrar el doc del cajero en rollback:', errDel);
+        }
+        throw new Error('No se pudo vincular el cajero al comercio. Intentá de nuevo.');
+      }
+
+      var panel = _el('p10-cajero-creado');
+      if (panel) panel.style.display = 'block';
+      _setText('p10-cajero-email-final', email);
+      
+      await _renderListaCajeros();
+    } catch (e) {
+      console.error('[Cuenta] Error al crear/vincular cajero:', e);
+      var code = (e && e.code) ? String(e.code) : '';
+      var msg  = (e && e.message) ? String(e.message) : '';
+
+      if (cajeroUser && (!perfilCreado || !vinculadoAlComercio)) {
+        try { await cajeroUser.delete(); } catch (errDel) {}
+      }
+
+      if (code === 'auth/email-already-in-use') {
+        _toast('Ese email ya existe en Firebase Auth. Contactá a soporte para limpiarlo.', 'error', 6000);
+      } else if (code === 'auth/weak-password') {
+        _toast('Contraseña muy débil.', 'error', 5000);
+      } else {
+        _toast(msg || 'Error al procesar el cajero', 'error', 5000);
+      }
+    } finally {
+      if (secondaryAuth) { try { await secondaryAuth.signOut(); } catch (e) {} }
+      if (secondaryApp) { try { await secondaryApp.delete(); } catch (e) {} }
+      if (btn) { btn.disabled = false; btn.textContent = '✅ Crear Cuenta'; }
+    }
+  };
+
+  Cuenta.copiarDatosCajero = function () {
+    var emailEl = _el('p10-cajero-email-final');
+    var password = _valorInput('p10-cajero-password', '');
+    if (!emailEl) return;
+    var texto = '📧 Email: ' + emailEl.textContent + '\n🔑 Contraseña: ' + password +
+                '\n\nIngresá a Mejora 2 con estos datos.';
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(texto)
+        .then(function () { _toast('Datos copiados', 'success'); })
+        .catch(function () { _toast('No se pudo copiar', 'error'); });
+    }
+  };
+
+  function _configurarListenersCuenta() {
+    document.querySelectorAll('#vista-cuenta .p10-tabs .p10-tab').forEach(function (tab) {
+      if (tab.dataset.b16p2Bound === '1') return;
+      tab.dataset.b16p2Bound = '1';
+      tab.addEventListener('click', function () {
+        document.querySelectorAll('#vista-cuenta .p10-tabs .p10-tab').forEach(function (t) {
+          t.classList.remove('active');
+        });
+        tab.classList.add('active');
+        document.querySelectorAll('#vista-cuenta .p10-tab-content').forEach(function (c) {
+          c.style.display = 'none';
+        });
+        var target = _el('p10-tab-' + tab.dataset.tab);
+        if (target) target.style.display = 'block';
+        if (tab.dataset.tab === 'logs') _cargarYRenderLogs();
+      });
+    });
+
+    document.querySelectorAll('.p10-log-filtro-btn').forEach(function (btn) {
+      if (btn.dataset.b16p2Bound === '1') return;
+      btn.dataset.b16p2Bound = '1';
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.p10-log-filtro-btn').forEach(function (b) {
+          b.classList.remove('active');
+        });
+        btn.classList.add('active');
+        _logsFiltroActual = btn.dataset.filtro;
+        _cargarYRenderLogs();
+      });
+    });
+
+    var bind = function (id, handler) {
+      var el = _el(id);
+      if (!el || el.dataset.b16p2Bound === '1') return;
+      el.dataset.b16p2Bound = '1';
+      el.addEventListener('click', handler);
+    };
+
+    bind('p10-btn-guardar-perfil', Cuenta.guardarPerfil);
+    bind('p10-btn-guardar-datos',  Cuenta.guardarDatos);
+    bind('p10-btn-guardar-fiscal', Cuenta.guardarDatosFiscales);
+    bind('p10-btn-exportar-backup', Cuenta.exportarBackup);
+    bind('p10-btn-actualizar-info', Cuenta.actualizarInfo);
+    bind('p10-btn-log-enviar-todos', Cuenta.enviarTodosLosLogs);
+    bind('p10-btn-log-copiar',      Cuenta.copiarTodosLosLogs);
+
+    var inputBackup = _el('p10-input-backup');
+    if (inputBackup && inputBackup.dataset.b16p2Bound !== '1') {
+      inputBackup.dataset.b16p2Bound = '1';
+      inputBackup.addEventListener('change', function (e) {
+        Cuenta.restaurarBackup(e.target.files[0]);
+      });
+    }
+
+    var btnInv = _el('p10-btn-invitar-cajero');
+    if (btnInv && btnInv.dataset.b16p2Bound !== '1') {
+      btnInv.dataset.b16p2Bound = '1';
+      btnInv.addEventListener('click', function () {
+        _setVal('p10-cajero-nombre', '');
+        _setVal('p10-cajero-apellido', '');
+        _setVal('p10-cajero-password', '');
+
+        var panel = _el('p10-cajero-creado');
+        if (panel) panel.style.display = 'none';
+
+        var inputEmail = _el('p10-cajero-email-preview');
+        if (inputEmail) {
+          inputEmail.dataset.manual = '0';
+          inputEmail.value = '';
+        }
+
+        var aviso = _el('p10-cajero-email-aviso');
+        if (aviso) {
+          aviso.textContent = '';
+          aviso.className = 'text-small';
+        }
+
+        var passInput = _el('p10-cajero-password');
+        var passGroup = passInput ? passInput.closest('.input-group') : null;
+        if (passGroup) passGroup.style.display = '';
+
+        Cuenta.generarEmailCajero();
+        App.abrirModal('modal-p10-crear-cajero');
+      });
+    }
+    var inputEmail = _el('p10-cajero-email-preview');
+    if (inputEmail && inputEmail.dataset.b16p2Bound !== '1') {
+      inputEmail.dataset.b16p2Bound = '1';
+      
+      // Marcar como editado manualmente
+      inputEmail.addEventListener('input', function() {
+        inputEmail.dataset.manual = '1';
+      });
+
+      // Verificar si la cuenta ya existe al salir del campo
+      inputEmail.addEventListener('blur', async function() {
+        var email = inputEmail.value.trim();
+        if (!email || !App.validarEmail(email)) return;
+        
+        try {
+          var qSnap = await App.getDb().collection('usuarios').where('email', '==', email).get();
+          var aviso = _el('p10-cajero-email-aviso');
+          var passInput = _el('p10-cajero-password');
+          var passGroup = passInput ? passInput.closest('.input-group') : null;
+
+          if (!qSnap.empty) {
+            // Cuenta existente
+            if (aviso) {
+              aviso.textContent = '⚠️ Cuenta existente. Se vinculará a tu comercio (no requiere contraseña).';
+              aviso.className = 'text-small text-warning';
+            }
+            if (passGroup) passGroup.style.display = 'none';
+          } else {
+            // Cuenta nueva
+            if (aviso) {
+              aviso.textContent = 'Cuenta nueva. Se creará con la contraseña indicada abajo.';
+              aviso.className = 'text-small text-success';
+            }
+            if (passGroup) passGroup.style.display = '';
+          }
+        } catch (e) {
+          console.warn('Error al verificar email:', e);
+        }
+      });
+    }
+    bind('p10-btn-crear-cajero', Cuenta.crearCajero);
+    var selectNumeroCajero = _el('p10-cajero-numero');
+    if (selectNumeroCajero && selectNumeroCajero.dataset.b16p2Bound !== '1') {
+      selectNumeroCajero.dataset.b16p2Bound = '1';
+      selectNumeroCajero.addEventListener('change', function () {
+        Cuenta.generarEmailCajero(true);
+      });
+    }
+    bind('p10-btn-copiar-datos-cajero', Cuenta.copiarDatosCajero);
+
+    var cerrarCajero = function () { App.cerrarModal('modal-p10-crear-cajero'); };
+    bind('p10-btn-cancelar-crear-cajero', cerrarCajero);
+    bind('p10-close-crear-cajero', cerrarCajero);
+
+    bind('p10-btn-tutorial-arca', Arca.tutorial);
+    bind('p10-btn-vincular-arca', Arca.abrirModalVincular);
+    bind('p10-btn-tutorial-siguiente', Arca.tutorialSiguiente);
+    bind('p10-btn-tutorial-anterior', Arca.tutorialAnterior);
+    bind('p10-btn-tutorial-ir-vincular', function () {
+      App.cerrarModal('modal-p10-arca-tutorial');
+      Arca.abrirModalVincular();
+    });
+    bind('p10-close-tutorial-arca', function () {
+      App.cerrarModal('modal-p10-arca-tutorial');
+    });
+    bind('p10-btn-probar-arca', Arca.probarConexion);
+    bind('p10-btn-guardar-arca', async function () {
+      try { await Arca.vincular(); }
+      catch (e) { _toast(e.message, 'error'); }
+    });
+    bind('p10-close-vincular-arca', function () {
+      App.cerrarModal('modal-p10-arca-vincular');
+    });
+    bind('p10-btn-desvincular-arca', Arca.desvincular);
+
+    var certInput = _el('p10-arca-cert');
+    if (certInput && certInput.dataset.b16p2Bound !== '1') {
+      certInput.dataset.b16p2Bound = '1';
+      certInput.addEventListener('change', function () {
+        var nombre = certInput.files[0] ? certInput.files[0].name.toLowerCase() : '';
+        var esCrt = nombre.slice(-4) === '.crt';
+        var kg = _el('p10-arca-key-group');
+        if (kg) kg.style.display = esCrt ? 'block' : 'none';
+      });
+    }
+  }
+
+  window.Cuenta = Cuenta;
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 7. MÓDULO ARCA                                              */
+  /* ═══════════════════════════════════════════════════════════ */
+  var ARCA_TUTORIAL_TTL_MS = 24 * 60 * 60 * 1000;
+  var _arcaTutorialImagenes = null;
+  var _arcaTutorialImagenesTs = 0;
+  var _arcaTutorialComercioId = undefined;
+  var _arcaRenderEnCurso = false;
+  var _arcaRenderPendiente = false;
+  var _arcaRenderHandle = null;
+
+  var Arca = {};
+
+  function _arcaDisponible() {
+    try {
+      if (typeof firebase === 'undefined' || !firebase.functions) return false;
+      return !!App.getFunctions();
+    } catch (e) { return false; }
+  }
+  function _arcaNoDisponible() { _reportarError('E-ARC-001'); }
+
+  /* [B16-07] Deshabilitar botón de vincular si ARCA no está listo. */
+  function _actualizarBotonVincularArca() {
+    var btn = _el('p10-btn-vincular-arca');
+    if (!btn) return;
+    if (_arcaDisponible()) {
+      btn.disabled = false;
+      btn.title = 'Vincular ARCA con certificado digital';
+    } else {
+      btn.disabled = true;
+      btn.title = 'ARCA no está disponible todavía en esta versión';
+    }
+  }
+
+  Arca.tutorial = async function () {
+    _irAPasoArca(1);
+    App.abrirModal('modal-p10-arca-tutorial');
+
+    var cid = _dataLista() ? Data.getComercioId() : null;
+    if (_arcaTutorialComercioId !== cid) {
+      _arcaTutorialImagenes = null;
+      _arcaTutorialImagenesTs = 0;
+      _arcaTutorialComercioId = cid;
+    }
+
+    var ahora = Date.now();
+    var cacheVencida = (ahora - _arcaTutorialImagenesTs) > ARCA_TUTORIAL_TTL_MS;
+    if (_arcaTutorialImagenes === null || cacheVencida) {
+      var imgs = [];
+      try {
+        if (_dataLista()) {
+          var doc = await App.getDb().collection('configuracion').doc('tutorial_arca').get();
+          if (doc.exists) {
+            var data = doc.data();
+            if (Array.isArray(data.imagenes)) imgs = data.imagenes;
+          }
+        }
+      } catch (e) {
+        console.warn('[Arca] No se pudieron cargar imágenes del tutorial:', e);
+        imgs = [];
+      }
+      _arcaTutorialImagenes = imgs;
+      _arcaTutorialImagenesTs = ahora;
+    }
+
+    if (_arcaTutorialImagenes.length > 0) {
+      var contenedores = document.querySelectorAll('#modal-p10-arca-tutorial .p10-arca-imagen');
+      contenedores.forEach(function (cont, idx) {
+        var url = _arcaTutorialImagenes[idx];
+        if (url && String(url).trim()) {
+          cont.innerHTML = '<img src="' + _escapeAttr(String(url).trim()) +
+                          '" alt="Paso ' + (idx + 1) + '" loading="lazy">';
+        }
+      });
+    }
+  };
+
+  Arca.tutorialSiguiente = function () {
+    var pasos = document.querySelectorAll('.p10-arca-paso');
+    var activo = document.querySelector('.p10-arca-paso.activo');
+    var idx = Array.prototype.indexOf.call(pasos, activo);
+    if (idx < pasos.length - 1) {
+      activo.classList.remove('activo');
+      pasos[idx + 1].classList.add('activo');
+      _actualizarProgresoArca(idx + 2);
+    }
+  };
+  Arca.tutorialAnterior = function () {
+    var pasos = document.querySelectorAll('.p10-arca-paso');
+    var activo = document.querySelector('.p10-arca-paso.activo');
+    var idx = Array.prototype.indexOf.call(pasos, activo);
+    if (idx > 0) {
+      activo.classList.remove('activo');
+      pasos[idx - 1].classList.add('activo');
+      _actualizarProgresoArca(idx);
+    }
+  };
+  function _irAPasoArca(paso) {
+    document.querySelectorAll('.p10-arca-paso').forEach(function (p, i) {
+      p.classList.toggle('activo', i + 1 === paso);
+    });
+    _actualizarProgresoArca(paso);
+  }
+  function _actualizarProgresoArca(paso) {
+    document.querySelectorAll('.p10-arca-punto').forEach(function (p, i) {
+      p.classList.toggle('activo', i + 1 === paso);
+      p.classList.toggle('completado', i + 1 < paso);
+    });
+  }
+  Arca.abrirModalVincular = function () {
+    if (!_arcaDisponible()) {
+      _reportarError('E-ARC-001');
+      return;
+    }
+    App.abrirModal('modal-p10-arca-vincular');
+  };
+
+  Arca.probarConexion = async function () {
+    if (!_arcaDisponible()) { _arcaNoDisponible(); return; }
+    var entorno = _getRadioArca();
+    var user = _getUser();
+    try {
+      var fn = App.getFunctions().httpsCallable('arcaProbarConexion');
+      var res = await fn({ comercioId: user.comercioId, entorno: entorno });
+      var ok = res.data && res.data.ok;
+      _toast(
+        ok ? 'Conexión exitosa' : 'Error: ' + (res.data && res.data.error),
+        ok ? 'success' : 'error'
+      );
+    } catch (e) {
+      _reportarError('E-ARC-003', { detalles: { mensaje: e.message } });
+    }
+  };
+
+  Arca.vincular = async function () {
+    if (!_arcaDisponible()) {
+      throw new Error('Próximamente: activá el plan de pago para vincular ARCA');
+    }
+    var entorno = _getRadioArca();
+    var certInput = _el('p10-arca-cert');
+    var keyInput  = _el('p10-arca-key');
+    var pass = _valorInput('p10-arca-pass', '');
+    var puntoVenta = parseInt(_valorInput('p10-arca-punto-venta', '1'), 10) || 1;
+    var user = _getUser();
+    var cert = certInput && certInput.files[0];
+    var key  = keyInput  && keyInput.files[0];
+
+    if (!cert) throw new Error('Subí el certificado');
+    if (cert.name.toLowerCase().slice(-4) === '.crt' && !key) {
+      throw new Error('Subí la clave privada');
+    }
+
+    var certB64 = await _leerArchivoB64(cert);
+    var keyB64  = key ? await _leerArchivoB64(key) : null;
+
+    try {
+      var fn = App.getFunctions().httpsCallable('arcaConectar');
+      var res = await fn({
+        comercioId: user.comercioId,
+        entorno: entorno,
+        cert: certB64,
+        key: keyB64,
+        password: pass,
+        puntoVenta: puntoVenta
+      });
+      if (!res.data || !res.data.ok) {
+        throw new Error((res.data && res.data.error) || 'Error al vincular');
+      }
+      await Data.update('config', 'comercio', {
+        arca_config: {
+          conectado: true,
+          entorno: entorno,
+          punto_venta: puntoVenta,
+          fecha_vinculacion: Date.now(),
+          ultimo_error: null
+        }
+      });
+      App.cerrarModal('modal-p10-arca-vincular');
+      _toast('ARCA vinculado', 'success');
+      await Arca.renderEstado();
+    } catch (e) {
+      _reportarError('E-ARC-002', { detalles: { mensaje: e.message } });
+      throw new Error(e.message || 'Error al conectar');
+    }
+  };
+
+  Arca.desvincular = async function () {
+    if (!await _confirmar('¿Desvincular ARCA?')) return;
+    try {
+      await Data.update('config', 'comercio', { arca_config: null });
+      await Arca.renderEstado();
+      _toast('ARCA desvinculado', 'info');
+    } catch (e) {
+      _toast('Error al desvincular', 'error');
+    }
+  };
+
+  Arca.facturarSiCorresponde = async function (venta) {
+    if (!venta || !venta.id) return { ok: false, motivo: 'venta_sin_id' };
+    if (!_arcaDisponible()) return { ok: false, motivo: 'proximamente' };
+    if (!_dataLista()) return { ok: false, motivo: 'sin_comercio' };
+
+    var comercio = null;
+    try {
+      comercio = await Data.get('config', 'comercio');
+    } catch (e) {
+      return { ok: false, motivo: 'sin_config', error: e && e.message };
+    }
+
+    var modo = (comercio && comercio.datos_fiscales && comercio.datos_fiscales.modo)
+            || (comercio && comercio.modo_fiscal)
+            || 'particular';
+    if (modo === 'particular' || modo === 'no_fiscal') {
+      return { ok: false, motivo: 'modo_particular' };
+    }
+    if (!comercio || !comercio.arca_config || !comercio.arca_config.conectado) {
+      return { ok: false, motivo: 'arca_no_vinculado' };
+    }
+
+    if (venta.cae && venta.estado === 'facturado') {
+      return { ok: false, motivo: 'ya_facturada', cae: venta.cae };
+    }
+
+    var user = _getUser();
+    try {
+      var fn = App.getFunctions().httpsCallable('arcaEmitirFactura');
+      var res = await fn({ comercioId: user.comercioId, ventaId: venta.id });
+      if (res.data && res.data.ok) {
+        await Data.update('ventas', venta.id, {
+          cae: res.data.cae,
+          cae_vencimiento: res.data.cae_vencimiento,
+          numero_comprobante: res.data.numero_comprobante,
+          estado: 'facturado'
+        });
+        return { ok: true, cae: res.data.cae, numero_comprobante: res.data.numero_comprobante };
+      }
+      await Data.update('ventas', venta.id, { estado: 'error_facturacion' });
+      _reportarError('E-ARC-002', {
+        detalles: {
+          contexto: 'facturar_venta',
+          ventaId: venta.id,
+          error: (res.data && res.data.error) || 'sin_detalle'
+        }
+      });
+      return { ok: false, motivo: 'arca_error', error: res.data && res.data.error };
+    } catch (e) {
+      try { await Data.update('ventas', venta.id, { estado: 'error_facturacion' }); }
+      catch (e2) {}
+      console.warn('[Arca] Error al facturar venta ' + venta.id + ':', e);
+      return { ok: false, motivo: 'exception', error: e && e.message };
+    }
+  };
+
+  Arca.procesarVentaPostCobro = async function (venta) {
+    try {
+      return await Arca.facturarSiCorresponde(venta);
+    } catch (e) {
+      console.warn('[Arca] Error en procesarVentaPostCobro:', e);
+      return { ok: false, motivo: 'exception', error: e && e.message };
+    }
+  };
+
+  Arca.renderEstado = async function (intento) {
+    intento = intento || 0;
+
+    if (intento === 0) {
+      if (_arcaRenderEnCurso) return;
+      if (_arcaRenderPendiente) return;
+      _arcaRenderEnCurso = true;
+    }
+
+    try {
+      var cont = _el('p10-arca-estado');
+      var btnDes = _el('p10-btn-desvincular-arca');
+      if (!cont) return;
+
+      if (!_dataLista()) {
+        if (intento < 20 && !_arcaRenderPendiente) {
+          _arcaRenderPendiente = true;
+          _safeSetTimeout(function () {
+            _arcaRenderPendiente = false;
+            Arca.renderEstado(intento + 1);
+          }, 500);
+        } else if (intento >= 20) {
+          cont.innerHTML = '<p class="text-muted">Sin comercio activo. Reingresá para ver el estado de ARCA.</p>';
+          if (btnDes) btnDes.style.display = 'none';
+        }
+        return;
+      }
+
+      try {
+        var comercio = await Data.get('config', 'comercio');
+        var cfg = comercio && comercio.arca_config;
+        if (cfg && cfg.conectado) {
+          cont.classList.add('conectado');
+          cont.innerHTML =
+            '<p><strong>✅ Conectado</strong></p>' +
+            '<p>Entorno: ' + _escapeHtml(cfg.entorno) + '</p>' +
+            '<p>Punto de venta: ' + _escapeHtml(String(cfg.punto_venta || '-')) + '</p>' +
+            '<p>Vinculado: ' + _escapeHtml(App.formatearFechaHora(cfg.fecha_vinculacion)) + '</p>';
+          if (btnDes) btnDes.style.display = 'block';
+        } else {
+          cont.classList.remove('conectado');
+          cont.innerHTML = '<p class="text-muted">Sin conexión configurada</p>';
+          if (btnDes) btnDes.style.display = 'none';
+        }
+      } catch (e) {
+        cont.innerHTML = '<p class="text-muted">Error al cargar estado</p>';
+      }
+    } finally {
+      if (intento === 0) {
+        _arcaRenderEnCurso = false;
+      }
+    }
+  };
+
+  function _getRadioArca() {
+    var checked = document.querySelector('input[name="p10-arca-entorno"]:checked');
+    return checked ? checked.value : 'homologacion';
+  }
+  function _leerArchivoB64(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var partes = String(reader.result).split(',');
+        resolve(partes[1] || '');
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  window.Arca = Arca;
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 8. BADGE LOGS — coordinación con B10                        */
+  /* ═══════════════════════════════════════════════════════════ */
+  function _aplicarVisibilidadBadge() {
+    if (!document.body) return;
+    if (_esAdmin()) {
+      document.body.classList.remove('b16-sin-badge-logs');
+    } else {
+      document.body.classList.add('b16-sin-badge-logs');
+    }
+  }
+
+function _actualizarBadgeLogsMenu() {
+    _aplicarVisibilidadBadge();
+    var badge = _el('menu-badge-logs');
+    if (!badge) return;
+
+    /* [FIX-MEDIO-5] Para no-admin, resetear el badge a vacío/oculto.
+     * Antes se retornaba temprano y el badge quedaba con el valor
+     * del último admin que usó la pestaña (hasta 15 s de ventana
+     * tras un cambio de rol sin reload). */
+    if (!_esAdmin()) {
+      if (badge.textContent) badge.textContent = '';
+      if (badge.style.display !== 'none') badge.style.display = 'none';
+      return;
+    }
+
+    var logs = (App.getLogs ? App.getLogs() : []);
+    var nuevos = logs.filter(function (l) { return l.estado === 'nuevo'; }).length;
+    if (nuevos > 0) {
+      badge.textContent = String(nuevos);
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  window.Bloque16 = window.Bloque16 || {};
+  window.Bloque16.refrescarBadgeLogs = _actualizarBadgeLogsMenu;
+
+  /* [B16-04 / errores2 #4] Hook público por CustomEvent.
+   * Estado: registrado pero SIN emisores internos.
+   * B12 usa la API directa Bloque16.refrescarBadgeLogs() desde
+   * _actualizarMenuUsuario (NUEVO-B12-B), lo cual cubre el caso
+   * same-tab. El cross-tab se cubre con _bindStorageRolListener.
+   * Este hook queda disponible para consumidores externos
+   * (extensiones, scripts de test) que prefieran notificar por
+   * evento en vez de llamar a la API. */
+  /* [API EXTERNA — sin emisores internos]
+   * B12 usa la API directa Bloque16.refrescarBadgeLogs() desde
+   * _actualizarMenuUsuario. Este CustomEvent queda expuesto para
+   * consumidores externos (extensiones, tests, scripts) que prefieran
+   * notificar por evento en vez de llamar a la API. */
+  window.addEventListener('b16:refrescar-badge-logs', function () {
+    try { _actualizarBadgeLogsMenu(); } catch (e) {}
+  });
+
+  function _bindStorageRolListener() {
+    _safeAddStorageListener(function (e) {
+      if (!e || !e.key) return;
+      if (e.key === 'rol_actual_v1' ||
+          e.key === 'usuario_actual_v1' ||
+          e.key === 'licencia_v1' ||
+          e.key === 'sesion_activa_v1') {
+        _actualizarBadgeLogsMenu();
+      }
+    });
+  }
+
+  var _rolObserver = null;
+  var _rolObserverRetryHandle = null;
+
+  function _bindRolObserver() {
+    if (_rolObserver) return;
+    if (typeof MutationObserver !== 'function') {
+      console.warn('[B16] MutationObserver no disponible. Fallback a poll de 5s.');
+      _safeSetInterval(_actualizarBadgeLogsMenu, 5000);
+      return;
+    }
+
+    var target = _el('menu-user-role');
+    if (!target) {
+      if (_rolObserverRetryHandle) return;
+      _rolObserverRetryHandle = _crearRetry(function () {
+        var t = _el('menu-user-role');
+        if (!t || _STATE.destroyed) return true;
+        try {
+          _rolObserver = new MutationObserver(function () {
+            _actualizarBadgeLogsMenu();
+          });
+          _rolObserver.observe(t, {
+            childList: true,
+            characterData: true,
+            subtree: true
+          });
+          _STATE.observers.push(_rolObserver);
+          console.info('[B16] MutationObserver activo sobre #menu-user-role.');
+        } catch (e) {
+          console.warn('[B16] No se pudo instalar MutationObserver:', e);
+        }
+        return true;
+      }, 20, 500);
+      return;
+    }
+
+    try {
+      _rolObserver = new MutationObserver(function () {
+        _actualizarBadgeLogsMenu();
+      });
+      _rolObserver.observe(target, {
+        childList: true,
+        characterData: true,
+        subtree: true
+      });
+      _STATE.observers.push(_rolObserver);
+      console.info('[B16] MutationObserver activo sobre #menu-user-role.');
+    } catch (e) {
+      console.warn('[B16] No se pudo instalar MutationObserver:', e);
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 9. INTEGRACIONES                                            */
+  /* ═══════════════════════════════════════════════════════════ */
+
+  /* ─── 9.1 App.error → Notificaciones del navegador ─────────── */
+  var CODIGOS_CRITICOS_NOTIF = [
+    'E-LIC-002', 'E-LIC-006',
+    'E-AUTH-006', 'E-AUTH-009', 'E-AUTH-010',
+    'E-DATA-005', 'E-DATA-009',
+    'E-NET-005', 'E-NET-006',
+    'E-SYS-001', 'E-SYS-002', 'E-SYS-004'
+  ];
+
+  function _procesarLogParaNotif(logItem) {
+    if (!logItem || !logItem.codigo) return;
+    if (!window.Notif) return;
+    if (CODIGOS_CRITICOS_NOTIF.indexOf(logItem.codigo) === -1) return;
+
+    if (logItem.codigo === 'E-LIC-002') {
+      if (typeof Notif.licencia === 'function') {
+        var dias = -1;
+        var det = logItem.detalles || {};
+        var exp = det.fecha_expiracion;
+        if (exp) {
+          var ms = typeof exp === 'number' ? exp : new Date(exp).getTime();
+          if (!isNaN(ms)) dias = Math.ceil((ms - Date.now()) / 86400000);
+        }
+        try { Notif.licencia(dias); } catch (e) {}
+      }
+      return;
+    }
+
+    if (typeof Notif.errorCritico === 'function') {
+      try {
+        Notif.errorCritico(logItem.codigo, logItem.mensaje || 'Error crítico');
+      } catch (e) {}
+    }
+  }
+
+  function _integrarConAppError() {
+    if (window.App && typeof App._registrarHookLog === 'function') {
+      try {
+        App._registrarHookLog(function (logItem) {
+          try { _procesarLogParaNotif(logItem); } catch (e) {}
+        });
+        window.__B16__.notifHookInstalled = true;
+      } catch (e) {
+        console.warn('[B16] No se pudo registrar hook de logs:', e);
+      }
+      return;
+    }
+
+    /* Fallback: poll throttled de 5s (era 2s en v4). Reduce carga. */
+    if (window.__B16__.notifPollInstalled) return;
+    window.__B16__.notifPollInstalled = true;
+
+    var _ultimoLogId = null;
+    _safeSetInterval(function () {
+      if (!window.App || typeof App.getLogs !== 'function') return;
+      var logs = App.getLogs();
+      if (!logs || logs.length === 0) return;
+      var masReciente = logs[0];
+      if (masReciente.id === _ultimoLogId) return;
+      _ultimoLogId = masReciente.id;
+      var esReciente = (Date.now() - masReciente.timestamp) < 5000;
+      if (!esReciente) return;
+      _procesarLogParaNotif(masReciente);
+    }, 5000);
+  }
+
+  /* ─── 9.2 Cola de impresión → Notif ───────────────────────── */
+  function _precargarColaImpresora() {
+    if (!window.Impresora || typeof Impresora.cargarCola !== 'function') return;
+    try { Impresora.cargarCola(); }
+    catch (e) { console.warn('[B16] No se pudo precargar la cola de impresión:', e); }
+  }
+
+  function _integrarConCola() {
+    if (window.__B16__.colaPollInstalled) return;
+    window.__B16__.colaPollInstalled = true;
+
+    _precargarColaImpresora();
+
+    var _ultimaCantidad = 0;
+    _safeSetInterval(function () {
+      if (!_dataLista()) return;
+      if (!window.Impresora || !Impresora.cola) return;
+      var pendientes = Impresora.cola.filter(function (t) {
+        return t.estado === 'pendiente';
+      }).length;
+      if (pendientes > _ultimaCantidad && pendientes > 0) {
+        if (window.Notif && typeof Notif.ticketEnCola === 'function') {
+          try { Notif.ticketEnCola(pendientes); } catch (e) {}
+        }
+      }
+      _ultimaCantidad = pendientes;
+    }, 30000);
+  }
+
+  /* ─── 9.3 Stock bajo → Notif ──────────────────────────────── */
+  /* [B16-08] stock > 0 && stock <= min. Un producto sin stock
+   * (stock === 0) NO cuenta como "bajo". Se podría notificar
+   * aparte en el futuro, pero por ahora solo cuenta el rango
+   * (0, min]. */
+  function _integrarConStockBajo() {
+    if (window.__B16__.stockPollInstalled) return;
+    window.__B16__.stockPollInstalled = true;
+
+    var _ultimaCantidad = 0;
+    var _ultimaNotificacion = 0;
+    _safeSetInterval(function () {
+      if (!_dataLista()) return;
+      if (!window.Stock || typeof Stock.obtenerTodos !== 'function') return;
+      var productos = Stock.obtenerTodos();
+      var bajos = productos.filter(function (p) {
+        var minParsed = parseInt(p.stock_minimo, 10);
+        var min = (!isNaN(minParsed) && minParsed >= 0) ? minParsed : 5;
+
+        var stock = 0;
+        if (typeof Stock.obtenerStock === 'function') {
+          try { stock = parseFloat(Stock.obtenerStock(p.id)) || 0; }
+          catch (e) { stock = parseFloat(p.stock_total) || 0; }
+        } else {
+          stock = parseFloat(p.stock_total) || 0;
+        }
+        return stock > 0 && stock <= min;
+      }).length;
+
+      var ahora = Date.now();
+      if (bajos > _ultimaCantidad && bajos > 0 && (ahora - _ultimaNotificacion) > 3600000) {
+        if (window.Notif && typeof Notif.stockBajo === 'function') {
+          try { Notif.stockBajo(bajos); } catch (e) {}
+        }
+        _ultimaNotificacion = ahora;
+      }
+      _ultimaCantidad = bajos;
+    }, 60000);
+  }
+
+  /* ─── 9.4 UX modales P10 ──────────────────────────────────── */
+  function _configurarUxModalesP10() {
+    var modales = [
+      'modal-p10-crear-cajero',
+      'modal-p10-arca-tutorial',
+      'modal-p10-arca-vincular'
+    ];
+
+    modales.forEach(function (id) {
+      var m = _el(id);
+      if (!m || m.dataset.b16UxBound === '1') return;
+      m.dataset.b16UxBound = '1';
+      m.addEventListener('mousedown', function (e) {
+        if (e.target !== m) return;
+        App.cerrarModal(id);
+      });
+    });
+
+    if (document.body && document.body.dataset.b16UxEscP10Bound !== '1') {
+      document.body.dataset.b16UxEscP10Bound = '1';
+      document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        for (var i = 0; i < modales.length; i++) {
+          var m = _el(modales[i]);
+          if (m && m.classList.contains('active')) {
+            App.cerrarModal(modales[i]);
+            e.stopPropagation();
+            return;
+          }
+        }
+      });
+    }
+  }
+
+  /* ─── 9.5 Navegación [data-panel] ─────────────────────────── */
+  var _navPanelRetryHandle = null;
+  var _navController = null;   /* [FIX-B16-20] AbortController de navegación */
+
+  /* [FIX-B16-19] Lectura defensiva de turno_activo_v1.
+   * Antes, si el JSON estaba corrupto, el SyntaxError rompía el
+   * handler del click y el usuario quedaba sin poder navegar. */
+  function _leerTurnoActivoSeguro() {
+    try {
+      var raw = localStorage.getItem('turno_activo_v1');
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) {
+      console.warn('[B16] turno_activo_v1 corrupto, se ignora:', e);
+      return null;
+    }
+  }
+
+   function _configurarNavegacionPaneles() {
+    var botones = document.querySelectorAll('[data-panel]');
+    if (botones.length === 0) {
+      if (_navPanelRetryHandle) return;
+      _navPanelRetryHandle = _crearRetry(function () {
+        if (document.querySelectorAll('[data-panel]').length > 0 || _STATE.destroyed) {
+          _navPanelRetryHandle = null;
+          if (!_STATE.destroyed) _configurarNavegacionPaneles();
+          return true;
+        }
+        return false;
+      }, 20, 500);
+      return;
+    }
+
+    /* [FIX-B16-20] AbortController específico para que destroy()
+     * desconecte estos listeners. Antes quedaban vivos tras
+     * _destroyGlobal y podían llamar a .init() de módulos ya
+     * destruidos. */
+    if (!_navController) _navController = _safeAddAbortController();
+    var signal = _navController.signal;
+
+    /* [FIX-B16-20] Helper para no repetir try/catch en cada init. */
+    function _safeInit(module, fnName, ctxLabel) {
+      if (!module || typeof module[fnName] !== 'function') return;
+      try { module[fnName](); }
+      catch (e) {
+        console.warn('[B16] ' + ctxLabel + ' falló tras navegación:', e);
+        _reportarError('E-SYS-001', {
+          detalles: {
+            contexto: 'navegacion_panel_init',
+            modulo: ctxLabel,
+            mensaje: e && e.message
+          },
+          stack: e && e.stack
+        });
+      }
+    }
+
+    botones.forEach(function (btn) {
+      if (btn.dataset.b16NavBound === '1') return;
+      btn.dataset.b16NavBound = '1';
+      btn.addEventListener('click', async function () {
+        var panel = btn.dataset.panel;
+
+        if (panel === 'pos') {
+          var turno = _leerTurnoActivoSeguro();
+          if (!turno || turno.estado !== 'abierto') {
+            _toast('Abrí la caja primero', 'warning');
+            App.navegar('caja');
+            _safeInit(window.Caja, 'init', 'Caja.init');
+            return;
+          }
+          App.navegar('pos');
+          _safeInit(window.POS, 'init', 'POS.init');
+        } else if (panel === 'caja') {
+          App.navegar('caja');
+          _safeInit(window.Caja, 'init', 'Caja.init');
+        } else if (panel === 'stock') {
+          App.navegar('stock');
+        } else if (panel === 'proveedores') {
+          App.navegar('proveedores');
+          _safeInit(window.Proveedores, 'init', 'Proveedores.init');
+        } else if (panel === 'impresora') {
+          App.navegar('impresora');
+          _safeInit(Impresora, 'init', 'Impresora.init');
+        } else if (panel === 'impuestos') {
+          App.navegar('impuestos');
+          _safeInit(Impuestos, 'init', 'Impuestos.init');
+        } else if (panel === 'cuenta') {
+          App.navegar('cuenta');
+          _safeInit(Cuenta, 'init', 'Cuenta.init');
+        } else if (panel === 'menu') {
+          App.navegar('menu');
+        }
+      }, { signal: signal });
+    });
+  }
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 10. PARCHES ADYACENTES                                      */
+  /* ═══════════════════════════════════════════════════════════ */
+
+  /* ─── 10.1 Label del logo 500 KB → 300 KB ─────────────────── */
+  var _labelLogoRetryHandle = null;
+
+  function _parchearLabelLogo() {
+    if (window.__B16__.labelLogoPatched) return true;
+    var label = document.querySelector('label[for="p08-logo"]');
+    if (!label) return false;
+    if (label.textContent.indexOf('500 KB') !== -1) {
+      label.textContent = label.textContent.replace('500 KB', '300 KB');
+      console.info('[B16] Label del logo alineado a 300 KB.');
+    }
+    window.__B16__.labelLogoPatched = true;
+    return true;
+  }
+
+  /* ─── 10.2 Hook ARCA sobre Caja.registrarVentaEnTurno ─────── */
+  var _arcoWrapped = null;
+  var _hookArcaRetryHandle = null;
+
+  function _parchearCajaParaArca() {
+    if (window.__B16__.arcaHookInstalled) return true;
+    if (!window.Caja || typeof Caja.registrarVentaEnTurno !== 'function') return false;
+
+    var _original = Caja.registrarVentaEnTurno.bind(Caja);
+
+    _arcoWrapped = async function (venta) {
+      var resultado = await _original(venta);
+      if (venta && venta.id) {
+        try {
+          Arca.procesarVentaPostCobro(venta).then(function (r) {
+            if (r && r.ok && window.App && typeof App.toast === 'function') {
+              App.toast('Facturado · CAE ' + (r.cae || '—'), 'success', 4000);
+            } else if (r && r.motivo === 'arca_error' &&
+                       window.App && typeof App.toast === 'function') {
+              App.toast('La venta se cobró pero no pudo facturarse. Revisá ARCA.', 'warning', 6000);
+            }
+          }).catch(function (e) {
+            console.warn('[B16] ARCA autofacturación falló (no bloquea):', e);
+          });
+        } catch (e) {
+          console.warn('[B16] No se pudo invocar Arca.procesarVentaPostCobro:', e);
+        }
+      }
+      return resultado;
+    };
+
+    Caja.registrarVentaEnTurno = _arcoWrapped;
+    window.__B16__.arcaHookInstalled = true;
+    console.info('[B16] Hook ARCA instalado vía Caja.registrarVentaEnTurno.');
+    return true;
+  }
+
+  /* [FIX-B16-26] El verificador corría indefinidamente aunque ARCA
+ * estuviera deshabilitado (firebase.functions no cargado) o aunque
+ * Caja.registrarVentaEnTurno no existiera. Ahora:
+ *   · Si ARCA no está disponible, no se instala el verificador.
+ *   · Cuando el hook se instala, corre 20 ciclos (5 minutos) y se
+ *     auto-detiene. Si en 5 minutos nadie reasignó el método, es
+ *     improbable que lo hagan después.
+ *   · Si detecta reasignación, reinstala y continúa 20 ciclos más. */
+function _iniciarVerificacionHookArca() {
+  if (window.__B16__.arcaHookVerifyInstalled) return;
+  if (!_arcaDisponible()) return;   /* ARCA off → nada que verificar */
+  window.__B16__.arcaHookVerifyInstalled = true;
+
+  var CICLOS_MAX = 20;
+  var ciclos = 0;
+
+  var intervalId = _safeSetInterval(function () {
+    ciclos++;
+
+    if (ciclos > CICLOS_MAX) {
+      _safeClearInterval(intervalId);
+      return;
+    }
+    if (!window.__B16__.arcaHookInstalled) return;
+    if (!window.Caja || typeof Caja.registrarVentaEnTurno !== 'function') return;
+    if (!_arcoWrapped) return;
+    if (Caja.registrarVentaEnTurno === _arcoWrapped) return;
+
+    console.warn('[B16] Caja.registrarVentaEnTurno fue reasignada. Reinstalando hook ARCA...');
+    window.__B16__.arcaHookInstalled = false;
+    _parchearCajaParaArca();
+    ciclos = 0;   /* Resetear al reinstalar. */
+  }, 15000);
+}
+
+  function _aplicarParchesAdyacentes() {
+    if (_labelLogoRetryHandle) return;
+    if (_hookArcaRetryHandle) return;
+
+    var okLabel = _parchearLabelLogo();
+    var okCaja  = _parchearCajaParaArca();
+
+    if (okLabel && okCaja) {
+      console.info('[B16] Parches adyacentes aplicados (label + hook ARCA).');
+      _iniciarVerificacionHookArca();
+      return;
+    }
+
+    if (!okLabel && !_labelLogoRetryHandle) {
+      _labelLogoRetryHandle = _crearRetry(function () {
+        if (_parchearLabelLogo() || _STATE.destroyed) {
+          _labelLogoRetryHandle = null;
+          return true;
+        }
+        return false;
+      }, 30, 200);
+    }
+
+    if (!okCaja && !_hookArcaRetryHandle) {
+      _hookArcaRetryHandle = _crearRetry(function () {
+        if (_parchearCajaParaArca() || _STATE.destroyed) {
+          _hookArcaRetryHandle = null;
+          _iniciarVerificacionHookArca();
+          return true;
+        }
+        return false;
+      }, 30, 200);
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 11. ARRANQUE                                                */
+  /* ═══════════════════════════════════════════════════════════ */
+var _arrancadoFinal = false;
+var _arranqueIntentos = 0;
+var _MAX_ARRANQUE_INTENTOS = 60;   /* 60 × 100 ms = 6 s */
+
+function _arrancarFinal() {
+  if (_arrancadoFinal || _STATE.destroyed) return;
+  if (!window.App) {
+    _arranqueIntentos++;
+    if (_arranqueIntentos >= _MAX_ARRANQUE_INTENTOS) {
+      console.error(
+        '[B16] window.App no disponible tras ' + _MAX_ARRANQUE_INTENTOS +
+        ' intentos. Abortando arranque de B16.'
+      );
+      _reportarError('E-SYS-001', {
+        detalles: {
+          contexto: 'B16_arranque',
+          motivo: 'App_timeout',
+          intentos: _arranqueIntentos
+        }
+      });
+      return;
+    }
+    _safeSetTimeout(_arrancarFinal, 100);
+    return;
+  }
+  _arrancadoFinal = true;
+
+    _configurarUxModalesB16();
+    _configurarNavegacionPaneles();
+    _configurarUxModalesP10();
+    _integrarConAppError();
+    _integrarConCola();
+    _integrarConStockBajo();
+    _aplicarVisibilidadBadge();
+    _bindStorageRolListener();
+    _bindRolObserver();
+    _actualizarBotonVincularArca();
+    _aplicarParchesAdyacentes();
+
+/* [FIX-B16-25] Consolidación de timers de mantenimiento. Antes había
+ * dos _safeSetInterval de 5s (uno para badge de logs, otro para cola
+ * de impresión) que despertaban al navegador dos veces por ciclo. Se
+ * unifican en un único tick de 15s que ejecuta ambos chequeos. El
+ * costo de reaccionar hasta 10s más tarde es imperceptible para el
+ * usuario, y el ahorro de wake-ups del navegador es significativo en
+ * sesiones largas (12h+). */
+_safeSetInterval(function () {
+  _actualizarBadgeLogsMenu();
+  if (window.Impresora && typeof Impresora.renderCola === 'function') {
+    Impresora.renderCola();
+  }
+}, 15000);
+
+_safeSetTimeout(_actualizarBadgeLogsMenu, 500);
+_safeSetTimeout(_actualizarBadgeLogsMenu, 1500);
+_safeSetTimeout(_actualizarBadgeLogsMenu, 3000);
+
+    console.info('[B16 v5] Arranque final completado.');
+  }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 12. DESTROY GLOBAL                                          */
+  /* ═══════════════════════════════════════════════════════════ */
+  function _destroyGlobal() {
+    if (_STATE.destroyed) return;
+    _STATE.destroyed = true;
+
+    console.info('[B16] destroy() invocado. Limpiando recursos...');
+
+    /* 1. Cancelar retries */
+    _STATE.retries.slice().forEach(function (r) {
+      try { r.cancelar(); } catch (e) {}
+    });
+    _STATE.retries.length = 0;
+
+    /* 2. Limpiar timeouts */
+    _STATE.timeouts.forEach(function (id) {
+      try { clearTimeout(id); } catch (e) {}
+    });
+    _STATE.timeouts.clear();
+
+    /* 3. Limpiar intervals */
+    _STATE.intervals.forEach(function (id) {
+      try { clearInterval(id); } catch (e) {}
+    });
+    _STATE.intervals.clear();
+
+    /* 4. Desconectar observers */
+    _STATE.observers.forEach(function (obs) {
+      try { obs.disconnect(); } catch (e) {}
+    });
+    _STATE.observers.length = 0;
+
+    /* 5. Remover storage listeners */
+    _STATE.storageListeners.forEach(function (fn) {
+      try { window.removeEventListener('storage', fn); } catch (e) {}
+    });
+    _STATE.storageListeners.length = 0;
+
+    /* 6. Abortar AbortControllers */
+    _STATE.abortables.forEach(function (ctrl) {
+      try { ctrl.abort(); } catch (e) {}
+    });
+    _STATE.abortables.length = 0;
+
+    /* 7. Cancelar snapshot de logs si lo teníamos */
+    if (typeof _unsubscribeLogs === 'function') {
+      try { _unsubscribeLogs(); } catch (e) {}
+      _unsubscribeLogs = null;
+      _logsComercioId = null;
+    }
+
+    /* 8. Limpiar estado de drag */
+    _dragState = { activo: false, elemento: null, inicioY: 0, tipo: null };
+    _elementoSeleccionado = null;
+
+    /* [FIX-B16-23] Null-out del controller de navegación para que
+     * si B16 se reinstala después, se cree uno nuevo. El abort()
+     * ya se hizo en el paso 6 sobre todos los controllers de
+     * _STATE.abortables (incluido _navController). */
+    _navController = null;
+
+    /* 9. Liberar listeners de Impresora */
+    if (window.Impresora && typeof Impresora.destroy === 'function') {
+      try { Impresora.destroy(); } catch (e) {}
+    }
+  }
+
+  /* Exponer destroy público. */
+  window.Bloque16.destroy = _destroyGlobal;
+  window.Bloque16.version = 'v5';
+  window.__B16__.destroy = _destroyGlobal;
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 13. ARRANQUE GLOBAL                                         */
+  /* ═══════════════════════════════════════════════════════════ */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _arrancarFinal);
+  } else {
+    _arrancarFinal();
+  }
+
+})();
+</script>
+
 <!-- ╔══════════════════════════════════════════════════════════════════════╗ -->
 <!-- ║  BLOQUE 17 v1 — VISTAS LEGALES, FOOTER Y COOKIES                     ║ -->
 <!-- ║                                                                      ║ -->
