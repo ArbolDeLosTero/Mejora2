@@ -1,3 +1,11 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║  BLOQUE 00 COMPLETO — Mejora2.html con N-B00-01 aplicado (v13-A)     ║
+║  Extraído de: Mejora2.html corregido (líneas 1-524 de 43.909)        ║
+║  Ediciones: ① changelog v13-A en header (después de v12-B)           ║
+║             ② guard file:// tras rel="manifest" (línea 356)          ║
+║  Producción (https) y localhost/http: 100% intactos                  ║
+╚══════════════════════════════════════════════════════════════════════╝
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -93,6 +101,16 @@
        no cargó desde el CDN' con la etiqueta correcta. Sin esto,
        el fallo quedaba mudo en consola (solo visible en el toast
        del wizard).
+
+    🟡 v13-A (DESARROLLO / N-B00-01) — Guard file:// para recursos
+       PWA. <script id="bloque-00-pwa-file-guard"> tras el
+       rel="manifest" (347): si location.protocol === 'file:',
+       remueve link[rel="manifest"] y link[rel="apple-touch-icon"].
+       Elimina el spam CORS de esquema en consola al abrir por doble
+       click. Producción (https) y localhost/http intactos. El
+       listener de errores NO cubre estos hosts (whitelist solo
+       gstatic/cdnjs/sheetjs), por eso el guard va en el <head> y no
+       en el listener.
   -->
   <!-- ═══════════════════════════════════════════════════════════════════ -->
   <!-- NOTA SOBRE LA CONFIG DE FIREBASE                                   -->
@@ -304,7 +322,7 @@
   <!-- app-version: leída por App.getVersion() (B10) y por el
        VersionChecker del bloque final. Sincronizable desde
        version.json vía GitHub Action (§5.2 auditoría). -->
-  <meta name="app-version" content="1.0.73">
+  <meta name="app-version" content="1.0.64">
 
   <title>Sistema de Gestión para Kioscos y Almacenes</title>
 
@@ -345,6 +363,25 @@
          }
        Si no lo vas a proveer, comentá esta línea para evitar el 404. -->
   <link rel="manifest" href="manifest.json">
+
+  <!-- [v13-A / N-B00-01] Guard file:// para recursos PWA.
+       Bajo file:// el fetch del manifest y el apple-touch-icon generan
+       error CORS de esquema repetitivo en consola (el fetch relativo no
+       soporta file:). Este micro-script corre síncrono justo DESPUÉS de
+       que el parser procesó ambos <link> (329 y 347), así que ambos ya
+       existen en el DOM y se pueden remover de forma determinista.
+       Solo afecta desarrollo local por doble click: producción (https)
+       y localhost/http quedan intactos. -->
+  <script id="bloque-00-pwa-file-guard">
+    (function () {
+      'use strict';
+      if (location.protocol !== 'file:') return;
+      try {
+        document.querySelectorAll('link[rel="manifest"], link[rel="apple-touch-icon"]')
+          .forEach(function (l) { l.remove(); });
+      } catch (e) { /* silencioso: el guard solo elimina ruido de consola */ }
+    })();
+  </script>
 
   <!-- ─────────────────────────────────────────────────────────── -->
   <!-- PRECONNECT — Warm-up de conexiones TLS a CDNs              -->
@@ -4285,12 +4322,52 @@
 <!-- clase inicial "en-auth-view" (04-v4-D).                            -->
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 
-
 <!-- ═══════════════════════════════════════════════════════════ -->
-<!-- BLOQUE 05 v7 — HEADER GLOBAL + MENÚ CANÓNICO + VISTAS       -->
+<!-- BLOQUE 05 v8 — HEADER GLOBAL + MENÚ CANÓNICO + VISTAS       -->
 <!-- CANÓNICAS (PROVEEDORES / IMPRESORA / IMPUESTOS / CUENTA)    -->
 <!-- + MODALES + SCRIPT DE CABECERA                              -->
 <!--                                                            -->
+<!-- 🟠 FIX-05-D (MEDIA — TUTORIAL ARCA) — Los captions h4/p de   -->
+<!--    #modal-p10-arca-tutorial contradecían a los SVG          -->
+<!--    didácticos [FIX-16-11] de B16: decían "AFIP",            -->
+<!--    "Descargar el certificado", "Generar la clave privada"   -->
+<!--    y "Punto de venta", cuando el flujo real dibujado es     -->
+<!--    Clave Fiscal (ARCA) → certificado digital (WSAA) →       -->
+<!--    cargar el .crt/.key en Mejora 2. Ahora título y          -->
+<!--    descripción de los 3 pasos son coherentes con la imagen. -->
+<!--    NO se tocan los SVG (contenido B16) ni la navegación     -->
+<!--    (B05 v7 intacta).                                        -->
+<!--                                                             -->
+<!-- 🟡 FIX-05-E (BAJA — UX) — mostrarPasoArca() solo toggleaba   -->
+<!--    .activo en los puntos de progreso: .completado (verde,   -->
+<!--    definido en CSS desde v5) era estado muerto porque B05   -->
+<!--    posee los botones y los helpers de B16 no llegan a       -->
+<!--    correr. El punto de los pasos ya dados queda verde.      -->
+<!--                                                             -->
+<!-- 🟠 FIX-05-F (MEDIA — CONTRASTE AA) — .p08-zona-central       -->
+<!--    (hint de la zona arrastrable del ticket) usaba color     -->
+<!--    #888 (3.54:1 sobre blanco, reprobado AA) y borde #bbb    -->
+<!--    fijos. Ahora tokens de tema: --m2-text-mid y --m2-border.-->
+<!--    Claro: 7.96:1 sobre el papel blanco; dark: el ticket pasa-->
+<!--    a #2a2a32 y el token a #a8a8b0. Clase compartida con el  -->
+<!--    diseñador de B16: solo color/borde, cero layout.         -->
+<!--                                                             -->
+<!-- 🟡 FIX-05-G (BAJA — ROBUSTEZ) — p10-arca-cert: guard         -->
+<!--    simétrico (además respeta b16p2Bound, espejo del bind()  -->
+<!--    de B16) y lógica del grupo de clave privada alineada a   -->
+<!--    B16 v7: SOLO se muestra para .crt (con .pem no se pide   -->
+<!--    .key aparte y el grupo se oculta). Antes B05 lo mostraba -->
+<!--    para cualquier archivo y el handler condicional de B16   -->
+<!--    quedaba muerto por el guard b05Bound.                    -->
+<!--                                                             -->
+<!-- ⚪ EVALUADO — SIN CAMBIO (placeholders offline): los         -->
+<!--    "[Imagen del paso N]" del HTML son el fallback que       -->
+<!--    _poblarTutorialArcaDefecto() de B16 reemplaza al         -->
+<!--    arranque (regex ^\[Imagen del paso). Si B05 cambiara     -->
+<!--    ese texto, el regex dejaría de matchear y bloquearía     -->
+<!--    los SVG reales. Fallback offline real = traspaso B16.    -->
+<!--                                                             -->
+<!--                                                             -->
 <!-- CHANGELOG RESPECTO A v6 → v7 (Plan de Correcciones          -->
 <!-- 2026-11-22 — SOLO las tareas del bloque B05: T-B05-01..10): -->
 <!--                                                            -->
@@ -4541,7 +4618,7 @@
 <!--     plan, NO se corrige dentro de B05.                     -->
 <!--                                                            -->
 <!-- ═══════════════════════════════════════════════════════════ -->
-<!-- CONSUMIDORES ACTUALES DE B05 (actualizado en v7)           -->
+<!-- CONSUMIDORES ACTUALES DE B05 (actualizado en v8)           -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!--                                                            -->
 <!-- IDs consumidos por OTROS bloques:                           -->
@@ -4577,6 +4654,8 @@
 <!--                              → patrón estándar de B01/B04.  -->
 <!--                                                            -->
 <!-- Clases CSS consumidas por OTROS bloques:                    -->
+<!--   · .p08-zona-central → diseñador de ticket B16 (solo color -->
+<!--     AA en v8 [FIX-05-F]; layout intacto).                   -->
 <!--   · .p05-badge-caja.abierta / .cerrada                       -->
 <!--                              → B05 las togglea (mismo blq). -->
 <!--   · .p09-tab / .p10-tab      → B05 v5 togglean .active.     -->
@@ -5283,13 +5362,16 @@
     min-height: 20px;
   }
 
+  /* [FIX-05-F] #888 (3.54:1, reprobado AA) y borde #bbb fijos
+   * → tokens de tema. Claro: #4a5160 sobre papel blanco = 7.96:1.
+   * Dark: el ticket pasa a #2a2a32 y el token a #a8a8b0. */
   .p08-zona-central {
-    border: 1px dashed #bbb;
+    border: 1px dashed var(--m2-border, #e0e0e0);
     padding: 10px;
     margin: 10px 0;
     text-align: center;
     font-style: italic;
-    color: #888;
+    color: var(--m2-text-mid, #4a5160);
     font-size: 11px;
   }
 
@@ -7336,19 +7418,25 @@
     <div class="modal-body">
       <div class="p10-arca-pasos">
         <div class="p10-arca-paso activo" data-paso="1">
-          <h4>Paso 1: Descargar el certificado</h4>
+          <!-- [FIX-05-D] Caption alineado al SVG [FIX-16-11] de B16. -->
+          <h4>Paso 1: Clave Fiscal en ARCA</h4>
           <div class="p10-arca-imagen">[Imagen del paso 1]</div>
-          <p>Ingresá a la AFIP con tu CUIT y descargá el certificado digital.</p>
+          <p>Entrá a ARCA (antes AFIP) con tu CUIT y verificá tu Clave Fiscal
+             con nivel 3.</p>
         </div>
         <div class="p10-arca-paso" data-paso="2">
-          <h4>Paso 2: Generar la clave privada</h4>
+          <!-- [FIX-05-D] Caption alineado al SVG [FIX-16-11] de B16. -->
+          <h4>Paso 2: Certificado digital</h4>
           <div class="p10-arca-imagen">[Imagen del paso 2]</div>
-          <p>Descargá la clave privada asociada a tu certificado.</p>
+          <p>En el Administrador de Relaciones de Clave Fiscal generá el
+             certificado (WSAA) y descargá el .crt y la .key.</p>
         </div>
         <div class="p10-arca-paso" data-paso="3">
-          <h4>Paso 3: Punto de venta</h4>
+          <!-- [FIX-05-D] Caption alineado al SVG [FIX-16-11] de B16. -->
+          <h4>Paso 3: Cargar en Mejora 2</h4>
           <div class="p10-arca-imagen">[Imagen del paso 3]</div>
-          <p>Definí un punto de venta numérico (por defecto 1).</p>
+          <p>En Vincular ARCA elegí el .crt y la .key, el ambiente y tu punto
+             de venta, y tocá Guardar vinculación.</p>
         </div>
       </div>
       <div class="p10-arca-progreso">
@@ -8110,13 +8198,22 @@
       _b('p10-btn-probar-arca', function () { self.probarArca(); });
       _b('p10-btn-guardar-arca', function () { self.guardarArca(); });
 
-      /* Certificado elegido → mostrar el grupo de clave privada. */
+      /* [FIX-05-G] Certificado elegido → grupo de clave privada.
+       * Guard simétrico con B16 (también respeta b16p2Bound) y
+       * lógica de B16 v7: SOLO se pide .key aparte si eligió .crt
+       * (con .pem el grupo se oculta). Restore 'flex' = display
+       * natural de .input-group. */
       var certInput = $('p10-arca-cert');
-      if (certInput && certInput.dataset.b05Bound !== '1') {
+      if (certInput &&
+          certInput.dataset.b05Bound !== '1' &&
+          certInput.dataset.b16p2Bound !== '1') {
         certInput.dataset.b05Bound = '1';
         certInput.addEventListener('change', function () {
           var grupo = $('p10-arca-key-group');
-          if (grupo) grupo.style.display = 'flex';
+          if (!grupo) return;
+          var nombre = (certInput.files && certInput.files[0])
+            ? certInput.files[0].name.toLowerCase() : '';
+          grupo.style.display = (nombre.slice(-4) === '.crt') ? 'flex' : 'none';
         });
       }
 
@@ -8658,8 +8755,12 @@
       pasos.forEach(function (p) {
         p.classList.toggle('activo', p.dataset.paso === String(paso));
       });
+      /* [FIX-05-E] Los puntos de pasos ya dados quedan
+       * .completado (verde, CSS v5). Antes solo toggleaba
+       * .activo: estado muerto. */
       puntos.forEach(function (p, i) {
         p.classList.toggle('activo', i === paso - 1);
+        p.classList.toggle('completado', i < paso - 1);
       });
     },
 
@@ -34820,6 +34921,15 @@ async function _safeLocalStorageRemove(key) {
 <!--               inline didácticos (autocontenidos, dark-mode OK)      -->
 <!--               poblados al arranque; override opcional desde         -->
 <!--               configuracion/tutorial_arca (TTL 24h). [T-B16-02]     -->
+<!--   ⚪ T-B16-02 CIERRE (2026-11-26) — QA visual claro/oscuro           -->
+<!--               aprobado por el usuario. El override de               -->
+<!--               configuracion/tutorial_arca queda DORMIDO por         -->
+<!--               diseño: B05 posee p10-btn-tutorial-arca               -->
+<!--               (b05Bound) y Arca.tutorial() no corre en              -->
+<!--               producción; los SVG por defecto (39500) cubren        -->
+<!--               el OK. Re-activar el override es decisión de          -->
+<!--               una ronda futura (cambiar el handler de B05           -->
+<!--               8144-8148).                                           -->
 <!--   🟠 FIX-16-12 — Cajeros: B16 es dueño del markup de                -->
 <!--               #p10-lista-cajeros (el único con botón Revocar; el    -->
 <!--               de B05 es de solo lectura). Defensa con MutationObserver: -->
@@ -42490,7 +42600,6 @@ body.dark-mode .escaner-manual-input {
 <!-- FIN BLOQUE 18.5                                                    -->
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 
-
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!-- BLOQUE FINAL v4 — MODO OSCURO + NOTIFICACIONES + VERSION   -->
 <!--                                                            -->
@@ -43618,6 +43727,12 @@ body.dark-mode .escaner-manual-input {
 
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!-- SCRIPT 3 — VERSION CHECKER (ÚNICA IMPLEMENTACIÓN)           -->
+<!--                                                             -->
+<!-- 🟡 [N-BF-02] Guard file://: _fetchVersionRemota retorna      -->
+<!--    null sin fetch y _configurarChequeos no registra         -->
+<!--    interval/visibilitychange bajo file://. Elimina el       -->
+<!--    spam '[Version] Error al consultar version.json' en      -->
+<!--    desarrollo local. Producción (https) intacta.            -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <script id="bloque-final-js-version">
   (function () {
@@ -43639,6 +43754,13 @@ body.dark-mode .escaner-manual-input {
     var _visHandler    = null;
 
     async function _fetchVersionRemota() {
+      /* [N-BF-02] Bajo file:// el fetch relativo a version.json es
+       * CORS de esquema garantizado (falla siempre). Skip silencioso:
+       * retorna null, que el flujo ya trata como "no hay versión
+       * remota" (43783: if (!versionRemota) return). Cubre también
+       * las llamadas manuales vía VersionChecker.check() y
+       * VersionChecker.getVersionRemota(). Producción intacta. */
+      if (location.protocol === 'file:') return null;
       try {
         var url = VERSION_URL + '?t=' + Date.now();
         var res = await fetch(url, { cache: 'no-store' });
@@ -43764,6 +43886,16 @@ body.dark-mode .escaner-manual-input {
     }
 
     function _configurarChequeos() {
+      /* [N-BF-02] Bajo file:// no registramos interval ni listener de
+       * visibilitychange: cero timers golpeando la red y cero warnings
+       * en consola. El camino manual (VersionChecker.check()) queda
+       * cubierto por el guard de _fetchVersionRemota. localStorage
+       * sigue funcionando bajo file://, por lo que la maquinaria de
+       * reload pendiente no se toca. */
+      if (location.protocol === 'file:') {
+        console.info('[Version] Modo file://: chequeo de versión deshabilitado (N-BF-02).');
+        return;
+      }
       if (_intervalId !== null) {
         console.info('[Version] Chequeos ya configurados, se omite la segunda llamada.');
         return;
